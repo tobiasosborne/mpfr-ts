@@ -463,6 +463,72 @@ static inline void jl_output_scalar_int(FILE *f, int v) {
     fprintf(f, ",\"output\":%d", v);
 }
 
+/* Emit ,"output":"<token>" where <token> follows the same convention as
+ * jl_kv_double: a quoted "%.17g" lossless decimal for finite doubles
+ * (with a ".0" suffix appended when the format produced a bare integer,
+ * so the wire is unambiguous against the bigint path), and the quoted
+ * sentinel tokens "NaN" / "+Infinity" / "-Infinity" for the IEEE 754
+ * specials. Use for the bare-double return type of ops like mpfr_get_d.
+ *
+ * Why a quoted string and not a bare JSON number? Because JSON cannot
+ * encode NaN or ±Infinity as bare numbers (RFC 8259), and emitting a
+ * bare `NaN` produces a parse error in standards-compliant decoders.
+ * Quoting every double — finite or not — keeps the wire format uniform
+ * so the TS-side decoder needs a single rule.
+ *
+ * The TS-side decodeExpectedOutput in eval/harness/value_codec.ts
+ * recognises the three sentinel tokens and finite-double-shaped strings
+ * (matched by /^-?(?:\d+\.\d*|\.\d+|\d+)(?:[eE][+-]?\d+)?$/) and decodes
+ * to {kind: 'scalar', value: <number>}. The compareOutput's scalar
+ * branch uses Object.is(actual, expected) on numbers to handle the
+ * NaN-equality and +0/-0 distinction correctly.
+ *
+ * Ref: jl_kv_double for the input-side counterpart and the rationale
+ *   behind the ".0" disambiguation.
+ * Ref: eval/harness/value_codec.ts §decodeExpectedOutput — sentinel +
+ *   finite-double parsing.
+ * Ref: eval/harness/value_codec.ts §compareOutput "scalar" branch —
+ *   Object.is for the number-vs-number equality. */
+static inline void jl_output_scalar_double(FILE *f, double v) {
+    if (v != v) {
+        fputs(",\"output\":\"NaN\"", f);
+        return;
+    }
+    if (v > 0 && v * 0.5 == v) {
+        fputs(",\"output\":\"+Infinity\"", f);
+        return;
+    }
+    if (v < 0 && v * 0.5 == v) {
+        fputs(",\"output\":\"-Infinity\"", f);
+        return;
+    }
+    char buf[40];
+    int n = snprintf(buf, sizeof buf, "%.17g", v);
+    if (n < 0 || (size_t)n >= sizeof buf) {
+        fprintf(stderr, "jl_output_scalar_double: snprintf overflow on %g\n", v);
+        exit(2);
+    }
+    int needs_decimal = 1;
+    for (int i = 0; i < n; i++) {
+        if (buf[i] == '.' || buf[i] == 'e' || buf[i] == 'E') {
+            needs_decimal = 0;
+            break;
+        }
+    }
+    if (needs_decimal) {
+        if ((size_t)(n + 3) >= sizeof buf) {
+            fprintf(stderr, "jl_output_scalar_double: buffer too small to append .0\n");
+            exit(2);
+        }
+        buf[n] = '.';
+        buf[n + 1] = '0';
+        buf[n + 2] = '\0';
+    }
+    fputs(",\"output\":\"", f);
+    fputs(buf, f);
+    fputc('"', f);
+}
+
 /* Emit ,"output":"<escaped>" — scalar string output. Same simple
  * escape policy as jl_kv_str. */
 static inline void jl_output_scalar_str(FILE *f, const char *s) {

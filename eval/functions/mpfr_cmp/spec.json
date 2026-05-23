@@ -1,0 +1,19 @@
+{
+  "function": "mpfr_cmp",
+  "class": "arithmetic",
+  "signature": {
+    "params": ["a", "b"],
+    "returns": "number"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_cmp: compare two MPFR values structurally. Returns -1 if a < b, 0 if a == b, +1 if a > b. Signed zero is NOT ordered (+0 == -0). Class is 'arithmetic' (50ms per-case budget): a single MPFR comparison even at very large precisions is dominated by one bigint compare, comfortably inside 50ms. Return TYPE is plain JS `number`, NOT bigint — the result {-1, 0, +1} fits trivially and matches the C `int` return.",
+  "c_signature": "int mpfr_cmp(mpfr_srcptr op1, mpfr_srcptr op2)",
+  "divergence_from_c": "C returns 0 AND sets the erange flag on NaN input; the idiomatic TS port THROWS MPFRError('EDOMAIN', ...) on any NaN operand. This is the documented domain-error divergence per CLAUDE.md \"Hallucination-risk callouts: NaN ≠ NaN\". The grader therefore CANNOT exercise NaN cases (a throw is graded as n_throw, not a pass) — the golden master skips them. C may return any signed int with the correct sign; canonical libmpfr returns -1/0/+1 and the driver normalises defensively in case a future libmpfr widens the range.",
+  "refs": [
+    "mpfr/src/cmp.c L32–L98 — the C reference (mpfr_cmp3). NaN sets ERANGE and returns 0 (L43–L47); both Inf with same sign return 0 (L50–L51); zeros are NOT sign-ordered (L57–L58: `MPFR_IS_ZERO(c) ? 0 : -s`); cross-sign returns the sign of b (L63–L64); exponent decides (L70–L73); then limb-by-limb MSB-first (L83–L95).",
+    "mpfr/src/cmp.c L100–L105 — mpfr_cmp itself is just mpfr_cmp3(b, c, +1).",
+    "mpfr/tests/tcmp.c L37–L209 — source for the `mined` cases (5 of: same value at different precs, +Inf vs +Normal, +Inf vs -Inf, +Inf vs +Inf, 0 vs +0.1).",
+    "src/core.ts — locked MPFR / Sign / MPFRError types; cmp returns plain number outside the {value, ternary} Result wrapper since there is no rounding to attribute ternary to.",
+    "src/internal/mpn/cmp.ts — substrate analog (different shape: raw bigint-array compare with explicit length). The MPFR-level cmp here folds in sign / exponent / kind dispatch before reaching the mantissa compare.",
+    "CLAUDE.md \"Hallucination-risk callouts\" — \"NaN ≠ NaN\" (throws here, not return 0); \"Signed zero is real\" (preserved for arithmetic, but NOT for cmp — see cmp.c L58); \"Subnormals exist only when emin/emax set\" (not exercised here)."
+  ]
+}

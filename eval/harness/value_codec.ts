@@ -268,6 +268,25 @@ export function decodeExpectedOutput(raw: unknown): ExpectedOutput {
     if (isDecimalIntegerString(raw)) {
       return { kind: 'scalar', value: BigInt(raw) };
     }
+    // IEEE 754 sentinel tokens from jl_output_scalar_double in
+    // eval/golden_master/common.h. JSON cannot carry NaN/±Infinity as
+    // bare numbers (RFC 8259), so the C emitter wraps them. Mirror the
+    // input-side parsing in decodeInputValue.
+    if (raw === 'NaN') return { kind: 'scalar', value: Number.NaN };
+    if (raw === '+Infinity') {
+      return { kind: 'scalar', value: Number.POSITIVE_INFINITY };
+    }
+    if (raw === '-Infinity') {
+      return { kind: 'scalar', value: Number.NEGATIVE_INFINITY };
+    }
+    // Finite-double-shaped strings (the `%.17g`-with-decimal-point form
+    // jl_output_scalar_double emits). Parsed via strict `Number(s)` —
+    // requires at least one digit and that the result is finite. Same
+    // regex as decodeInputValue's finite-double branch.
+    if (/^-?(?:\d+\.\d*|\.\d+|\d+)(?:[eE][+-]?\d+)?$/.test(raw)) {
+      const n = Number(raw);
+      if (Number.isFinite(n)) return { kind: 'scalar', value: n };
+    }
     throw new Error(`unrecognised scalar string output: ${JSON.stringify(raw)}`);
   }
   if (typeof raw === 'number') {
@@ -426,9 +445,20 @@ export function compareOutput(
         }
         return `scalar mismatch: expected bigint ${expected.value}, got ${typeof actual} ${String(actual)}`;
       }
-      // number-valued scalar (rare; small int output)
-      if (actual === expected.value) return null;
-      return `scalar mismatch: expected ${expected.value}, got ${String(actual)}`;
+      // number-valued scalar. Use `Object.is` rather than `===` so:
+      //   - NaN equals NaN (=== returns false; CLAUDE.md hallucination
+      //     callout "NaN ≠ NaN" — for the OUTPUT side of get-conversion
+      //     ops the only way to assert NaN-equality is via Object.is or
+      //     a Number.isNaN dance).
+      //   - +0 is distinct from -0 (=== returns true; Object.is returns
+      //     false). Signed zero is observable in MPFR's get_d/set_d
+      //     round-trip (CLAUDE.md hallucination callout "Signed zero is
+      //     real"), so a port that drops the sign on a -0 input must
+      //     fail the grade.
+      if (typeof actual === 'number' && Object.is(actual, expected.value)) {
+        return null;
+      }
+      return `scalar mismatch: expected ${expected.value} (Object.is), got ${String(actual)}`;
     }
 
     case 'mpfr': {

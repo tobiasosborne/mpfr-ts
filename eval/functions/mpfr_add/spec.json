@@ -1,0 +1,24 @@
+{
+  "function": "mpfr_add",
+  "class": "arithmetic",
+  "signature": {
+    "params": ["a", "b", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_add: add two MPFR values, round per rnd at the caller-supplied prec, return {value, ternary}. The C function mutates rop in place (whose prec is set independently) and returns the ternary as int; the TS port takes prec explicitly and returns the canonical Result shape from src/core.ts. Class is 'arithmetic' (50ms per-case budget): mpfr_add is the prototypical arithmetic op — composing mpn_add_n / mpn_sub_n with rounding fits comfortably inside the budget even at PREC_MAX-neighbourhood mantissas; the golden's fuzz cap of prec ≤ 200 keeps the budget realistic. This is the first port that meaningfully composes substrate (mpn_add_n, mpn_sub_n) AND exercises full five-mode rounding with signed-zero semantics on cancellation.",
+  "c_signature": "int mpfr_add(mpfr_t rop, mpfr_srcptr op1, mpfr_srcptr op2, mpfr_rnd_t rnd)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C mutates rop (which carries prec) and returns the ternary as a separate int; TS takes prec as a positional argument and returns {value, ternary} per the locked Result schema (src/core.ts L173–L176). Behaviour for specials matches the C reference exactly: NaN + anything → NaN; +Inf + -Inf → NaN; ±Inf + finite → ±Inf; ±0 + ±0 → +0 (RNDN/Z/U/A) or sign-following (RNDD: -0 unless both +0; or generally per mpfr/src/add.c L66–L75); ±0 + normal copies the normal rounded to prec. Signed zero on cancellation: |a| == |b| with opposite signs gives +0 for all rounding modes except RNDD which gives -0 (mpfr/src/sub1.c L66–L74).",
+  "refs": [
+    "mpfr/src/add.c L24–L121 — the C dispatcher. Handles specials inline (NaN, ±Inf, ±0 + ±0, ±0 + normal), then dispatches normal+normal to mpfr_sub1 (different signs) or mpfr_add1 (same sign).",
+    "mpfr/src/add.c L66–L75 — 0+0 sign rule: under RNDD the result is -0 unless both operands are +0; under all other modes the result is +0 unless both operands are -0.",
+    "mpfr/src/sub1.c L34–L75 — sub1's cancellation path: when |b| == |c| with opposite signs, set result to +0 (or -0 under RNDD), ternary 0.",
+    "mpfr/src/add1.c — add1 algorithm: align mantissas by exponent diff, sum (mpn_add_n), check carry-out into MSB, round to target prec, return ternary.",
+    "mpfr/src/add1sp.c — same-precision fast path; we don't specialise this in the port (the general path handles same-prec correctly with one extra branch), but the algorithm cross-references add1.c.",
+    "src/core.ts — locked MPFR / RoundingMode / Result / Ternary types; validate() invariants the returned value must satisfy.",
+    "src/internal/mpn/add_n.ts — substrate composed for same-sign addition of aligned significands.",
+    "src/internal/mpn/sub_n.ts — substrate composed for opposite-sign subtraction (after determining which operand has larger magnitude).",
+    "src/ops/set_d.ts — reference for the local roundMantissa pattern; the add port duplicates it locally per the same 'don't extract until a third caller forces it' note in set_d.ts.",
+    "CLAUDE.md 'Hallucination-risk callouts' — Signed zero is observable (+0 + -0 differs between RNDN and RNDD); ternary is sign of (rounded - exact); rounding-mode count is FIVE; mpfr_prec_t is in bits not digits; NaN ≠ NaN (both NaN equal under our grader)."
+  ]
+}

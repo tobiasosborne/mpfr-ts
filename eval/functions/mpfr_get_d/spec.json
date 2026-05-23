@@ -1,0 +1,19 @@
+{
+  "function": "mpfr_get_d",
+  "class": "misc",
+  "signature": {
+    "params": ["x", "rnd"],
+    "returns": "number"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_get_d: convert an MPFR value to the IEEE 754 binary64 closest to it under the given rounding mode. Inverse of mpfr_set_d. Returns a bare JS number (no Result wrapper) because the get-conversion family has no ternary in the locked schema, matching the C signature `double mpfr_get_d(mpfr_srcptr, mpfr_rnd_t)`. Class is 'misc' (matching mpfr_set_d / mpfr_init2) because it's a conversion op, with the same 1000ms per-case headroom needed for the PREC_MAX-neighbourhood mantissa rounding the golden exercises.",
+  "c_signature": "double mpfr_get_d(mpfr_srcptr op, mpfr_rnd_t rnd)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C takes mpfr_srcptr; TS takes the immutable MPFR struct from src/core.ts. C returns a bare double; TS returns bare number (same — no ternary on the get-family).",
+  "refs": [
+    "mpfr/src/get_d.c L34–L132 — the C reference. Special-value dispatch (L41–L56), overflow (L83–L90), underflow (L66–L81), in-range round-and-scale (L91–L129).",
+    "src/ops/set_d.ts — the inverse direction; roundMantissa logic shared one-for-one with this port (direction-agnostic primitive).",
+    "src/core.ts §validate — the input MPFR must pass structural validation. The port calls validate() on x to catch malformed JSON-decoded inputs from the grader.",
+    "CLAUDE.md \"Hallucination-risk callouts\" — Signed zero is observable; NaN ≠ NaN; rounding-mode count is FIVE (RNDA folded to RNDU/RNDD by sign internally, per mpfr/src/get_d.c L61–L62).",
+    "IEEE 754-2019 §3.4 — double-precision binary64 layout: 1 sign bit, 11 exponent bits (bias 1023), 52 mantissa bits; subnormals (biased exp 0) have no implicit leading 1."
+  ]
+}
