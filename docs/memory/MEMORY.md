@@ -1,0 +1,11 @@
+- [User profile](user_profile.md) — built auto-port-eval; talks in Pareto/L3/golden-master terms; wants brutal harnesses
+- [Project: MPFR-TS goal](project_mpfr_goal.md) — auto-port full libmpfr to pure idiomatic TS via sonnet L3 ralph loop
+- [Decision: API shape](decision_api_shape.md) — idiomatic immutable: `op(...args, prec, rnd) → {value, ternary}`
+- [Decision: Substrate strategy](decision_substrate.md) — faithful port of GMP mpn_* and MPFR helpers first, public fns on top
+- [Decision: Failure policy](decision_failure_policy.md) — sonnet L3 → auto-escalate to opus L3 once → park
+- [Decision: Perf gate](decision_perf_gate.md) — moderate-to-strict gate, perf grade tracked separately, slow fns re-attempted later
+- [Decision: Library coherence](decision_library_coherence.md) — locked `src/core.ts` schema, grader AST-rejects redeclarations, integration suite gates Production exit
+- [Decision: Runtime](decision_runtime.md) — Bun ≥1.3 for harness; published `src/` runs on Bun OR Node ≥22 (no `Bun.*` or `node:*` in src/)
+- [Feedback: Quality bar](feedback_quality_bar.md) — "uncompromising senior TS expert" is the ambiguity resolver; spawn review subagent after substantial work
+- [MPFR storage traps](mpfr_storage_traps.md) — `mpfr_get_z_2exp` already de-pads; `exp_ts = exp_2 + prec`; NaN drops prec on the TS side
+- [Reference: auto-port-eval](reference_auto_port_eval.md) — sibling project at ../auto-port-eval with FLINT→TS harness + 90 runs of data

@@ -1,0 +1,20 @@
+{
+  "name": "mpfr-ts",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Auto-ported pure-TypeScript reimplementation of GNU MPFR, with the eval harness that produced it.",
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "engines": {
+    "bun": ">=1.3",
+    "node": ">=22"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "grade": "bun eval/harness/runner.ts",
+    "test": "bun test eval/integration/",
+    "typecheck": "tsc --noEmit"
+  }
+}
