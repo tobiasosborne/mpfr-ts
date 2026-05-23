@@ -352,8 +352,37 @@ def _render_iteration_loop(
     """
     runner_path = repo_root / "eval" / "harness" / "runner.ts"
     golden_path = repo_root / "eval" / "functions" / fn_name / "golden.jsonl"
+    core_path = repo_root / "src" / "core.ts"
     port_path = f"/tmp/eval_{fn_name}/port.ts"
     grade_path = f"/tmp/eval_{fn_name}/grade.json"
+
+    # Public (non-substrate) ports must import from src/core.ts. Because the
+    # port lives under /tmp/ during grading, the relative path "../core.ts"
+    # resolves to /tmp/core.ts (which does not exist). Use the absolute path
+    # below in your port's import statement. When the port is promoted to its
+    # canonical location (src/ops/...), the orchestrator rewrites this to a
+    # relative path.
+    import_guidance = (
+        ""
+        if port_class == "substrate"
+        else f"""\
+
+   **Import path**: your port runs from `/tmp/eval_{fn_name}/port.ts`, so a
+   relative `../core.ts` import will fail (`/tmp/core.ts` does not exist).
+   Use the absolute path:
+
+   ```ts
+   import type {{ MPFR /*, RoundingMode, Result, Ternary*/ }} from "{core_path}";
+   import {{ /* posZero, MPFRError, PREC_MIN, ... as needed */ }} from "{core_path}";
+   ```
+
+   Two separate `import` statements: one `import type {{ ... }}` for type-only
+   symbols, one `import {{ ... }}` for runtime values. The ast_check gate
+   currently flags `import {{ type MPFR }}` mixed syntax as a false-positive
+   redeclaration (bd `mpfr-ts-wli`). The orchestrator will rewrite paths to
+   relative when promoting your port to `src/ops/`.
+"""
+    )
 
     return f"""\
 # Iteration loop
@@ -367,6 +396,7 @@ or refine.
    ```
    {port_path}
    ```
+{import_guidance}
 
 2. Run the grader:
 

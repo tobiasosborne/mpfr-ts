@@ -176,6 +176,29 @@ export function decodeInputValue(raw: unknown): unknown {
     if (isDecimalIntegerString(raw)) {
       return BigInt(raw);
     }
+    // IEEE 754 special-value tokens from jl_kv_double in
+    // eval/golden_master/common.h. JSON cannot represent NaN/±Infinity
+    // as bare numbers (RFC 8259 forbids it), so the C side wraps them
+    // in quoted strings; we recognise the three sentinel tokens here
+    // and return them as JS `number` values rather than strings. This
+    // is the *input* path — the call site is decoding a value the C
+    // driver wants the TS port to receive as a `number`. Finite doubles
+    // emitted via "%.17g" hit the catch-all `Number(raw)` branch below.
+    if (raw === 'NaN') return Number.NaN;
+    if (raw === '+Infinity') return Number.POSITIVE_INFINITY;
+    if (raw === '-Infinity') return Number.NEGATIVE_INFINITY;
+    // Finite-double check: `%.17g` outputs look like `1.5`, `-1.5`,
+    // `5e-324`, `-3.14e+0`, etc. — anything `Number()` can parse to a
+    // finite value (and which is NOT a plain decimal integer, already
+    // handled above) is treated as a double. Strict parse: `Number("")`
+    // is 0, `Number("0x10")` is 16 — both ambiguous, so we require at
+    // least one digit AND that the string isn't empty AND that the
+    // strict-parse `Number(raw)` is finite. Hex / octal / whitespace-
+    // padded strings fall through to the return-as-string branch.
+    if (/^-?(?:\d+\.\d*|\.\d+|\d+)(?:[eE][+-]?\d+)?$/.test(raw)) {
+      const n = Number(raw);
+      if (Number.isFinite(n)) return n;
+    }
     return raw;
   }
 

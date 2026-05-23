@@ -1,0 +1,18 @@
+{
+  "function": "mpfr_set_d",
+  "class": "misc",
+  "signature": {
+    "params": ["d", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_set_d: convert an IEEE 754 double to an MPFR value at the given precision, rounded per the rounding mode, returning {value, ternary}. The C function mutates rop in place (precision comes from rop); the TS port takes prec as an explicit positional argument and returns a fresh Result. Public surface (class != substrate) so the schema ast_check requires importing the locked types from src/core.ts. Class is 'misc' (matching mpfr_init2's classification) because mpfr_set_d is a conversion constructor, not an arithmetic op — it sits in the same per-case budget tier (1000ms) as init2, and that headroom is needed for the PREC_MAX-neighbourhood mantissa allocations that the golden exercises.",
+  "c_signature": "int mpfr_set_d(mpfr_t rop, double op, mpfr_rnd_t rnd)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C mutates rop (which carries prec) and returns the ternary as a separate int; TS takes prec as a positional argument and returns {value, ternary} per the locked Result schema (src/core.ts L173–L176).",
+  "refs": [
+    "mpfr/src/set_d.c — the C reference. extract_double (L34–L237) reads the IEEE 754 bit pattern into a 64-bit MSB-aligned mantissa with an unbiased exponent; mpfr_set_d (L241–L324) handles NaN/Inf/zero specials then delegates to mpfr_set4 which performs the round-from-53-bits-to-prec step.",
+    "src/core.ts §validate — every returned MPFR must pass structural validation (MSB-aligned mantissa, prec bounds, signed zero preserved). The port returns values that pass validate() without post-processing.",
+    "CLAUDE.md \"Hallucination-risk callouts\" — Signed zero is observable (Object.is on -0); ternary is sign of (rounded - exact); rounding-mode count is FIVE; mpfr_prec_t is in bits, not digits.",
+    "IEEE 754-2019 §3.4 — double-precision binary64 layout: 1 sign bit, 11 exponent bits (bias 1023), 52 mantissa bits with implicit leading 1 for normals."
+  ]
+}

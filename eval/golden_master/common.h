@@ -157,6 +157,101 @@ static inline void jl_kv_int(FILE *f, int first, const char *key, int v) {
     fprintf(f, "%d", v);
 }
 
+/* Emit ,"key":"<token>" where <token> is one of "NaN" / "+Infinity" /
+ * "-Infinity" / a "%.17g" lossless decimal — for the IEEE 754 double
+ * input type used by ports like mpfr_set_d.
+ *
+ * Why a quoted string and not a bare JSON number? Because JSON cannot
+ * encode NaN or ±Infinity as bare numbers (the grammar in RFC 8259
+ * forbids it), and emitting `NaN` unquoted produces a parse error in
+ * standards-compliant decoders — including JSON.parse in V8/Bun.
+ * Quoting every double — finite or not — keeps the wire format uniform
+ * so the TS-side decoder needs a single rule.
+ *
+ * Round-trip contract: "%.17g" is the IEEE 754 round-trip-safe
+ * specifier for `double` — every finite normal/subnormal double `d`
+ * satisfies `Number(string(d)) === d` after this format, by IEEE 754
+ * §5.12.2 (17 significant decimal digits suffice). The TS-side decoder
+ * in value_codec.ts uses `Number(s)` (NOT parseFloat — parseFloat
+ * tolerates trailing junk; Number is strict).
+ *
+ * Ref: src/core.ts L19–L63 — value model; the double extraction in
+ *   the TS port reads sign/exp/mant directly from a DataView.
+ * Ref: CLAUDE.md "Hallucination-risk callouts" — NaN ≠ NaN; signed
+ *   zero observable. We emit +0 and -0 as "0" and "-0" via "%.17g".
+ *   The TS-side `Number("-0") === -0` and `Object.is(Number("-0"), -0)`
+ *   is true under V8/Bun, so the signed-zero distinction survives.
+ */
+static inline void jl_kv_double(FILE *f, int first, const char *key, double v) {
+    jl__key(f, first, key);
+    /* NaN check first — DOUBLE_ISNAN is a libmpfr macro but we can't
+     * count on it here (common.h is consumed by drivers that may not
+     * have included <math.h>). Use the IEEE-754 self-inequality trick:
+     * NaN is the only value that compares unequal to itself. */
+    if (v != v) {
+        fputs("\"NaN\"", f);
+        return;
+    }
+    if (v > 0 && v * 0.5 == v) {
+        /* +inf: doubling (halving) leaves it unchanged. Faster than
+         * including <math.h> for isinf, and works on every IEEE-754
+         * implementation. */
+        fputs("\"+Infinity\"", f);
+        return;
+    }
+    if (v < 0 && v * 0.5 == v) {
+        fputs("\"-Infinity\"", f);
+        return;
+    }
+    /* %.17g — round-trip-safe for IEEE-754 double. Use a fixed buffer
+     * so we don't depend on snprintf availability; 32 chars is ample
+     * (the longest %.17g output is ~24 chars including sign, exponent,
+     * and decimal point). */
+    char buf[40];
+    int n = snprintf(buf, sizeof buf, "%.17g", v);
+    if (n < 0 || (size_t)n >= sizeof buf) {
+        /* Should be unreachable for a finite double — but if snprintf
+         * ever surprises us, fail loud rather than emit a truncated
+         * literal that would mis-grade. */
+        fprintf(stderr, "jl_kv_double: snprintf overflow on %g\n", v);
+        exit(2);
+    }
+    /* Disambiguation from a decimal-integer string: the TS-side
+     * decodeInputValue (eval/harness/value_codec.ts) treats any
+     * "%d"-shaped string as a BigInt, which would mis-route a finite
+     * double like 1.0 (printed as "1" by %.17g) into the bigint path.
+     * To keep the wire format unambiguous, we ensure every finite
+     * double's emitted string contains either '.' or 'e'/'E'. If %.17g
+     * produced a bare integer (no exponent, no decimal), append ".0"
+     * so it cannot be confused with an integer literal.
+     *
+     * Note: for the signed-zero distinction, "%.17g" emits "0" for +0
+     * and "-0" for -0; appending ".0" gives "0.0" and "-0.0", both of
+     * which round-trip through JS `Number()` preserving the sign
+     * (Object.is(Number("-0.0"), -0) === true in V8/Bun). */
+    int needs_decimal = 1;
+    for (int i = 0; i < n; i++) {
+        if (buf[i] == '.' || buf[i] == 'e' || buf[i] == 'E') {
+            needs_decimal = 0;
+            break;
+        }
+    }
+    if (needs_decimal) {
+        /* Append ".0" — guaranteed to fit since buf is 40 bytes and
+         * %.17g output is at most ~24 chars + sign. */
+        if ((size_t)(n + 3) >= sizeof buf) {
+            fprintf(stderr, "jl_kv_double: buffer too small to append .0\n");
+            exit(2);
+        }
+        buf[n] = '.';
+        buf[n + 1] = '0';
+        buf[n + 2] = '\0';
+    }
+    fputc('"', f);
+    fputs(buf, f);
+    fputc('"', f);
+}
+
 /* Emit ,"key":"<escaped>". Escapes only `"` and `\` — sufficient for
  * the controlled string values goldens carry (mostly short tags); we
  * are not a general JSON library. */

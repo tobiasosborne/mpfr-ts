@@ -1,0 +1,18 @@
+{
+  "function": "mpfr_init2",
+  "class": "misc",
+  "signature": {
+    "params": ["prec"],
+    "returns": "MPFR"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_init2: construct a fresh MPFR at the given precision. The C function leaves the mantissa uninitialised — by upstream convention the caller MUST call mpfr_set_* before reading. That contract does not translate to the immutable TS surface, so this port returns a deterministic posZero(prec), the closest immutable analog to 'init at this precision'. Documented divergence; callers wanting NaN use NAN_VALUE. Public surface (class != substrate), so the schema ast_check requires importing MPFR / posZero from src/core.ts.",
+  "c_signature": "void mpfr_init2(mpfr_ptr x, mpfr_prec_t p)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C leaves mantissa uninitialised; TS returns posZero(prec).",
+  "refs": [
+    "mpfr/src/init2.c — the C reference: allocates limbs, sets prec, marks NaN.",
+    "mpfr/src/mpfr.h L191–L193 — MPFR_PREC_MIN / MPFR_PREC_MAX bounds (matched by src/core.ts PREC_MIN / PREC_MAX).",
+    "src/core.ts L278–L281 — posZero(prec) is the constructor of record for {kind:'zero', sign:1, prec, exp:0n, mant:0n}.",
+    "CLAUDE.md Law 4 — library coherence: public ports must import the locked schema."
+  ]
+}
