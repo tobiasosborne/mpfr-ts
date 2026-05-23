@@ -1,0 +1,16 @@
+{
+  "function": "mpn_add_n",
+  "class": "substrate",
+  "signature": {
+    "params": ["s1", "s2", "n"],
+    "returns": "{ result: readonly bigint[], carry: bigint }"
+  },
+  "doc": "Pure-TS port of GMP mpn_add_n: add two n-limb non-negative integers stored as bigint arrays in little-endian limb order (limbs[0] is the least-significant 2^64 word), returning the n-limb sum and the carry-out limb (0n or 1n). Substrate-class — operates on raw bigint arrays, not src/core.ts MPFR values, so the schema ast_check requireCoreImport=false exemption applies (see eval/harness/runner.ts L1184).",
+  "c_signature": "mp_limb_t mpn_add_n(mp_limb_t *rp, const mp_limb_t *s1p, const mp_limb_t *s2p, mp_size_t n)",
+  "limb_width_bits": 64,
+  "limb_order": "little-endian",
+  "refs": [
+    "GMP manual §8.3 (Low-level Functions): 'The least significant limb is stored at the lowest address (i.e. limbs[0]).'",
+    "mpfr/src/add1sp.c L921 — `limb = mpn_add_n (ap, MPFR_MANT(b), MPFR_MANT(c), n);` — same-exponent significand addition, the canonical MPFR caller of mpn_add_n."
+  ]
+}

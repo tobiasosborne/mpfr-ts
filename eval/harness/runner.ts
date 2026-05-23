@@ -70,6 +70,7 @@ declare const Bun: BunNamespace;
 
 declare const process: {
   readonly argv: readonly string[];
+  cwd(): string;
   exit(code?: number): never;
 };
 
@@ -985,9 +986,11 @@ async function gradeCases(
 function pathToUrl(p: string): string {
   if (p.startsWith('file://')) return p;
   if (p.startsWith('/')) return `file://${p}`;
-  // Relative path: resolve against the runner's cwd via import.meta.url's
-  // parent. Bun also supports bare relative paths, but file:// is clearer.
-  const cwdUrl = new URL('./', import.meta.url);
+  // Relative paths resolve against the CALLER's cwd, not the runner.ts file's
+  // directory. Resolving against `import.meta.url` would make
+  // `--port src/internal/mpn/add_n.ts` from the repo root try
+  // `eval/harness/src/internal/mpn/add_n.ts`, which is wrong. Issue: mpfr-ts-61i.
+  const cwdUrl = new URL(`file://${process.cwd()}/`);
   return new URL(p, cwdUrl).href;
 }
 
