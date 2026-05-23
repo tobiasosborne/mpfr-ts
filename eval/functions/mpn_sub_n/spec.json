@@ -1,0 +1,16 @@
+{
+  "function": "mpn_sub_n",
+  "class": "substrate",
+  "signature": {
+    "params": ["s1", "s2", "n"],
+    "returns": "{ result: readonly bigint[], borrow: bigint }"
+  },
+  "doc": "Pure-TS port of GMP mpn_sub_n: subtract two n-limb non-negative integers stored as bigint arrays in little-endian limb order (limbs[0] is the least-significant 2^64 word), returning the n-limb difference s1 - s2 and the borrow-out limb (0n or 1n). The borrow is 1n iff s1 < s2 as unsigned multi-precision integers, in which case the limb-wise result is (s1 - s2 + 2^(64*n)) mod 2^(64*n) — i.e. two's-complement-style wrapping at the n-limb boundary. Substrate-class — operates on raw bigint arrays, not src/core.ts MPFR values, so the schema ast_check requireCoreImport=false exemption applies (see eval/harness/runner.ts L1188).",
+  "c_signature": "mp_limb_t mpn_sub_n(mp_limb_t *rp, const mp_limb_t *s1p, const mp_limb_t *s2p, mp_size_t n)",
+  "limb_width_bits": 64,
+  "limb_order": "little-endian",
+  "refs": [
+    "GMP manual §8.3 (Low-level Functions): 'The least significant limb is stored at the lowest address (i.e. limbs[0]).' Subtraction returns 1 as borrow-out when s1 < s2; the result limbs wrap modulo 2^(64*n).",
+    "mpfr/src/sub1sp.c — same-exponent significand subtraction; the canonical MPFR caller of mpn_sub_n. The borrow-out is folded back into the exponent / cancellation handling there."
+  ]
+}

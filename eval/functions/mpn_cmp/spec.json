@@ -1,0 +1,16 @@
+{
+  "function": "mpn_cmp",
+  "class": "substrate",
+  "signature": {
+    "params": ["s1", "s2", "n"],
+    "returns": "number"
+  },
+  "doc": "Pure-TS port of GMP mpn_cmp: lexicographically compare two n-limb non-negative integers stored as bigint arrays in little-endian limb order (limbs[0] is the least-significant 2^64 word). Returns -1 if s1 < s2 unsigned, 0 if s1 == s2, +1 if s1 > s2. Walks MSB-first (index n-1 down to 0) — iteration direction is OPPOSITE to mpn_add_n / mpn_sub_n, because the most-significant differing limb decides the comparison. Substrate-class — operates on raw bigint arrays, not src/core.ts MPFR values, so the schema ast_check requireCoreImport=false exemption applies (see eval/harness/runner.ts L1188). Return type is a plain JS `number` (not bigint) because the result range {-1, 0, +1} fits trivially in a JS number and matches the C int return; the wire format emits a bare number via jl_output_scalar_int.",
+  "c_signature": "int mpn_cmp(const mp_limb_t *s1p, const mp_limb_t *s2p, mp_size_t n)",
+  "limb_width_bits": 64,
+  "limb_order": "little-endian",
+  "refs": [
+    "GMP manual §8.3 (Low-level Functions): 'The least significant limb is stored at the lowest address (i.e. limbs[0]).' mpn_cmp returns a negative, zero, or positive int; canonical implementations return -1/0/+1.",
+    "mpfr/src/mulders.c L170 — `if ((qh = (mpn_cmp (np, dp, n) >= 0)))` — the canonical MPFR caller compares numerator vs divisor to decide a quotient bit. Two more sites in mpfr/src/div.c (L1210, L1269) follow the same pattern: result-of-comparison threaded into rounding decisions, where the sign of the return — not the magnitude — is what matters."
+  ]
+}

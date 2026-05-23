@@ -353,6 +353,21 @@ static inline void jl_output_scalar_u64(FILE *f, uint64_t v) {
     fprintf(f, ",\"output\":\"%" PRIu64 "\"", v);
 }
 
+/* Emit ,"output":N — scalar int as a bare JS number, NOT stringified.
+ * Use for ops whose return type is a small signed int that comfortably
+ * fits in a JS number — comparison ops (sign of difference: -1/0/+1),
+ * ternary flags returned standalone, predicate "boolean" returns
+ * encoded as int. The TS-side `decodeExpectedOutput` recognises a
+ * bare-number `output` field as `{kind:'scalar', value:<number>}`
+ * (see eval/harness/value_codec.ts L250–L252) and `compareOutput`
+ * for that variant uses strict `===` against the port's return value,
+ * so the port must return a plain `number` (NOT a bigint). Distinct
+ * from `jl_output_scalar_u64` so callers don't accidentally widen a
+ * signed -1 into the unsigned UINT64_MAX. */
+static inline void jl_output_scalar_int(FILE *f, int v) {
+    fprintf(f, ",\"output\":%d", v);
+}
+
 /* Emit ,"output":"<escaped>" — scalar string output. Same simple
  * escape policy as jl_kv_str. */
 static inline void jl_output_scalar_str(FILE *f, const char *s) {

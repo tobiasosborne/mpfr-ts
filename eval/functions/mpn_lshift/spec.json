@@ -1,0 +1,18 @@
+{
+  "function": "mpn_lshift",
+  "class": "substrate",
+  "signature": {
+    "params": ["s", "n", "count"],
+    "returns": "{ result: readonly bigint[], out: bigint }"
+  },
+  "doc": "Pure-TS port of GMP mpn_lshift: shift an n-limb non-negative integer (stored as a bigint array in little-endian limb order — limbs[0] is the least-significant 2^64 word) left by `count` bits, where 1 <= count <= 63. Returns the n-limb shifted result and the `count` bits that shifted out from the top, packed as the LOW `count` bits of the returned bigint (the high 64-count bits of `out` are always zero). Substrate-class — operates on raw bigint arrays, not src/core.ts MPFR values, so the schema ast_check requireCoreImport=false exemption applies (see eval/harness/runner.ts L1186). Iteration is LSB-first: because the TS port writes into a *fresh* result array (never aliases the input), no read-before-write ordering hazard exists — unlike the in-place C version, which still walks LSB-first but with deliberate sequencing. `count == 0` is undefined behaviour in GMP and is NOT exercised by the golden; the port treats it as an input error (throws).",
+  "c_signature": "mp_limb_t mpn_lshift(mp_limb_t *rp, const mp_limb_t *sp, mp_size_t n, unsigned int count)",
+  "limb_width_bits": 64,
+  "limb_order": "little-endian",
+  "refs": [
+    "GMP manual §8.3 (Low-level Functions): 'The least significant limb is stored at the lowest address (i.e. limbs[0])', and mpn_lshift shifts left by `count` bits where `1 <= count < GMP_NUMB_BITS`; the bits shifted out of the high end are returned in the low `count` bits of the function's return value.",
+    "mpfr/src/set_q.c L52 — `mpn_lshift (MPFR_MANT (f), p, s, c);` — canonical MPFR caller, normalising the mantissa of an mpq -> mpfr conversion so the MSB of the top limb is set.",
+    "mpfr/src/sub1sp.c L1573, L1598, L1884 — `mpn_lshift (ap, ap, n, cnt)` — normalisation after catastrophic cancellation in same-precision subtraction; the in-place aliasing here is what makes the C implementation's LSB-first iteration order load-bearing (read sp[i] before writing rp[i] when rp == sp).",
+    "mpfr/src/sum.c L337, L494, L987, L1100 — multiple aligned-shift call sites in the lazy-summation core; cnt ranges over the full [1, 63] interval, motivating the count sweep in the goldens."
+  ]
+}
