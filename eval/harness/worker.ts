@@ -23,6 +23,10 @@
  * ported code; a worker-internal AbortController cannot interrupt a
  * synchronous busy-loop because the event loop never yields.
  *
+ * The parent must also time-bound the init -> ready round-trip; a port
+ * with top-level await or top-level infinite work blocks `await import`
+ * and will never reply. Runner.ts owns this timeout.
+ *
  * The worker does NO value comparison — that's the runner's job; the
  * worker just returns whatever the port returned (BigInts and all, since
  * Bun's `postMessage` uses structured clone which handles BigInt natively).
@@ -123,9 +127,7 @@ self.onmessage = async (evt: MessageEvent<ParentMessage>) => {
       });
     }
     return;
-  }
-
-  if (msg.type === 'case') {
+  } else if (msg.type === 'case') {
     if (portFunction === null) {
       // Defensive: should not happen given the parent waits for 'ready'
       // before sending cases, but a malformed parent or a race during
@@ -144,6 +146,21 @@ self.onmessage = async (evt: MessageEvent<ParentMessage>) => {
     const t0 = performance.now();
     try {
       const value = fn(...msg.inputArgs);
+      // Reject async/thenable returns: the port contract is strictly
+      // synchronous, and a Promise crossing structured-clone surfaces as a
+      // DataCloneError that masks the real contract violation. Throwing
+      // here lets the existing catch reply with a precise diagnostic.
+      // Issue: mpfr-ts-eep.
+      if (
+        value !== null &&
+        typeof value === 'object' &&
+        typeof (value as { then?: unknown }).then === 'function'
+      ) {
+        throw new Error(
+          'port returned a Promise; sync contract violated ' +
+            '(await is not supported in port functions)',
+        );
+      }
       const ms = performance.now() - t0;
       // Note: structured clone serialises BigInt, plain objects, arrays of
       // BigInt, etc. — no special handling needed on either side.
@@ -158,6 +175,17 @@ self.onmessage = async (evt: MessageEvent<ParentMessage>) => {
         error: e instanceof Error ? e.message : String(e),
       });
     }
+    return;
+  } else {
+    // Exhaustiveness: ParentMessage is InitMessage | CaseMessage. If a new
+    // variant is added without a handler, the `never` assignment fails at
+    // compile time. The runtime postMessage covers a misbehaving parent
+    // that posts an unknown shape past the type system. Issue: mpfr-ts-5gz.
+    const _exhaustive: never = msg;
+    postMessage({
+      type: 'init_error',
+      error: `worker received unknown message type: ${JSON.stringify(_exhaustive)}`,
+    });
     return;
   }
 };

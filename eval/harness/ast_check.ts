@@ -68,13 +68,13 @@ export interface AstCheckOptions {
  * scan those separately so we can record the wildcard explicitly.
  */
 const NAMED_CORE_IMPORT_RE =
-  /import\s+(?:type\s+)?\{([^}]+)\}\s+from\s+['"]([^'"]*core\.ts)['"]/g;
+  /import\s+(?:type\s+)?\{([^}]+)\}\s+from\s+['"]((?:[^'"]*\/)?core\.ts)['"]/g;
 
 /**
  * Matches a wildcard import from a core.ts path. Records as `*`.
  */
 const WILDCARD_CORE_IMPORT_RE =
-  /import\s+\*\s+as\s+\w+\s+from\s+['"][^'"]*core\.ts['"]/g;
+  /import\s+\*\s+as\s+\w+\s+from\s+['"](?:[^'"]*\/)?core\.ts['"]/g;
 
 /**
  * Matches a default-or-namespace import that goes through core.ts but
@@ -83,7 +83,7 @@ const WILDCARD_CORE_IMPORT_RE =
  * always a bug, but we surface it as an import rather than a violation).
  */
 const DEFAULT_CORE_IMPORT_RE =
-  /import\s+(\w+)\s+from\s+['"][^'"]*core\.ts['"]/g;
+  /import\s+(\w+)\s+from\s+['"](?:[^'"]*\/)?core\.ts['"]/g;
 
 /**
  * Locked-schema redeclaration patterns. Word-boundary on the type name so:
@@ -174,10 +174,21 @@ export function astCheck(
   DEFAULT_CORE_IMPORT_RE.lastIndex = 0;
   while ((m = DEFAULT_CORE_IMPORT_RE.exec(source)) !== null) {
     const name = m[1] ?? 'default';
+    // Record for diagnostic visibility, but flag as an explicit error:
+    // core.ts has no default export, so any default-shaped import from it
+    // is necessarily a bug. We do NOT let this satisfy requireCoreImport.
     coreImports.push(`default(${name})`);
+    errors.push(
+      `default import from core.ts ('${name}'): core.ts has no default ` +
+        `export — import named symbols instead (e.g. \`import { MPFR } from "../core.ts"\`)`,
+    );
   }
 
-  if (opts.requireCoreImport && coreImports.length === 0) {
+  // `default(...)` entries are recorded for diagnostics but must not
+  // satisfy the core-import requirement: a port whose only "core import"
+  // is a bogus default import has not actually imported the schema.
+  const namedCoreImports = coreImports.filter((s) => !s.startsWith('default('));
+  if (opts.requireCoreImport && namedCoreImports.length === 0) {
     errors.push(
       'missing required import from src/core.ts (Law 4: every public port ' +
         'must import MPFR / RoundingMode / Result from the locked schema)',
@@ -195,8 +206,33 @@ export function astCheck(
   }
 
   // --- (3) `any` usage -----------------------------------------------------
+  // Apply the `any` patterns to a copy of the source with comments and
+  // string/template literals erased. Without this step the gate falsely
+  // flags `// no `any` here` in a JSDoc, or the literal string `": any"`
+  // in an error message. We deliberately do NOT use this stripped form
+  // for the Cyrillic scan below — Rule 13 wants to catch homoglyphs in
+  // string literals too (the `0xaaaaaaaaа` failure mode was literally a
+  // hex literal, which is not a string, but a Cyrillic char inside a
+  // user-facing error message would still ship and confuse downstream
+  // users). Issue: mpfr-ts-4hp.
+  const stripped = source
+    // Block comments first (non-greedy, multi-line). Done before line
+    // comments so `/* // */` isn't mis-split.
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    // Line comments to end-of-line.
+    .replace(/\/\/[^\n]*/g, '')
+    // Template literals — replace contents with empty backticks. Does NOT
+    // recurse into `${...}` expressions; an `: any` inside a template
+    // interpolation would slip through, but that's vanishingly unlikely
+    // in port code and false-negative-prone is acceptable here.
+    .replace(/`[\s\S]*?`/g, '``')
+    // Double-quoted strings, with escape-aware matching.
+    .replace(/"(?:\\.|[^"\\])*"/g, '""')
+    // Single-quoted strings, with escape-aware matching.
+    .replace(/'(?:\\.|[^'\\])*'/g, "''");
+
   for (const pat of ANY_PATTERNS) {
-    if (pat.re.test(source)) {
+    if (pat.re.test(stripped)) {
       errors.push(
         `uses '${pat.label}' — ports must use 'unknown' + narrowing instead`,
       );

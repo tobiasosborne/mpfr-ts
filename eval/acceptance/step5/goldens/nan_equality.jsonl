@@ -1,0 +1,5 @@
+{"tag":"happy","inputs":{"x":{"kind":"nan","sign":1,"prec":"0","exp":"0","mant":"0"}},"output":{"value":{"kind":"nan","sign":1,"prec":"0","exp":"0","mant":"0"},"ternary":0},"time_ns":4000}
+{"tag":"edge","inputs":{"x":{"kind":"nan","sign":1,"prec":"0","exp":"0","mant":"0"}},"output":{"value":{"kind":"nan","sign":1,"prec":"0","exp":"0","mant":"0"},"ternary":0},"time_ns":4017}
+{"tag":"adversarial","inputs":{"x":{"kind":"nan","sign":1,"prec":"0","exp":"0","mant":"0"}},"output":{"value":{"kind":"nan","sign":1,"prec":"0","exp":"0","mant":"0"},"ternary":0},"time_ns":4034}
+{"tag":"fuzz","inputs":{"x":{"kind":"nan","sign":1,"prec":"0","exp":"0","mant":"0"}},"output":{"value":{"kind":"nan","sign":1,"prec":"0","exp":"0","mant":"0"},"ternary":0},"time_ns":4051}
+{"tag":"mined","inputs":{"x":{"kind":"nan","sign":1,"prec":"0","exp":"0","mant":"0"}},"output":{"value":{"kind":"nan","sign":1,"prec":"0","exp":"0","mant":"0"},"ternary":0},"time_ns":4068}

@@ -1,0 +1,5 @@
+{"tag":"happy","inputs":{"x":{"kind":"normal","sign":1,"prec":"53","exp":"1","mant":"4503599627370496"}},"output":{"value":{"kind":"normal","sign":1,"prec":"53","exp":"1","mant":"4503599627370496"},"ternary":0},"time_ns":2000}
+{"tag":"happy","inputs":{"x":{"kind":"normal","sign":1,"prec":"53","exp":"2","mant":"4503599627370497"}},"output":{"value":{"kind":"normal","sign":1,"prec":"53","exp":"2","mant":"4503599627370497"},"ternary":0},"time_ns":2011}
+{"tag":"edge","inputs":{"x":{"kind":"normal","sign":1,"prec":"53","exp":"0","mant":"9007199254740991"}},"output":{"value":{"kind":"normal","sign":1,"prec":"53","exp":"0","mant":"9007199254740991"},"ternary":0},"time_ns":2022}
+{"tag":"edge","inputs":{"x":{"kind":"normal","sign":-1,"prec":"53","exp":"-3","mant":"4503599627370496"}},"output":{"value":{"kind":"normal","sign":-1,"prec":"53","exp":"-3","mant":"4503599627370496"},"ternary":0},"time_ns":2033}
+{"tag":"adversarial","inputs":{"x":{"kind":"normal","sign":1,"prec":"53","exp":"1024","mant":"4503600701112320"}},"output":{"value":{"kind":"normal","sign":1,"prec":"53","exp":"1024","mant":"4503600701112320"},"ternary":0},"time_ns":2044}

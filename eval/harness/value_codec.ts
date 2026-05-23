@@ -264,9 +264,19 @@ export function decodeExpectedOutput(raw: unknown): ExpectedOutput {
       typeof valueField === 'object' &&
       valueField !== null &&
       !Array.isArray(valueField) &&
-      looksLikeMpfrWire(valueField) &&
-      isTernary(ternaryField)
+      looksLikeMpfrWire(valueField)
     ) {
+      // Shape looks like a Result (value is MpfrWire-shaped, ternary
+      // present). Once we've committed to that interpretation, the ternary
+      // MUST be valid — otherwise the golden is malformed and we surface
+      // it as an internal error rather than silently falling through to
+      // generic-object decoding and grading the case as a struct mismatch.
+      if (!isTernary(ternaryField)) {
+        throw new Error(
+          `malformed Result output: value is MpfrWire-shaped but ternary ` +
+            `is ${JSON.stringify(ternaryField)} (must be -1, 0, or 1)`,
+        );
+      }
       return {
         kind: 'result',
         value: decodeMpfr(valueField),
@@ -383,10 +393,13 @@ export function compareOutput(
             ? null
             : `scalar mismatch: expected ${expected.value}, got ${actual}`;
         }
-        if (typeof actual === 'number' && Number.isFinite(actual)) {
+        if (typeof actual === 'number' && Number.isInteger(actual)) {
           return BigInt(actual) === expected.value
             ? null
             : `scalar mismatch: expected ${expected.value}, got ${actual}`;
+        }
+        if (typeof actual === 'number' && Number.isFinite(actual)) {
+          return `scalar mismatch: expected bigint ${expected.value}, got non-integer number ${actual}`;
         }
         return `scalar mismatch: expected bigint ${expected.value}, got ${typeof actual} ${String(actual)}`;
       }
@@ -450,6 +463,17 @@ export function compareOutput(
       }
       return null;
     }
+
+    default: {
+      // Exhaustiveness guard. If a new variant is added to ExpectedOutput
+      // without a corresponding case, TS will refuse the `never` assignment
+      // at compile time. The runtime throw is a defence against a malformed
+      // ExpectedOutput object that bypasses decodeExpectedOutput.
+      const _exhaust: never = expected;
+      throw new Error(
+        `unhandled ExpectedOutput kind: ${String((_exhaust as { kind?: string }).kind)}`,
+      );
+    }
   }
 }
 
@@ -464,10 +488,13 @@ function compareField(actual: unknown, expected: unknown): string | null {
     if (typeof actual === 'bigint') {
       return actual === expected ? null : `expected ${expected}, got ${actual}`;
     }
-    if (typeof actual === 'number' && Number.isFinite(actual)) {
+    if (typeof actual === 'number' && Number.isInteger(actual)) {
       return BigInt(actual) === expected
         ? null
         : `expected ${expected}, got ${actual}`;
+    }
+    if (typeof actual === 'number' && Number.isFinite(actual)) {
+      return `expected bigint ${expected}, got non-integer number ${actual}`;
     }
     return `expected bigint ${expected}, got ${typeof actual} (${String(actual)})`;
   }

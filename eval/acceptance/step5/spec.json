@@ -1,0 +1,8 @@
+{
+  "function": "acceptanceFn",
+  "class": "arithmetic",
+  "signature": {
+    "params": ["x"],
+    "returns": "Result"
+  }
+}
