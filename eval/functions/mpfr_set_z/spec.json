@@ -1,0 +1,20 @@
+{
+  "function": "mpfr_set_z",
+  "class": "misc",
+  "signature": {
+    "params": ["z", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_set_z: convert an arbitrary-precision integer (GMP mpz_t in C, JS bigint here) to an MPFR at the requested precision, rounded per rnd, returning {value, ternary}. Unlike set_si which caps at int64, set_z accepts any bigint — inputs may be thousands of bits. Class is 'misc' (1000ms budget) because the body is O(bitLength(|z|)) for the bit-length scan and roundMantissa shift. Sign is forced positive on z=0 per the C reference.",
+  "c_signature": "int mpfr_set_z(mpfr_t f, mpz_srcptr z, mpfr_rnd_t rnd)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C takes z as `mpz_srcptr` (GMP arbitrary-precision integer); TS takes a JS `bigint` directly — the natural representation, no separate limb-array marshalling. C mutates rop and returns the ternary as int; TS takes prec positionally and returns {value, ternary} per src/core.ts. C clamps against emax/emin (returning ±Inf or ±0 on out-of-range exp); TS performs no exponent range check (schema has no bound). The C reference forces sign +1 on z=0 (mpfr/src/set_z_2exp.c L39–L41); TS matches.",
+  "refs": [
+    "mpfr/src/set_z.c L24–L29 — C reference (trivial delegate to mpfr_set_z_2exp with e=0).",
+    "mpfr/src/set_z_2exp.c L27–L198 — the load-bearing implementation: zero short-circuit (+0 sign forced), count_leading_zeros on the top limb to compute srcExp, mpfr_round_raw on prec mismatch with rounding-bit/sticky-bit extraction, sign assignment, exp bump on carry-out.",
+    "src/internal/mpfr/round_raw.ts — shared substrate primitive; the carry-out renormalisation lives there.",
+    "src/ops/set_si.ts — sibling op for the int64 input path; shares the 'MSB-align + lossless pad or round' structure. set_z removes the [LONG_MIN, LONG_MAX] gate.",
+    "src/core.ts — locked MPFR/RoundingMode/Result types; posZero / PREC_MIN / PREC_MAX.",
+    "CLAUDE.md 'Hallucination-risk callouts' — signed zero forced positive on z=0; ternary direction is sign of (rounded - exact); rounding-mode count is FIVE."
+  ]
+}

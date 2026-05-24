@@ -234,12 +234,20 @@ export function decodeInputValue(raw: unknown): unknown {
 /**
  * Discriminated runtime representation of a golden's expected output. The
  * four shapes are the four jl_output_* helpers in common.h.
+ *
+ * Note on the boolean scalar variant: the predicate family (mpfr_less_p
+ * et al.) returns a TS `boolean`, with `true`/`false` emitted on the wire
+ * by `jl_output_scalar_bool` in common.h. We collapse it into the same
+ * `'scalar'` kind because the comparison rule is the same shape as the
+ * number-vs-number one (strict `===`), just on a different primitive.
+ * Keeping it a separate `'bool'` discriminant would force every caller to
+ * branch over it without adding correctness.
  */
 export type ExpectedOutput =
   | { readonly kind: 'result'; readonly value: MPFR; readonly ternary: Ternary }
   | { readonly kind: 'mpfr'; readonly value: MPFR }
   | { readonly kind: 'object'; readonly fields: Readonly<Record<string, unknown>> }
-  | { readonly kind: 'scalar'; readonly value: bigint | number };
+  | { readonly kind: 'scalar'; readonly value: bigint | number | boolean };
 
 /**
  * `true` iff `t` is a valid {@link Ternary} value (`-1`, `0`, or `1`).
@@ -290,6 +298,14 @@ export function decodeExpectedOutput(raw: unknown): ExpectedOutput {
     throw new Error(`unrecognised scalar string output: ${JSON.stringify(raw)}`);
   }
   if (typeof raw === 'number') {
+    return { kind: 'scalar', value: raw };
+  }
+  if (typeof raw === 'boolean') {
+    // Bare-boolean output — emitted by jl_output_scalar_bool in
+    // eval/golden_master/common.h for the predicate family
+    // (mpfr_less_p / mpfr_greater_p / mpfr_lessequal_p /
+    // mpfr_greaterequal_p / mpfr_equal_p). The compareOutput's scalar
+    // branch handles boolean via strict `===`.
     return { kind: 'scalar', value: raw };
   }
   if (typeof raw === 'object' && raw !== null && !Array.isArray(raw)) {
@@ -444,6 +460,16 @@ export function compareOutput(
           return `scalar mismatch: expected bigint ${expected.value}, got non-integer number ${actual}`;
         }
         return `scalar mismatch: expected bigint ${expected.value}, got ${typeof actual} ${String(actual)}`;
+      }
+      if (typeof expected.value === 'boolean') {
+        // Boolean-valued scalar — the predicate family's return type.
+        // Strict `===` is sufficient (no NaN/signed-zero corner like
+        // the number branch). A port that returns 0/1, "true"/"false",
+        // or any non-boolean must fail the grade — we do NOT coerce.
+        if (typeof actual === 'boolean' && actual === expected.value) {
+          return null;
+        }
+        return `scalar mismatch: expected boolean ${expected.value}, got ${typeof actual} ${String(actual)}`;
       }
       // number-valued scalar. Use `Object.is` rather than `===` so:
       //   - NaN equals NaN (=== returns false; CLAUDE.md hallucination

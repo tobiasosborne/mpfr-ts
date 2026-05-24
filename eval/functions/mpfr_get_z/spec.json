@@ -1,0 +1,21 @@
+{
+  "function": "mpfr_get_z",
+  "class": "misc",
+  "signature": {
+    "params": ["x", "rnd"],
+    "returns": "bigint"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_get_z: round an MPFR value to the nearest integer per rnd, return as bigint. The TS port THROWS MPFRError('EPREC') on NaN / ±Inf rather than returning a flagged 0 — the locked schema (src/core.ts) has no ERANGE flag, so silent saturation would hide bugs at the trust boundary. Class is 'misc' (1000ms budget) because the result can be arbitrarily large (a value with huge exp produces a correspondingly-large bigint via the `mant << (exp - prec)` shift). The return type is `bigint` (not `number`) — the inverse of set_z, and a value whose integer-rounded form may exceed Number.MAX_SAFE_INTEGER.",
+  "c_signature": "int mpfr_get_z(mpz_ptr z, mpfr_srcptr f, mpfr_rnd_t rnd)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C mutates z and returns the ternary as int; TS returns only the bigint value (callers who need the ternary can re-derive via mpfr_rint when that's ported). C sets ERANGE flag and returns 0 on NaN/Inf; TS throws MPFRError('EPREC') because the schema has no flag surface. NaN / Inf cases are EXCLUDED from the golden because the harness can't grade expected-throw cases; coverage of those domain errors is by inspection of src/ops/get_z.ts. No range check on the output — bigint accommodates any magnitude, unlike get_si's [LONG_MIN, LONG_MAX] gate.",
+  "refs": [
+    "mpfr/src/get_z.c L25–L70 — the C reference: dispatches on MPFR_IS_SINGULAR, allocates scratch r at max(PREC_MIN, exp), calls mpfr_rint to round per rnd, then applies the 2^e shift via mpz_mul_2exp or mpz_fdiv_q_2exp.",
+    "mpfr/src/rint.c — the round-to-integer primitive; we inline its |u|<1 and |u|>=1 branches in the TS roundToInteger helper.",
+    "mpfr/src/get_z_2exp.c L50–L95 — the 2^e shift step; we apply it as the final `mant << (exp - prec)` in the integer branch.",
+    "src/internal/mpfr/round_raw.ts — shared substrate; the integer-rounding path uses outPrec = exp to align the LSB to the units position.",
+    "src/ops/get_si.ts — sibling get-family op for the int64-bounded case; shares the round-then-extract algorithm. get_z removes the LONG_MAX cap.",
+    "src/core.ts — locked schema.",
+    "CLAUDE.md 'Hallucination-risk callouts' — NaN ≠ NaN (we throw rather than return a flagged 0); rounding-mode count is FIVE."
+  ]
+}

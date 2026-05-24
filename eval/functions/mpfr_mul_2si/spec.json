@@ -1,0 +1,20 @@
+{
+  "function": "mpfr_mul_2si",
+  "class": "arithmetic",
+  "signature": {
+    "params": ["x", "e", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_mul_2si: multiply x by 2^e at the requested precision, rounded per rnd, returning {value, ternary}. The C function mutates rop and returns ternary as int; the TS port takes prec positionally and returns the canonical Result. The mantissa is unchanged; only the exponent shifts (plus any refit-to-prec rounding when prec != x.prec). Class is 'arithmetic' (50ms budget): the body is a constant number of bigint ops on the substrate's refit path. Singular values (NaN/Inf/zero) propagate kind+sign at the target prec with ternary 0.",
+  "c_signature": "int mpfr_mul_2si(mpfr_t rop, mpfr_srcptr op, long e, mpfr_rnd_t rnd)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C takes `e` as `long` (int64 on x86_64); TS takes `e` as `bigint` with no range bound — there's no hardware-int limitation. C clamps the result against the active emax/emin and returns ±Inf or ±0 on overflow/underflow with the appropriate ternary; the TS port performs no exponent range check because the locked schema (src/core.ts) places no bound on the exponent field of a normal MPFR. A caller wanting saturating semantics can layer one on top. C mutates rop and returns the ternary as int; TS takes prec positionally and returns {value, ternary}.",
+  "refs": [
+    "mpfr/src/mul_2si.c L24–L58 — the C reference: singulars defer to mpfr_set (kind/sign propagate); normal path uses MPFR_SETRAW (refit) then bumps exp by n with overflow/underflow checks against emax/emin.",
+    "src/internal/mpfr/round_raw.ts — shared rounding substrate for the prec-refit step; carries out renormalisation on increment.",
+    "src/ops/set_si.ts — sibling 'MSB-align + pad or round' shape.",
+    "src/ops/neg.ts — sibling sign-preserving transform with prec refit; same approach to omitting emax/emin.",
+    "src/core.ts — locked MPFR/RoundingMode/Result types; the schema's exponent field is an arbitrary bigint with no cap.",
+    "CLAUDE.md 'Hallucination-risk callouts' — ternary direction is sign of (rounded - exact); rounding-mode count is FIVE; signed zero observable across scaling."
+  ]
+}

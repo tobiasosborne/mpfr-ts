@@ -1,0 +1,18 @@
+{
+  "function": "mpfr_greater_p",
+  "class": "arithmetic",
+  "signature": {
+    "params": ["a", "b"],
+    "returns": "boolean"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_greater_p: strict greater-than predicate. Returns true iff a > b. NaN-vs-anything returns false. Signed zero not ordered. Class 'arithmetic' (50ms budget).",
+  "c_signature": "int mpfr_greater_p(mpfr_srcptr x, mpfr_srcptr y)",
+  "divergence_from_c": "C returns int; TS returns boolean. Predicates do NOT throw on NaN — returns false. See ../mpfr_less_p/spec.json for shared rationale.",
+  "refs": [
+    "mpfr/src/comparisons.c L39–L43.",
+    "mpfr/src/cmp.c L32–L98.",
+    "src/internal/mpfr/cmp_raw.ts.",
+    "src/ops/cmp.ts.",
+    "mpfr/tests/tcomparisons.c L26–L117."
+  ]
+}

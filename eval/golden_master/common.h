@@ -478,6 +478,26 @@ static inline void jl_output_scalar_int(FILE *f, int v) {
     fprintf(f, ",\"output\":%d", v);
 }
 
+/* Emit ,"output":true or ,"output":false — bare JSON boolean. Use for the
+ * predicate family (mpfr_less_p, mpfr_greater_p, mpfr_lessequal_p,
+ * mpfr_greaterequal_p, mpfr_equal_p, etc.) whose C return is `int`
+ * (0/non-zero) but whose idiomatic TS port returns a plain `boolean`.
+ *
+ * Wire shape is a bare JSON boolean (true / false) — the TS-side
+ * `decodeExpectedOutput` recognises this in
+ * eval/harness/value_codec.ts and produces `{kind:'scalar',
+ * value:<boolean>}`. The corresponding `compareOutput` scalar branch
+ * uses strict `===` against the port's return value, so the port MUST
+ * return a TS `boolean` (NOT 0/1, NOT a string "true"/"false") — that
+ * matches the C documented contract better than the int return would.
+ *
+ * The argument `v` is the C int that mpfr's predicate returned; we map
+ * any non-zero to JSON `true`, zero to `false`. This is the same
+ * normalisation MPFR's manual describes for the predicate family. */
+static inline void jl_output_scalar_bool(FILE *f, int v) {
+    fputs(v ? ",\"output\":true" : ",\"output\":false", f);
+}
+
 /* Emit ,"output":"<token>" where <token> follows the same convention as
  * jl_kv_double: a quoted "%.17g" lossless decimal for finite doubles
  * (with a ".0" suffix appended when the format produced a bare integer,

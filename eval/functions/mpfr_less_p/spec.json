@@ -1,0 +1,19 @@
+{
+  "function": "mpfr_less_p",
+  "class": "arithmetic",
+  "signature": {
+    "params": ["a", "b"],
+    "returns": "boolean"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_less_p: strict less-than predicate. Returns true iff a < b under the MPFR ordering, false otherwise. NaN-vs-anything returns false (the unordered case). Signed zero is not ordered (+0 == -0 → less_p returns false). Return type is TS boolean rather than int. Class is 'arithmetic' (50ms per-case budget).",
+  "c_signature": "int mpfr_less_p(mpfr_srcptr x, mpfr_srcptr y)",
+  "divergence_from_c": "C returns int (0/non-zero); TS returns boolean. C does NOT throw on NaN (returns 0); TS does NOT throw on NaN either (returns false) — this is the documented predicate-family contract, which DIVERGES from mpfr_cmp's throw-on-NaN behaviour. The grader CAN exercise NaN cases for predicates (output is well-defined as false), unlike mpfr_cmp where NaN cases would be n_throw.",
+  "refs": [
+    "mpfr/src/comparisons.c L52–L55 — the C reference. Predicates are 'NaN-guard + mpfr_cmp comparison'.",
+    "mpfr/src/cmp.c L32–L98 — the underlying mpfr_cmp algorithm used by the predicate.",
+    "src/internal/mpfr/cmp_raw.ts — the shared non-throwing core (returns -1/0/+1/null on NaN); the predicate delegates to it.",
+    "src/ops/cmp.ts — the throwing mpfr_cmp surface. Both predicate and mpfr_cmp share cmp_raw.ts to avoid try/catch around the throw.",
+    "mpfr/tests/tcomparisons.c L26–L117 — source for the `mined` cases (eq_tests on L87–L117 asserts same-value-different-prec equality holds across all predicates).",
+    "CLAUDE.md \"Hallucination-risk callouts\": NaN ≠ NaN (predicates return false, do NOT throw); signed zero is NOT ordered for cmp/predicates."
+  ]
+}

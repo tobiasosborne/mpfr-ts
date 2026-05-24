@@ -1,0 +1,19 @@
+{
+  "function": "mpfr_div_2si",
+  "class": "arithmetic",
+  "signature": {
+    "params": ["x", "e", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_div_2si: divide x by 2^e at the requested precision, rounded per rnd, returning {value, ternary}. Structurally identical to mpfr_mul_2si with the exponent shift sign flipped (postExp - e instead of postExp + e). The mantissa is unchanged; only the exponent shifts (plus any refit-to-prec rounding). Class is 'arithmetic' (50ms budget). Singular values propagate.",
+  "c_signature": "int mpfr_div_2si(mpfr_t rop, mpfr_srcptr op, long e, mpfr_rnd_t rnd)",
+  "prec_unit": "bits",
+  "divergence_from_c": "Same as mul_2si: `e` is bigint (no int64 cap), no emax/emin range check (schema places no bound on exp), prec is positional, return is {value, ternary}.",
+  "refs": [
+    "mpfr/src/div_2si.c L24–L59 — the C reference; identical shape to mul_2si with exp - n instead of exp + n.",
+    "src/ops/mul_2si.ts — sibling; identical body except the final exponent sign.",
+    "src/internal/mpfr/round_raw.ts — shared substrate.",
+    "src/core.ts — locked schema.",
+    "CLAUDE.md 'Hallucination-risk callouts' — ternary direction; rounding-mode count is FIVE; signed zero observable."
+  ]
+}

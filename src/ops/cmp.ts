@@ -133,15 +133,25 @@
  */
 
 import type { MPFR } from '../core.ts';
-import { MPFRError, validate } from '../core.ts';
+import { MPFRError } from '../core.ts';
+import { compareMPFR } from '../internal/mpfr/cmp_raw.ts';
 
 /**
  * Compare two {@link MPFR} values. Returns `-1` if `a < b`, `0` if `a
  * == b`, `+1` if `a > b`. Signed zero is **not** ordered: `+0 == -0`
  * for the purposes of this comparison.
  *
- * @param a left operand. Must pass {@link validate}.
- * @param b right operand. Must pass {@link validate}.
+ * Implementation delegates the kind/sign/exp/mant dispatch to
+ * {@link compareMPFR} in `src/internal/mpfr/cmp_raw.ts` — the shared
+ * non-throwing core also used by the predicate family
+ * (mpfr_less_p / mpfr_greater_p / mpfr_lessequal_p / mpfr_greaterequal_p
+ * / mpfr_equal_p, mpfr/src/comparisons.c L39–L73). The only difference
+ * between the two surfaces is NaN handling: `compareMPFR` returns
+ * `null`, this throws `MPFRError('EDOMAIN', ...)` — see the file
+ * docstring "Divergence from C → TS" for the rationale.
+ *
+ * @param a left operand. Must pass {@link import('../core.ts').validate}.
+ * @param b right operand. Must pass {@link import('../core.ts').validate}.
  * @returns `-1`, `0`, or `+1`.
  * @throws {MPFRError} `EDOMAIN` if either operand has `kind === 'nan'`.
  *   This diverges from the C reference, which sets the erange flag and
@@ -153,120 +163,16 @@ import { MPFRError, validate } from '../core.ts';
  * @mpfrName mpfr_cmp
  */
 export function mpfr_cmp(a: MPFR, b: MPFR): number {
-  // Structural validation. Inputs to ops in this library are expected
-  // to pass validate() already (other ops produce values that pass
-  // validate by construction); the re-check here catches malformed
-  // JSON-decoded inputs at the grader boundary and surfaces them as
-  // EPREC rather than a downstream silent miscompare. Ref: src/core.ts
-  // §validate.
-  validate(a);
-  validate(b);
-
-  // Step 1: NaN. Divergence from C — we throw EDOMAIN rather than
-  // returning 0 + setting an erange flag. The throw is loud and the
-  // caller can wrap in try/catch if C semantics are desired. Ref:
-  // mpfr/src/cmp.c L43–L47 (C: ERANGE + return 0).
-  if (a.kind === 'nan' || b.kind === 'nan') {
+  // Delegate to the shared core. `null` is the NaN sentinel; translate
+  // to an EDOMAIN throw to preserve mpfr_cmp's documented divergence
+  // from the C reference (C returns 0 + sets erange; idiomatic TS
+  // throws, per CLAUDE.md "Hallucination-risk callouts: NaN ≠ NaN").
+  const r = compareMPFR(a, b);
+  if (r === null) {
     throw new MPFRError(
       'EDOMAIN',
       `mpfr_cmp: NaN operand (a.kind=${a.kind}, b.kind=${b.kind})`,
     );
   }
-
-  // Step 2: both zero. Returns 0 regardless of sign — signed zero is
-  // NOT ordered by mpfr_cmp. Ref: mpfr/src/cmp.c L57–L58.
-  if (a.kind === 'zero' && b.kind === 'zero') {
-    return 0;
-  }
-
-  // Step 3: both Inf. Same sign → 0; cross sign → sign of `a`. Ref:
-  // mpfr/src/cmp.c L48–L54.
-  if (a.kind === 'inf' && b.kind === 'inf') {
-    if (a.sign === b.sign) return 0;
-    return a.sign; // a is +Inf, b is -Inf → +1; or mirror.
-  }
-
-  // Step 4: exactly one operand is Inf. (We already handled both-Inf
-  // above; this branch is "exactly one is Inf, the other is finite".)
-  // The infinite operand dominates in magnitude. Ref: mpfr/src/cmp.c
-  // L48–L56.
-  if (a.kind === 'inf') {
-    return a.sign;
-  }
-  if (b.kind === 'inf') {
-    return -b.sign as 1 | -1;
-  }
-
-  // Step 5: exactly one operand is zero (the other necessarily normal,
-  // since we've eliminated NaN above and Inf in step 4). Ref:
-  // mpfr/src/cmp.c L57–L60 with s=+1.
-  if (a.kind === 'zero') {
-    // a is ±0, b is normal. Return -b.sign (zero is less than positive,
-    // greater than negative). Cast to 1|-1 to satisfy the return type.
-    return -b.sign as 1 | -1;
-  }
-  if (b.kind === 'zero') {
-    // a is normal, b is ±0. Return a.sign.
-    return a.sign;
-  }
-
-  // Step 6: both 'normal'. (The remaining case after steps 1–5: every
-  // singular combination has been handled. The switch-exhaustiveness
-  // check would require a final `default` but we encode the invariant
-  // directly via the assertion below.)
-  if (a.kind !== 'normal' || b.kind !== 'normal') {
-    // Unreachable given the chain of guards above. The throw is here so
-    // a future refactor that loosens the dispatch surfaces here rather
-    // than silently producing a wrong answer.
-    throw new MPFRError(
-      'EDOMAIN',
-      `mpfr_cmp: internal invariant violated — non-normal pair reached normal-vs-normal branch (a.kind=${a.kind}, b.kind=${b.kind})`,
-    );
-  }
-
-  // Step 6a: signs differ — positive > negative. Ref: mpfr/src/cmp.c
-  // L63–L64.
-  if (a.sign !== b.sign) {
-    return a.sign;
-  }
-
-  // Step 6b: same sign, exponents decide. Ref: mpfr/src/cmp.c L68–L73.
-  // For positive a/b: larger exp → larger value → return +1 (a.sign).
-  // For negative a/b: larger exp → larger magnitude → MORE negative →
-  // return -1 (a.sign × -1, which is -a.sign... but a.sign here is -1
-  // so -a.sign = +1 = wait. Let's re-derive: a.sign multiplies the
-  // magnitude comparison. magnitude(a) > magnitude(b) gives +1 raw;
-  // sign-aware result is +1 * a.sign = a.sign. So same-sign-larger-exp
-  // returns a.sign.).
-  if (a.exp > b.exp) return a.sign;
-  if (a.exp < b.exp) return -a.sign as 1 | -1;
-
-  // Step 6c: same sign, same exponent — mantissa decides after
-  // alignment to a common width. The MSB-aligned mantissas can have
-  // different bit-widths (one per its own prec); shift the
-  // lower-prec one up by the difference so both are at width
-  // max(a.prec, b.prec). Then compare directly. Multiply by a.sign to
-  // turn the magnitude comparison into the signed comparison.
-  //
-  // Why the shift (vs right-shifting the higher-prec one): we never
-  // want to discard bits. The lower-prec mantissa, when MSB-aligned
-  // to its own prec, has zeros below its LSB position when viewed at
-  // the higher prec — left-shifting by (max_prec - its_prec) makes
-  // those implicit zeros explicit. The higher-prec mantissa may have
-  // non-zero bits in that lower region (case (28) in golden_driver.c);
-  // those bits CANNOT be discarded without changing the answer.
-  //
-  // Performance: one bigint subtract or two bigint compares. For
-  // typical precs (53-256) bigint ops are tens of nanoseconds — comfortably
-  // inside the arithmetic-class 50ms budget.
-  //
-  // Ref: mpfr/src/cmp.c L77–L97 — limb-by-limb MSB-first walk;
-  // equivalent to a single multi-precision integer compare on the
-  // aligned mantissas.
-  const maxPrec = a.prec > b.prec ? a.prec : b.prec;
-  const aAligned = a.mant << (maxPrec - a.prec);
-  const bAligned = b.mant << (maxPrec - b.prec);
-  if (aAligned > bAligned) return a.sign;
-  if (aAligned < bAligned) return -a.sign as 1 | -1;
-  return 0;
+  return r;
 }

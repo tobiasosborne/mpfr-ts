@@ -1,0 +1,19 @@
+{
+  "function": "mpfr_equal_p",
+  "class": "arithmetic",
+  "signature": {
+    "params": ["a", "b"],
+    "returns": "boolean"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_equal_p: equality predicate. Returns true iff a == b. NaN-vs-anything returns false (matching IEEE 754; even equal_p(NaN, NaN) is false). +0 == -0 returns true (signed zero not distinguished for cmp/equal_p). Class 'arithmetic' (50ms budget).",
+  "c_signature": "int mpfr_equal_p(mpfr_srcptr x, mpfr_srcptr y)",
+  "divergence_from_c": "C returns int; TS returns boolean. Predicates do NOT throw on NaN — returns false. See ../mpfr_less_p/spec.json for shared rationale. equal_p deserves a specific callout: NaN vs NaN returns false (IEEE 754 'NaN is unequal to itself') and +0 vs -0 returns true (MPFR cmp does not order signed zero) — both behaviours are inherited verbatim from the C reference.",
+  "refs": [
+    "mpfr/src/comparisons.c L69–L73.",
+    "mpfr/src/cmp.c L32–L98 — and specifically L57–L58 for the +0/-0 → 0 rule that makes equal_p(+0, -0) return true.",
+    "src/internal/mpfr/cmp_raw.ts.",
+    "src/ops/cmp.ts.",
+    "mpfr/tests/tcomparisons.c L87–L117 — `eq_tests` exercises mpfr_equal_p on same-value-different-prec pairs.",
+    "CLAUDE.md \"Hallucination-risk callouts: NaN ≠ NaN\" — equal_p preserves IEEE-754 NaN-inequality; \"Signed zero is real\" applies to ARITHMETIC ops, NOT to cmp/equal_p."
+  ]
+}
