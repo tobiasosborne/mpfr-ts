@@ -143,3 +143,42 @@ def test_gate_passes_with_one_below_threshold() -> None:
     ]) is False
     # Init-failed mutations are excluded from the gate even if below_threshold.
     assert mutate._aggregate_gate([_mo("a", None, True, True, init_failed=True)]) is False
+
+
+# --- _rewrite_relative_imports unit tests (synthetic port_dir on /home/test) ---
+_PD = Path("/home/test/Projects/mpfr-ts/src/ops")
+_BASE = "/home/test/Projects/mpfr-ts/src"
+
+
+@pytest.mark.parametrize("src, expected_path, original_rel", [
+    # multi-line import (closing brace + `from` on one line)
+    ("import {\n  mpfr_add,\n  mpfr_mul,\n} from '../ops/index.ts';\n",
+     f"'{_BASE}/ops/index.ts'", "../ops/index.ts"),
+    # re-export
+    ("export { mpfr_add } from '../ops/add.ts';\n",
+     f"'{_BASE}/ops/add.ts'", "../ops/add.ts"),
+    # type-only import
+    ("import type { MPFR } from '../core.ts';\n",
+     f"'{_BASE}/core.ts'", "../core.ts"),
+    # mixed inline type
+    ("import { type MPFR, RoundingMode } from '../core.ts';\n",
+     f"'{_BASE}/core.ts'", "../core.ts"),
+    # nested relative path
+    ("import { add_n } from '../internal/mpn/add_n.ts';\n",
+     f"'{_BASE}/internal/mpn/add_n.ts'", "../internal/mpn/add_n.ts"),
+    # double-quoted
+    ('import type { MPFR } from "../core.ts";\n',
+     f'"{_BASE}/core.ts"', "../core.ts"),
+    # sibling ./ - resolves relative to port_dir, not one level up
+    ("import { foo } from './sibling.ts';\n",
+     f"'{_BASE}/ops/sibling.ts'", "./sibling.ts"),
+])
+def test_rewrite_relative_shapes(src: str, expected_path: str, original_rel: str) -> None:
+    out = mutate._rewrite_relative_imports(src, _PD)
+    assert expected_path in out
+    assert original_rel not in out
+
+
+def test_bare_package_import_untouched() -> None:
+    src = "import { x } from 'some-package';\nimport { y } from 'node:fs';\n"
+    assert mutate._rewrite_relative_imports(src, _PD) == src
