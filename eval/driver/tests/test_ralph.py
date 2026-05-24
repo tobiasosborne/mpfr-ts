@@ -13,8 +13,7 @@ created from ``eval/driver/schema.sql`` so the canonical
 
 Run with::
 
-    /home/tobias/.local/bin/pytest \\
-        /home/tobias/Projects/mpfr-ts/eval/driver/tests/test_ralph.py -v
+    pytest eval/driver/tests/test_ralph.py -v
 """
 
 from __future__ import annotations

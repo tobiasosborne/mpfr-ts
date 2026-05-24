@@ -55,9 +55,9 @@
  *   - CLAUDE.md "Signed zero is real" — RNDD-cancellation gives -0.
  */
 
-import type { MPFR, Result, RoundingMode, Sign, Ternary } from '/home/tobias/Projects/mpfr-ts/src/core.ts';
-import { MPFRError, negZero, posZero } from '/home/tobias/Projects/mpfr-ts/src/core.ts';
-import { mpfr_underflow } from '/home/tobias/Projects/mpfr-ts/src/ops/underflow.ts';
+import type { MPFR, Result, RoundingMode, Sign, Ternary } from '../core.ts';
+import { MPFRError, negZero, posZero } from '../core.ts';
+import { mpfr_underflow } from './underflow.ts';
 
 // ---------------------------------------------------------------------------
 // Constants

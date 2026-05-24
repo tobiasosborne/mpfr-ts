@@ -34,11 +34,11 @@
  * ----
  *
  *   - mpfr/src/sub_ui.c L26-L94 — C reference.
- *   - /home/tobias/Projects/mpfr-ts/src/ops/sub.ts — load-bearing delegate.
- *   - /home/tobias/Projects/mpfr-ts/src/ops/set_ui.ts — integer-to-MPFR exact conversion.
- *   - /home/tobias/Projects/mpfr-ts/src/ops/set.ts — c == 0 fast path.
- *   - /home/tobias/Projects/mpfr-ts/src/ops/add_ui.ts — structural mirror.
- *   - /home/tobias/Projects/mpfr-ts/src/core.ts — locked schema.
+ *   - ./sub.ts — load-bearing delegate.
+ *   - ./set_ui.ts — integer-to-MPFR exact conversion.
+ *   - ./set.ts — c == 0 fast path.
+ *   - ./add_ui.ts — structural mirror.
+ *   - ../core.ts — locked schema.
  */
 
 import type { MPFR, Result, RoundingMode } from "../core.ts";

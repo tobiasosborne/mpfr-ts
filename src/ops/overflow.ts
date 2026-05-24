@@ -85,15 +85,15 @@
  *     direction is critical.
  */
 
-import type { MPFR, Result, RoundingMode, Sign, Ternary } from '/home/tobias/Projects/mpfr-ts/src/core.ts';
+import type { MPFR, Result, RoundingMode, Sign, Ternary } from '../core.ts';
 import {
   MPFRError,
   negInf,
   posInf,
   PREC_MAX,
   PREC_MIN,
-} from '/home/tobias/Projects/mpfr-ts/src/core.ts';
-import { mpfr_setmax } from '/home/tobias/Projects/mpfr-ts/src/ops/setmax.ts';
+} from '../core.ts';
+import { mpfr_setmax } from './setmax.ts';
 
 /**
  * Default exponent ceiling. Mirrors `MPFR_EMAX_DEFAULT = (1 << 30) - 1`

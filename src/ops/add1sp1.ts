@@ -63,9 +63,9 @@
  *     of (rounded - exact), not 0/1."
  */
 
-import type { MPFR, Result, RoundingMode, Sign, Ternary } from '/home/tobias/Projects/mpfr-ts/src/core.ts';
-import { MPFRError } from '/home/tobias/Projects/mpfr-ts/src/core.ts';
-import { mpfr_overflow } from '/home/tobias/Projects/mpfr-ts/src/ops/overflow.ts';
+import type { MPFR, Result, RoundingMode, Sign, Ternary } from '../core.ts';
+import { MPFRError } from '../core.ts';
+import { mpfr_overflow } from './overflow.ts';
 
 // ---------------------------------------------------------------------------
 // Constants

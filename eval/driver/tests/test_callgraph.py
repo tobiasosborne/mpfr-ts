@@ -22,8 +22,7 @@ Test layout:
 
 Run with:
 
-    /home/tobias/.local/bin/pytest \
-        /home/tobias/Projects/mpfr-ts/eval/driver/tests/test_callgraph.py -v
+    pytest eval/driver/tests/test_callgraph.py -v
 """
 
 from __future__ import annotations
@@ -322,7 +321,7 @@ def test_emit_json_idempotent(tmp_path: Path) -> None:
 # ---------------------------------------------------------------------------
 
 
-REAL_MPFR_SRC = Path("/home/tobias/Projects/mpfr-ts/mpfr/src")
+REAL_MPFR_SRC = Path(__file__).resolve().parents[3] / "mpfr" / "src"
 
 
 @pytest.mark.skipif(

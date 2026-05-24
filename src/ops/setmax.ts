@@ -75,8 +75,8 @@
  *   - CLAUDE.md Law 4 — library coherence.
  */
 
-import type { MPFR, Sign } from '/home/tobias/Projects/mpfr-ts/src/core.ts';
-import { MPFRError, PREC_MAX, PREC_MIN } from '/home/tobias/Projects/mpfr-ts/src/core.ts';
+import type { MPFR, Sign } from '../core.ts';
+import { MPFRError, PREC_MAX, PREC_MIN } from '../core.ts';
 
 /**
  * Validate the public-boundary scalar arguments. Mirrors setmin's gate.

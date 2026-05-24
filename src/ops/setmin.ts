@@ -77,8 +77,8 @@
  *     digits. The MSB-only mantissa is 2^(prec-1), NOT 2^prec or 1."
  */
 
-import type { MPFR, Sign } from '/home/tobias/Projects/mpfr-ts/src/core.ts';
-import { MPFRError, PREC_MAX, PREC_MIN } from '/home/tobias/Projects/mpfr-ts/src/core.ts';
+import type { MPFR, Sign } from '../core.ts';
+import { MPFRError, PREC_MAX, PREC_MIN } from '../core.ts';
 
 /**
  * Validate the public-boundary scalar arguments. Same convention as

@@ -57,7 +57,7 @@
  *   - eval/functions/mpfr_get_prec/spec.json — function-specific contract.
  */
 
-import type { MPFR } from "/home/tobias/Projects/mpfr-ts/src/core.ts";
+import type { MPFR } from "../core.ts";
 
 /**
  * Return the precision of `x` in bits.

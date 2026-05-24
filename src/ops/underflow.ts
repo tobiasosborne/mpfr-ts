@@ -111,15 +111,15 @@
  *   - CLAUDE.md "Signed zero is real" — the ±0 carries the input sign; do not collapse.
  */
 
-import type { MPFR, Result, RoundingMode, Sign, Ternary } from '/home/tobias/Projects/mpfr-ts/src/core.ts';
+import type { MPFR, Result, RoundingMode, Sign, Ternary } from '../core.ts';
 import {
   MPFRError,
   negZero,
   posZero,
   PREC_MAX,
   PREC_MIN,
-} from '/home/tobias/Projects/mpfr-ts/src/core.ts';
-import { mpfr_setmin } from '/home/tobias/Projects/mpfr-ts/src/ops/setmin.ts';
+} from '../core.ts';
+import { mpfr_setmin } from './setmin.ts';
 
 /**
  * Default minimum exponent. Mirrors `MPFR_EMIN_DEFAULT` from

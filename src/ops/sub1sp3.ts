@@ -69,10 +69,10 @@
  *   - src/core.ts — locked schema.
  */
 
-import type { MPFR, Result, RoundingMode, Sign, Ternary } from '/home/tobias/Projects/mpfr-ts/src/core.ts';
-import { MPFRError, posZero, negZero } from '/home/tobias/Projects/mpfr-ts/src/core.ts';
-import { roundMantissa } from '/home/tobias/Projects/mpfr-ts/src/internal/mpfr/round_raw.ts';
-import { mpfr_underflow } from '/home/tobias/Projects/mpfr-ts/src/ops/underflow.ts';
+import type { MPFR, Result, RoundingMode, Sign, Ternary } from '../core.ts';
+import { MPFRError, posZero, negZero } from '../core.ts';
+import { roundMantissa } from '../internal/mpfr/round_raw.ts';
+import { mpfr_underflow } from './underflow.ts';
 
 const EMAX_DEFAULT = (1n << 30n) - 1n;
 const EMIN_DEFAULT = -((1n << 30n) - 1n);

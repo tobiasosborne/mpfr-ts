@@ -53,8 +53,8 @@
  *     (rounded - exact)".
  */
 
-import type { MPFR, Result, RoundingMode } from "/home/tobias/Projects/mpfr-ts/src/core.ts";
-import { mpfr_set4 } from "/home/tobias/Projects/mpfr-ts/src/ops/set4.ts";
+import type { MPFR, Result, RoundingMode } from "../core.ts";
+import { mpfr_set4 } from "./set4.ts";
 
 /**
  * Copy `b` into a fresh MPFR value at the target `prec`, rounding per

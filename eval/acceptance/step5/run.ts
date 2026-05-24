@@ -75,9 +75,10 @@ declare const process: {
 // ---------------------------------------------------------------------------
 // Project paths. All absolute so Bun.spawn cwd doesn't matter; the runner
 // reads relative imports from the port file's own directory anyway.
+// Derived from this file's location: eval/acceptance/step5/run.ts → 3 dirs up.
 // ---------------------------------------------------------------------------
 
-const REPO = '/home/tobias/Projects/mpfr-ts';
+const REPO = new URL('../../..', import.meta.url).pathname.replace(/\/$/, '');
 const RUNNER = `${REPO}/eval/harness/runner.ts`;
 const STEP5 = `${REPO}/eval/acceptance/step5`;
 

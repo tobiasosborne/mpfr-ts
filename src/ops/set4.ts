@@ -80,7 +80,7 @@
  *     (rounded - exact)" — at the OUTPUT sign (= signb).
  */
 
-import type { MPFR, Result, RoundingMode, Sign } from '/home/tobias/Projects/mpfr-ts/src/core.ts';
+import type { MPFR, Result, RoundingMode, Sign } from '../core.ts';
 import {
   MPFRError,
   NAN_VALUE,
@@ -90,8 +90,8 @@ import {
   negZero,
   posInf,
   posZero,
-} from '/home/tobias/Projects/mpfr-ts/src/core.ts';
-import { roundMantissa } from '/home/tobias/Projects/mpfr-ts/src/internal/mpfr/round_raw.ts';
+} from '../core.ts';
+import { roundMantissa } from '../internal/mpfr/round_raw.ts';
 
 /**
  * Validate the public-boundary scalar arguments.

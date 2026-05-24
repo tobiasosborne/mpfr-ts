@@ -27,8 +27,8 @@
  * covers exactly 5 modes and any other string is malformed input.
  */
 
-import type { RoundingMode } from "/home/tobias/Projects/mpfr-ts/src/core.ts";
-import { MPFRError } from "/home/tobias/Projects/mpfr-ts/src/core.ts";
+import type { RoundingMode } from "../core.ts";
+import { MPFRError } from "../core.ts";
 
 /**
  * Convert a `RoundingMode` to its canonical MPFR C-side name string.
