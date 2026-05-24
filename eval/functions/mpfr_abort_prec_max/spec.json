@@ -1,0 +1,22 @@
+{
+  "function": "mpfr_abort_prec_max",
+  "class": "misc",
+  "signature": {
+    "params": [],
+    "returns": "never"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_abort_prec_max. The C function fprintfs to stderr and calls abort(); the TS port throws MPFRError('EPREC', 'Maximal precision overflow'). Status: DEFERRED from grading — the harness's wire codec cannot encode 'expected throw' cases (every thrown exception currently classifies as n_throw, the failure path). The port itself at src/ops/abort_prec_max.ts is correct; what's missing is harness support. This spec records the deferral so future passes don't reattempt the function before the harness extension lands.",
+  "c_signature": "MPFR_NORETURN void mpfr_abort_prec_max(void)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C writes to stderr and calls abort() — process-terminating side effects unavailable in pure ESM TS (Rule 12). TS throws MPFRError('EPREC', ...) instead; abort() does not have a recoverable analog and a port that calls process.exit would (a) require node:process which violates Rule 12, and (b) corrupt the harness worker pool. The thrown exception is the only idiomatic translation.",
+  "tag": "deferred-grader-needs-throw-support",
+  "blocked_by": "harness wire codec does not support expected_throw test cases; extending runner.ts and value_codec.ts to accept {expected_throw: {code: string, message?: string}} is ~150-200 LOC of harness work and was deferred from this prep batch per the orchestrator's option (b) advisory.",
+  "refs": [
+    "mpfr/src/abort_prec_max.c L24-L29 — the C reference. fprintf(stderr, ...) followed by abort().",
+    "src/ops/abort_prec_max.ts — the TS stub. Correct, but ungraded until harness supports expected_throw cases.",
+    "src/core.ts L197-L209 — MPFRError class. The 'EPREC' code is the closest semantic fit for a precision-domain overflow.",
+    "eval/harness/runner.ts §worker-protocol — currently classifies any thrown error as n_throw (the failure path); no expected_throw branch exists.",
+    "CLAUDE.md Rule 12 — no node:* / Bun.* imports in src/ (rules out process.exit as an abort() analog).",
+    "CLAUDE.md Rule 14 — phase / harness-schema changes go through worklog + ADR; the harness extension is one such change."
+  ]
+}

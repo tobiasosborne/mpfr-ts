@@ -1,0 +1,23 @@
+{
+  "function": "mpfr_setmin",
+  "class": "misc",
+  "signature": {
+    "params": ["prec", "exp", "sign"],
+    "returns": "MPFR"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_setmin: construct the minimum representable normal value at a given precision and exponent. C body (mpfr/src/setmin.c L27-L37) sets the top limb to MPFR_LIMB_HIGHBIT and zeros every lower limb — a single MSB-only mantissa. In the TS schema where `mant` is a single bigint MSB-aligned to `prec` bits, that simplifies to `mant = 1n << (prec - 1n)`. The value magnitude is 2^(exp - 1) — a power of 2 with the leading bit only. Sibling of mpfr_setmax (identical structure modulo the mantissa formula). Class is 'misc' (1000ms budget); the port is O(1) modulo the bigint shift's polynomial cost in `prec`.",
+  "c_signature": "void mpfr_setmin(mpfr_ptr x, mpfr_exp_t e)",
+  "prec_unit": "bits",
+  "divergence_from_c": "Same shape as mpfr_setmax's divergence: C takes (mpfr_ptr x, mpfr_exp_t e) where `x` provides precision and sign implicitly; TS takes (prec, exp, sign?=1) with explicit prec and sign defaulting to +1 (the most common caller pattern). C returns void and mutates x; TS returns a fresh MPFR. Exp range: C's MPFR_SET_EXP asserts MPFR_EXP_IN_RANGE; TS imposes no library-side constraint on exp (any bigint is accepted at the schema level). The locked-schema invariant mant ∈ [2^(prec-1), 2^prec) is satisfied trivially with `mant = 2^(prec-1)` — the lower endpoint of the valid range.",
+  "refs": [
+    "mpfr/src/setmin.c L27-L37 — the C reference. Sets xp[xn] = MPFR_LIMB_HIGHBIT, MPN_ZERO(xp, xn).",
+    "mpfr/src/mpfr-impl.h L1301 — MPFR_LIMB_HIGHBIT = 1 << (GMP_NUMB_BITS - 1).",
+    "mpfr/src/mpfr-impl.h L1071 — MPFR_SET_EXP asserts MPFR_EXP_IN_RANGE.",
+    "mpfr/src/mpfr.h L231-L232 — MPFR_EMAX_DEFAULT = 2^30 - 1.",
+    "src/core.ts L93-L135 — MPFR value model; the minimum mantissa is 2^(prec-1).",
+    "src/core.ts L51-L62 — value formula sign * mant * 2^(exp - prec). With mant = 2^(prec-1) the magnitude is 2^(exp - 1).",
+    "src/ops/setmax.ts — sibling constructor; identical structure modulo the mantissa.",
+    "mpfr/tests/tfma.c L123, L438 — typical caller usage (set sign, call setmin with current emax/emin).",
+    "CLAUDE.md 'Hallucination-risk callouts': mpfr_prec_t is in bits, not decimal digits. The MSB-only mantissa is 2^(prec-1), NOT 2^prec or 1."
+  ]
+}

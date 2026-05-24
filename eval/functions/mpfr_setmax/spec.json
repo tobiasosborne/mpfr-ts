@@ -1,0 +1,23 @@
+{
+  "function": "mpfr_setmax",
+  "class": "misc",
+  "signature": {
+    "params": ["prec", "exp", "sign"],
+    "returns": "MPFR"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_setmax: construct the maximum representable value at a given precision and exponent. C body (mpfr/src/setmax.c L26-L40) fills the limb array with MPFR_LIMB_MAX bits, shifting the low limb by (xn*GMP_NUMB_BITS - prec) so that exactly the high `prec` bits are set across the limb array. In the TS schema where `mant` is a single bigint MSB-aligned to `prec` bits, that simplifies to `mant = (1n << prec) - 1n` (the value 2^prec - 1). Class is 'misc' (1000ms budget); the actual port is O(1) modulo the bigint subtraction's polynomial cost in `prec`, well under any timing gate even at PREC_MAX.",
+  "c_signature": "void mpfr_setmax(mpfr_ptr x, mpfr_exp_t e)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C takes (mpfr_ptr x, mpfr_exp_t e) where `x` provides the precision implicitly (via the allocated slot) and the sign is whatever x carries (the 'current sign is kept' note in mpfr/src/setmax.c L24). TS takes (prec, exp, sign?=1) — the precision is explicit and the sign defaults to +1 (the most common caller pattern; callers wanting negative max compose with mpfr_neg or pass -1 explicitly). C returns void and mutates x; TS returns a fresh MPFR. C uses libmpfr's MPFR_SET_EXP which asserts MPFR_EXP_IN_RANGE — i.e. e must lie in [1 - MPFR_EXP_INVALID, MPFR_EXP_INVALID - 1]. TS imposes no library-side range constraint on exp (the locked schema allows any bigint exponent); callers needing the libmpfr-style emax check compose with a downstream check_range op.",
+  "refs": [
+    "mpfr/src/setmax.c L26-L40 — the C reference. Fills xp[0] = MPFR_LIMB_MAX << sh, xp[i] = MPFR_LIMB_MAX for i >= 1.",
+    "mpfr/src/mpfr-impl.h L1301-L1302 — MPFR_LIMB_HIGHBIT (1 << (GMP_NUMB_BITS - 1)), MPFR_LIMB_MAX (((mp_limb_t) -1) = all bits set).",
+    "mpfr/src/mpfr-impl.h L1071 — MPFR_SET_EXP asserts MPFR_EXP_IN_RANGE on the exponent.",
+    "mpfr/src/mpfr.h L231-L232 — MPFR_EMAX_DEFAULT = 2^30 - 1 (the default emax libmpfr ships with).",
+    "src/core.ts L93-L135 — MPFR value model; mant ∈ [2^(prec-1), 2^prec).",
+    "src/core.ts L51-L62 — value formula sign * mant * 2^(exp - prec). With mant = 2^prec - 1 the magnitude is (2^prec - 1) * 2^(exp - prec) = 2^exp - 2^(exp - prec).",
+    "src/ops/set_inf.ts — sibling constructor convention (bare MPFR return, no Result wrapper, strict Sign).",
+    "mpfr/tests/tfma.c L90, L123 — typical caller usage pattern (set sign positive, call setmax with the current emax).",
+    "CLAUDE.md 'Hallucination-risk callouts': mpfr_prec_t is in bits, not decimal digits; signed zero is real (here: setmax preserves sign, so the strict Sign discriminant survives). The all-ones mantissa is 2^prec - 1, NOT 2^prec or 2^(prec-1)."
+  ]
+}

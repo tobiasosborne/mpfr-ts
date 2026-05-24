@@ -1,0 +1,20 @@
+{
+  "function": "mpfr_get_prec",
+  "class": "misc",
+  "signature": {
+    "params": ["x"],
+    "returns": "bigint"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_get_prec: read the precision field of an MPFR value. C: returns mpfr_prec_t (mpfr/src/set_prec.c L55-L59 — note the function is at the *bottom* of set_prec.c, not in a file of its own). TS: returns bigint (mpfr_prec_t is signed integer; bigint preserves the bit-width and keeps the library's precision-is-always-bigint invariant). Class is 'misc' (1000ms per-case budget) — generous; in practice the port runs in O(1) (a single field load) and the work is the wire decode + dispatch overhead, well under any timing gate.",
+  "c_signature": "mpfr_prec_t mpfr_get_prec(mpfr_srcptr x)",
+  "prec_unit": "bits",
+  "divergence_from_c": "TS returns a bigint where C returns mpfr_prec_t (signed long-ish); the runtime upgrade matches the library's locked-schema convention (src/core.ts L113-L135: MPFR.prec is always bigint). NaN-precision divergence: the TS schema folds every NaN to the canonical NAN_VALUE with prec=0n (mpfr_storage_traps.md §3 / src/core.ts L103-L107), whereas libmpfr keeps the originating precision on its NaN. So mpfr_get_prec(NAN_VALUE) returns 0n in TS but returns whatever prec the C NaN was constructed at in libmpfr. The golden_driver emits the TS-expected 0 for NaN inputs (driver constructs NaN-shaped wire records by hand) so the divergence is exercised, not papered over.",
+  "refs": [
+    "mpfr/src/set_prec.c L55-L59 — the C reference. Trivial wrapper around MPFR_PREC(x).",
+    "mpfr/src/mpfr.h L247-L253 — __mpfr_struct layout: _mpfr_prec field MPFR_PREC reads.",
+    "src/core.ts L113-L135 — MPFR.prec field; bigint, >= 1 for non-NaN, 0n for NaN.",
+    "src/core.ts L103-L107 — NaN sentinel convention: prec=0n.",
+    "mpfr_storage_traps.md §3 — NaN drops prec on the TS side (the divergence rationale).",
+    "CLAUDE.md 'Hallucination-risk callouts': mpfr_prec_t is in bits, not decimal digits; NaN ≠ NaN (here: NaN carries 0n prec on the TS side, libmpfr-arbitrary on the C side)."
+  ]
+}
