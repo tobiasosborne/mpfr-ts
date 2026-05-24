@@ -801,3 +801,452 @@ def test_mutual_exclusion_next_and_grade(
     assert rc == 2
     captured = capsys.readouterr()
     assert "mutually exclusive" in captured.err.lower() or "error" in captured.err.lower()
+
+
+# ---------------------------------------------------------------------------
+# Mode 4: --ship
+# ---------------------------------------------------------------------------
+#
+# Helpers shared by --ship tests
+# ---------------------------------------------------------------------------
+
+
+def _setup_ship_env(
+    tmp_path: Path,
+    fresh_db: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    fns: list[tuple[str, str]],  # (fn_name, class_)
+    *,
+    write_ports: set[str] | None = None,
+    write_goldens: set[str] | None = None,
+) -> tuple[Path, list[_RecordedCall]]:
+    """Scaffold a hermetic --ship test environment.
+
+    Creates per-function port.ts and golden.jsonl files under tmp_path,
+    patches TMP_ROOT and resolve_golden_path, and injects a subprocess.run
+    replacement that records calls.
+
+    Returns (tmp_root, calls_list).
+    """
+    if write_ports is None:
+        write_ports = {fn for fn, _ in fns}
+    if write_goldens is None:
+        write_goldens = {fn for fn, _ in fns}
+
+    tmp_root = tmp_path / "tmp"
+    tmp_root.mkdir(parents=True, exist_ok=True)
+    monkeypatch.setattr(ralph, "TMP_ROOT", tmp_root)
+
+    for fn, class_ in fns:
+        _seed_pending_function(fresh_db, fn, class_)
+        if fn in write_ports:
+            port_dir = tmp_root / f"eval_{fn}"
+            port_dir.mkdir(parents=True, exist_ok=True)
+            (port_dir / "port.ts").write_text(
+                f"// port for {fn}\nexport const stub = 1;\n"
+            )
+        if fn in write_goldens:
+            (tmp_path / f"golden_{fn}.jsonl").write_text("{}")
+
+    monkeypatch.setattr(
+        ralph,
+        "resolve_golden_path",
+        lambda fn, root: tmp_path / f"golden_{fn}.jsonl",
+    )
+
+    calls: list[_RecordedCall] = []
+    return tmp_root, calls
+
+
+def _make_ship_subprocess_stub(
+    *,
+    record: list[_RecordedCall],
+    fn_grades: dict[str, str],  # fn -> "pass" | "fail"
+) -> Any:
+    """subprocess.run stub that handles both bun grading and git/bd calls.
+
+    For bun calls, writes pass/fail grade.json. For git/bd calls, returns 0.
+    """
+
+    def fake_run(
+        cmd: list[str],
+        *,
+        capture_output: bool = False,
+        text: bool = False,
+        check: bool = False,
+        cwd=None,
+        **kwargs: Any,
+    ) -> subprocess.CompletedProcess:
+        record.append(_RecordedCall(cmd=list(cmd), cwd=cwd))
+        joined = " ".join(str(c) for c in cmd)
+
+        if "--output" in cmd:
+            # Bun grader call.
+            out_idx = cmd.index("--output") + 1
+            out_path = Path(cmd[out_idx])
+            fn_idx = cmd.index("--function") + 1
+            fn = cmd[fn_idx]
+            grade = fn_grades.get(fn, "pass")
+            if grade == "pass":
+                _write_passing_grade(out_path, fn)
+            else:
+                _write_failing_grade(out_path, fn)
+        # git and bd calls return 0 by default.
+        return subprocess.CompletedProcess(
+            args=cmd, returncode=0, stdout="committed", stderr=""
+        )
+
+    return fake_run
+
+
+# ---------------------------------------------------------------------------
+# Test 1: all-pass → promotes, commits, exit 0
+# ---------------------------------------------------------------------------
+
+
+def test_ship_all_pass_promotes_and_commits(
+    tmp_path: Path, fresh_db: Path, monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture,
+) -> None:
+    """3 functions, all composite=1.0 → runs inserted, ports promoted, commit invoked, exit 0."""
+    fns = [
+        ("mpfr_alpha", "misc"),
+        ("mpfr_beta", "arithmetic"),
+        ("mpfr_gamma", "transcendental"),
+    ]
+    tmp_root, calls = _setup_ship_env(tmp_path, fresh_db, monkeypatch, fns)
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir(parents=True, exist_ok=True)
+    monkeypatch.setattr(subprocess, "run", _make_ship_subprocess_stub(
+        record=calls, fn_grades={fn: "pass" for fn, _ in fns},
+    ))
+
+    rc = ralph.run_ship(
+        ["mpfr_alpha", "mpfr_beta", "mpfr_gamma"],
+        message="batch ship test",
+        db_path=fresh_db,
+        repo_root=repo_root,
+    )
+
+    assert rc == 0
+    captured = capsys.readouterr()
+    assert "SHIPPED" in captured.out
+    assert "mpfr_alpha" in captured.out
+    assert "mpfr_beta" in captured.out
+    assert "mpfr_gamma" in captured.out
+
+    # All 3 runs rows inserted.
+    with sqlite3.connect(fresh_db) as conn:
+        n_runs = conn.execute("SELECT COUNT(*) FROM runs").fetchone()[0]
+    assert n_runs == 3
+
+    # Destination files promoted.
+    assert (repo_root / "src" / "ops" / "alpha.ts").exists()
+    assert (repo_root / "src" / "ops" / "beta.ts").exists()
+    assert (repo_root / "src" / "ops" / "gamma.ts").exists()
+
+    # Commit-batch was called (git commit in the subprocess calls).
+    cmd_strings = [" ".join(str(x) for x in c.cmd) for c in calls]
+    assert any("git commit" in s for s in cmd_strings)
+    assert any("batch ship test" in s for s in cmd_strings)
+
+
+# ---------------------------------------------------------------------------
+# Test 2: any-fail → runs inserted, NO promote, NO commit, exit 1
+# ---------------------------------------------------------------------------
+
+
+def test_ship_any_fail_no_promote_no_commit(
+    tmp_path: Path, fresh_db: Path, monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture,
+) -> None:
+    """fn2 fails composite → 3 runs inserted, no promotes, no commit, stderr FAILED."""
+    fns = [
+        ("mpfr_p1", "misc"),
+        ("mpfr_p2", "misc"),
+        ("mpfr_p3", "misc"),
+    ]
+    tmp_root, calls = _setup_ship_env(tmp_path, fresh_db, monkeypatch, fns)
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir(parents=True, exist_ok=True)
+    monkeypatch.setattr(subprocess, "run", _make_ship_subprocess_stub(
+        record=calls,
+        fn_grades={"mpfr_p1": "pass", "mpfr_p2": "fail", "mpfr_p3": "pass"},
+    ))
+
+    rc = ralph.run_ship(
+        ["mpfr_p1", "mpfr_p2", "mpfr_p3"],
+        message="should not commit",
+        db_path=fresh_db,
+        repo_root=repo_root,
+    )
+
+    assert rc == 1
+    captured = capsys.readouterr()
+    assert "FAILED" in captured.err
+    assert "mpfr_p2" in captured.err
+
+    # All 3 runs rows inserted (grading is unconditional).
+    with sqlite3.connect(fresh_db) as conn:
+        n_runs = conn.execute("SELECT COUNT(*) FROM runs").fetchone()[0]
+    assert n_runs == 3
+
+    # No destination files created.
+    assert not (repo_root / "src" / "ops" / "p1.ts").exists()
+    assert not (repo_root / "src" / "ops" / "p2.ts").exists()
+    assert not (repo_root / "src" / "ops" / "p3.ts").exists()
+
+    # No commit called.
+    cmd_strings = [" ".join(str(x) for x in c.cmd) for c in calls]
+    assert not any("git commit" in s for s in cmd_strings)
+
+
+# ---------------------------------------------------------------------------
+# Test 3: missing /tmp port → exit 1 immediately, no grading for missing fn
+# ---------------------------------------------------------------------------
+
+
+def test_ship_missing_port_exits_early(
+    tmp_path: Path, fresh_db: Path, monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture,
+) -> None:
+    """One port absent → exit 1, stderr 'no port at <path>', no commit."""
+    fns = [("mpfr_present", "misc"), ("mpfr_absent", "misc")]
+    # Only write the port for mpfr_present; mpfr_absent has no port.
+    tmp_root, calls = _setup_ship_env(
+        tmp_path, fresh_db, monkeypatch, fns,
+        write_ports={"mpfr_present"},
+    )
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir(parents=True, exist_ok=True)
+    monkeypatch.setattr(subprocess, "run", _make_ship_subprocess_stub(
+        record=calls, fn_grades={"mpfr_present": "pass"},
+    ))
+
+    rc = ralph.run_ship(
+        ["mpfr_present", "mpfr_absent"],
+        message="should not commit",
+        db_path=fresh_db,
+        repo_root=repo_root,
+    )
+
+    assert rc == 1
+    captured = capsys.readouterr()
+    assert "no port at" in captured.err
+    assert "mpfr_absent" in captured.err
+
+    # No commit called.
+    cmd_strings = [" ".join(str(x) for x in c.cmd) for c in calls]
+    assert not any("git commit" in s for s in cmd_strings)
+
+
+# ---------------------------------------------------------------------------
+# Test 4: substrate destination routing — mpn_* and mpfr_* substrate
+# ---------------------------------------------------------------------------
+
+
+def test_ship_substrate_mpn_routing(
+    tmp_path: Path, fresh_db: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """substrate mpn_add_n → src/internal/mpn/add_n.ts (strips mpn_ prefix)."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir(parents=True, exist_ok=True)
+    dst = ralph._destination_path("mpn_add_n", "substrate", repo_root)
+    assert dst == repo_root / "src" / "internal" / "mpn" / "add_n.ts"
+
+
+def test_ship_substrate_mpfr_routing(
+    tmp_path: Path,
+) -> None:
+    """substrate mpfr_round_raw → src/internal/mpfr/round_raw.ts (strips mpfr_ prefix)."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir(parents=True, exist_ok=True)
+    dst = ralph._destination_path("mpfr_round_raw", "substrate", repo_root)
+    assert dst == repo_root / "src" / "internal" / "mpfr" / "round_raw.ts"
+
+
+# ---------------------------------------------------------------------------
+# Test 5: public function destination routing (misc/arithmetic/transcendental)
+# ---------------------------------------------------------------------------
+
+
+def test_ship_public_misc_routing(
+    tmp_path: Path,
+) -> None:
+    """misc mpfr_foo → src/ops/foo.ts (strips mpfr_ prefix)."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir(parents=True, exist_ok=True)
+    dst = ralph._destination_path("mpfr_foo", "misc", repo_root)
+    assert dst == repo_root / "src" / "ops" / "foo.ts"
+
+
+def test_ship_public_arithmetic_routing(
+    tmp_path: Path,
+) -> None:
+    """arithmetic mpfr_add → src/ops/add.ts."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir(parents=True, exist_ok=True)
+    dst = ralph._destination_path("mpfr_add", "arithmetic", repo_root)
+    assert dst == repo_root / "src" / "ops" / "add.ts"
+
+
+def test_ship_public_transcendental_routing(
+    tmp_path: Path,
+) -> None:
+    """transcendental mpfr_exp → src/ops/exp.ts."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir(parents=True, exist_ok=True)
+    dst = ralph._destination_path("mpfr_exp", "transcendental", repo_root)
+    assert dst == repo_root / "src" / "ops" / "exp.ts"
+
+
+# ---------------------------------------------------------------------------
+# Test 6: mutual exclusion — --ship with other modes
+# ---------------------------------------------------------------------------
+
+
+def test_ship_mutual_exclusion_with_grade(
+    capsys: pytest.CaptureFixture,
+) -> None:
+    """--ship with --grade is a usage error (exit 2)."""
+    rc = ralph.main(["--ship", "--message", "msg", "--grade", "mpfr_x", "mpfr_y"])
+    assert rc == 2
+    captured = capsys.readouterr()
+    assert "error" in captured.err.lower()
+
+
+def test_ship_mutual_exclusion_with_next(
+    capsys: pytest.CaptureFixture,
+) -> None:
+    """--ship with --next is a usage error (exit 2)."""
+    rc = ralph.main(["--ship", "--message", "msg", "--next", "mpfr_x"])
+    assert rc == 2
+    captured = capsys.readouterr()
+    assert "error" in captured.err.lower()
+
+
+def test_ship_mutual_exclusion_with_commit_batch(
+    capsys: pytest.CaptureFixture,
+) -> None:
+    """--ship with --commit-batch is a usage error (exit 2)."""
+    rc = ralph.main(["--ship", "--message", "msg", "--commit-batch", "other"])
+    assert rc == 2
+    captured = capsys.readouterr()
+    assert "error" in captured.err.lower()
+
+
+def test_ship_mutual_exclusion_with_dry_run(
+    capsys: pytest.CaptureFixture,
+) -> None:
+    """--ship with --dry-run is a usage error (exit 2)."""
+    rc = ralph.main(["--ship", "--message", "msg", "--dry-run", "mpfr_x"])
+    assert rc == 2
+    captured = capsys.readouterr()
+    assert "error" in captured.err.lower()
+
+
+def test_ship_mutual_exclusion_with_list_pending(
+    capsys: pytest.CaptureFixture,
+) -> None:
+    """--ship with --list-pending is a usage error (exit 2)."""
+    rc = ralph.main(["--ship", "--message", "msg", "--list-pending"])
+    assert rc == 2
+    captured = capsys.readouterr()
+    assert "error" in captured.err.lower()
+
+
+# ---------------------------------------------------------------------------
+# Test 7: --ship without --message is a usage error
+# ---------------------------------------------------------------------------
+
+
+def test_ship_requires_message(
+    capsys: pytest.CaptureFixture,
+) -> None:
+    """--ship without --message is a usage error (exit 2)."""
+    rc = ralph.main(["--ship", "mpfr_foo"])
+    assert rc == 2
+    captured = capsys.readouterr()
+    assert "error" in captured.err.lower() or captured.err  # argparse error
+
+
+# ---------------------------------------------------------------------------
+# Test 8: --ship with no function names is a usage error
+# ---------------------------------------------------------------------------
+
+
+def test_ship_requires_function_names(
+    capsys: pytest.CaptureFixture,
+) -> None:
+    """--ship --message 'msg' with no function names is a usage error (exit 2)."""
+    rc = ralph.main(["--ship", "--message", "some commit message"])
+    assert rc == 2
+    captured = capsys.readouterr()
+    assert "error" in captured.err.lower() or captured.err
+
+
+# ---------------------------------------------------------------------------
+# Test 9: promote idempotency — existing file with identical content is no-op
+# ---------------------------------------------------------------------------
+
+
+def test_ship_promote_idempotent_same_content(
+    tmp_path: Path, fresh_db: Path, monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture,
+) -> None:
+    """Destination already exists with identical content → promote is a no-op, no error."""
+    fns = [("mpfr_idem", "misc")]
+    tmp_root, calls = _setup_ship_env(tmp_path, fresh_db, monkeypatch, fns)
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir(parents=True, exist_ok=True)
+
+    # Pre-create destination with same content.
+    dst = repo_root / "src" / "ops" / "idem.ts"
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    port_content = f"// port for mpfr_idem\nexport const stub = 1;\n"
+    dst.write_text(port_content)
+
+    monkeypatch.setattr(subprocess, "run", _make_ship_subprocess_stub(
+        record=calls, fn_grades={"mpfr_idem": "pass"},
+    ))
+
+    rc = ralph.run_ship(
+        ["mpfr_idem"],
+        message="idempotent test",
+        db_path=fresh_db,
+        repo_root=repo_root,
+    )
+    assert rc == 0
+    # File still there with same content.
+    assert dst.read_text() == port_content
+
+
+def test_ship_promote_overwrites_different_content(
+    tmp_path: Path, fresh_db: Path, monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture,
+) -> None:
+    """Destination exists with different content → overwritten cleanly."""
+    fns = [("mpfr_overwrite", "misc")]
+    tmp_root, calls = _setup_ship_env(tmp_path, fresh_db, monkeypatch, fns)
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir(parents=True, exist_ok=True)
+
+    # Pre-create destination with old content.
+    dst = repo_root / "src" / "ops" / "overwrite.ts"
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    dst.write_text("// old content\n")
+
+    monkeypatch.setattr(subprocess, "run", _make_ship_subprocess_stub(
+        record=calls, fn_grades={"mpfr_overwrite": "pass"},
+    ))
+
+    rc = ralph.run_ship(
+        ["mpfr_overwrite"],
+        message="overwrite test",
+        db_path=fresh_db,
+        repo_root=repo_root,
+    )
+    assert rc == 0
+    # File was overwritten with the new port content.
+    new_content = dst.read_text()
+    assert "old content" not in new_content

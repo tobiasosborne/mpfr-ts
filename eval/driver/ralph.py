@@ -698,6 +698,123 @@ def run_commit_batch(message: str, *, repo_root: Path) -> int:
 
 
 # ---------------------------------------------------------------------------
+# Mode 4: --ship
+# ---------------------------------------------------------------------------
+
+
+def _destination_path(fn: str, class_: str, repo_root: Path) -> Path:
+    """Return the canonical destination path for a port file.
+
+    Routing rules (single source of truth):
+    - substrate + mpn_* prefix → src/internal/mpn/<short>.ts  (strip 'mpn_')
+    - substrate + mpfr_* prefix → src/internal/mpfr/<short>.ts (strip 'mpfr_')
+    - arithmetic | transcendental | misc (and conversion) → src/ops/<short>.ts
+      where short strips the 'mpfr_' prefix.
+
+    Any fn name that does not match the mpn_/mpfr_ conventions for substrate
+    falls back to src/ops/<fn>.ts (unlikely but safe).
+    """
+    if class_ == "substrate":
+        if fn.startswith("mpn_"):
+            short = fn[len("mpn_"):]
+            return repo_root / "src" / "internal" / "mpn" / f"{short}.ts"
+        if fn.startswith("mpfr_"):
+            short = fn[len("mpfr_"):]
+            return repo_root / "src" / "internal" / "mpfr" / f"{short}.ts"
+        # Fallback for unusual substrate names.
+        return repo_root / "src" / "internal" / f"{fn}.ts"
+
+    # Public API: arithmetic | transcendental | misc | conversion.
+    if fn.startswith("mpfr_"):
+        short = fn[len("mpfr_"):]
+    else:
+        short = fn
+    return repo_root / "src" / "ops" / f"{short}.ts"
+
+
+def _promote_port(src: Path, dst: Path) -> None:
+    """Copy ``src`` to ``dst``, creating parent directories as needed.
+
+    Overwrites ``dst`` if it already exists. Idempotent: if dst already
+    contains the same bytes, the write is still performed (harmless) —
+    callers that care about idempotency can pre-check.
+    """
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    dst.write_bytes(src.read_bytes())
+
+
+def run_ship(
+    fns: list[str],
+    message: str,
+    *,
+    db_path: Path,
+    repo_root: Path,
+) -> int:
+    """Atomic grade → promote → commit sequence for ``fns``.
+
+    Sequence
+    --------
+    1. Verify every /tmp/eval_<fn>/port.ts exists.  Abort on first missing.
+    2. Grade ALL functions (via _grade_one).  Insert runs rows for all.
+    3. If any grade fails (composite < PASS_THRESHOLD): print FAILED lines
+       to stderr, return 1.  No promotes, no commit.
+    4. Promote each port to its canonical destination.
+    5. Run run_commit_batch(message).
+    6. Print SHIPPED line and return 0.
+    """
+    if not fns:
+        print("error: --ship requires at least one function name", file=sys.stderr)
+        return 2
+
+    # Step 1: verify all ports exist before doing any grading.
+    port_paths: dict[str, Path] = {}
+    for fn in fns:
+        candidate = TMP_ROOT / f"eval_{fn}" / "port.ts"
+        if not candidate.exists():
+            print(f"no port at {candidate}", file=sys.stderr)
+            return 1
+        port_paths[fn] = candidate
+
+    # Step 2: grade all functions unconditionally (real grades → runs rows).
+    results: list[tuple[str, bool, str | None]] = []
+    for fn in fns:
+        passed, first_error, _summary = _grade_one(
+            fn, db_path=db_path, repo_root=repo_root
+        )
+        results.append((fn, passed, first_error))
+
+    # Step 3: check overall pass/fail.
+    failures = [(fn, err) for fn, passed, err in results if not passed]
+    if failures:
+        for fn, err in failures:
+            print(f"FAILED: {fn}  first_error={err}", file=sys.stderr)
+        return 1
+
+    # Step 4: promote each port to its canonical destination.
+    # Look up class from state.db for each fn.
+    uri_ro = f"file:{db_path}?mode=ro"
+    with sqlite3.connect(uri_ro, uri=True) as conn:
+        fn_classes: dict[str, str] = {}
+        for fn in fns:
+            row = _load_function_row(conn, fn)
+            fn_classes[fn] = row[0] if row else "misc"
+
+    for fn in fns:
+        src_path = port_paths[fn]
+        dst_path = _destination_path(fn, fn_classes[fn], repo_root)
+        _promote_port(src_path, dst_path)
+
+    # Step 5: commit batch.
+    commit_rc = run_commit_batch(message, repo_root=repo_root)
+    if commit_rc != 0:
+        return commit_rc
+
+    # Step 6: success output.
+    print(f"SHIPPED: {', '.join(fns)}")
+    return 0
+
+
+# ---------------------------------------------------------------------------
 # Legacy modes (unchanged)
 # ---------------------------------------------------------------------------
 
@@ -793,6 +910,25 @@ def _build_parser() -> argparse.ArgumentParser:
         metavar="MSG",
         help="bd export + git add -A + git commit -m MSG + git push.",
     )
+    parser.add_argument(
+        "--ship",
+        action="store_true",
+        help=(
+            "Atomic grade + promote + commit. "
+            "Requires --message and at least one positional function name."
+        ),
+    )
+    parser.add_argument(
+        "--message",
+        metavar="MSG",
+        help="Commit message for --ship mode.",
+    )
+    parser.add_argument(
+        "ship_fns",
+        nargs="*",
+        metavar="FN",
+        help="Function names to ship (used with --ship).",
+    )
     return parser
 
 
@@ -816,18 +952,19 @@ def main(argv: list[str] | None = None) -> int:
         bool(args.next),
         bool(args.grade),
         bool(args.commit_batch),
+        bool(args.ship),
     ]
     if sum(modes_set) > 1:
         print(
             "error: modes (--dry-run, --list-pending, --next, --grade, "
-            "--commit-batch) are mutually exclusive",
+            "--commit-batch, --ship) are mutually exclusive",
             file=sys.stderr,
         )
         return 2
     if sum(modes_set) == 0:
         print(
             "error: specify one of --dry-run, --list-pending, --next, "
-            "--grade, --commit-batch",
+            "--grade, --commit-batch, --ship",
             file=sys.stderr,
         )
         return 2
@@ -860,6 +997,22 @@ def main(argv: list[str] | None = None) -> int:
         return run_grade(args.grade, db_path=db_path, repo_root=root)
     if args.commit_batch:
         return run_commit_batch(args.commit_batch, repo_root=root)
+    if args.ship:
+        if not args.message:
+            print("error: --ship requires --message MSG", file=sys.stderr)
+            return 2
+        if not args.ship_fns:
+            print(
+                "error: --ship requires at least one function name",
+                file=sys.stderr,
+            )
+            return 2
+        return run_ship(
+            args.ship_fns,
+            args.message,
+            db_path=db_path,
+            repo_root=root,
+        )
 
     return 2  # unreachable
 
