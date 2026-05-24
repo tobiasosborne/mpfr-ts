@@ -1,0 +1,26 @@
+{
+  "function": "mpfr_div_2",
+  "class": "arithmetic",
+  "signature": {
+    "params": ["u", "v", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_div_2 (mpfr/src/div.c L390-L640). Two-limb division fast path: prec(q) == prec(u) == prec(v) = p with GMP_NUMB_BITS < p < 2*GMP_NUMB_BITS (i.e. 65 <= p <= 127 on a 64-bit GMP). The dispatcher in mpfr_div (mpfr/src/div.c L841-L843) routes here when those conditions hold.\n\nAlgorithm: qx = EXP(u) - EXP(v); load (r3, r2) = (u.mant[1], u.mant[0]) into 128-bit pseudoregisters; if r3:r2 >= v1:v0 set extra=1 and subtract v from r; compute approximate quotient q1:q0 via mpfr_div2_approx (a Moller-Granlund 2-limb Newton refinement, mpfr/src/div.c L256-L389), refine via a bounded fixup loop while the partial product s2:s1:s0 = q1:q0 * v1:v0 still differs from r2:0:0 by more than v1:v0, then extract round-bit rb and sticky-bit sb for the standard 5-mode rounding. Sign = u.sign * v.sign.\n\nThe TS port can sidestep the Moller-Granlund + fixup-loop machinery entirely: bigint division ((u_combined << (2*64+1)) / v_combined) gives the exact quotient and remainder in one operation, then extract round/sticky bits from the remainder. The result is byte-identical to the C output but much simpler to reason about. Class is 'arithmetic' (200ms runtime budget); the TS implementation is O(1) modulo bigint cost.",
+  "c_signature": "int mpfr_div_2(mpfr_ptr q, mpfr_srcptr u, mpfr_srcptr v, mpfr_rnd_t rnd_mode)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C takes (q, u, v, rnd) where q's prec is read off itself (and the dispatcher enforces equality with u and v's prec, i.e. PREC(q) == PREC(u) == PREC(v)). TS takes (u, v, prec, rnd) and returns Result {value, ternary}; the equal-prec invariant is the *caller's* contract (mpfr_div dispatches here only when it holds), so the TS port may assume u.prec == v.prec == prec and either assert or accept it.\n\nThe C uses an invert-limb 2-limb Moller-Granlund approximation (mpfr_div2_approx, mpfr/src/div.c L256-L389) plus a sub-ddmmss-driven fixup loop; the TS port doesn't need this complexity because bigint division gives the exact quotient. The C source's umul_ppmm / sub_ddmmss macros (mpfr/src/longlong.h) compile to add-with-carry / mul-high intrinsics; their TS analogs are simple bigint ops.\n\nSign = u.sign * v.sign. Division by zero is filtered out by the dispatcher (mpfr_div, mpfr/src/div.c L770-L830 handles all singular paths), so mpfr_div_2 only ever sees regular (non-zero, non-Inf, non-NaN) u and v. The TS port may still defensively check and throw MPFRError on a singular input to satisfy Rule 1 ('Fail fast, fail loud').\n\nOverflow/underflow delegate to mpfr_overflow / mpfr_underflow as in the C source -- but the TS port omits the underflow side-effect flag per the locked-schema policy (no __gmpfr_flags in src/).",
+  "refs": [
+    "mpfr/src/div.c L390-L640 -- the C reference body.",
+    "mpfr/src/div.c L256-L389 -- mpfr_div2_approx, the Newton-refinement helper (TS port doesn't need it; bigint division is exact).",
+    "mpfr/src/div.c L841-L843 -- dispatcher routes here when GMP_NUMB_BITS < PREC(q) < 2*GMP_NUMB_BITS.",
+    "mpfr/src/longlong.h -- umul_ppmm / sub_ddmmss macros; TS analogs are bigint ops.",
+    "src/ops/div.ts -- general mpfr_div that dispatches here.",
+    "src/ops/div_1.ts -- 1-limb sister fast path (precedent for the TS algorithm).",
+    "src/ops/overflow.ts -- exp-overflow delegate.",
+    "src/ops/underflow.ts -- exp-underflow delegate (note: the locked schema has no __gmpfr_flags side effect).",
+    "CLAUDE.md 'Hallucination-risk callouts: GMP mpn limbs are LITTLE-ENDIAN by limb index' -- u.mant[0] is the LSB; the 2-limb pair (r3, r2) in the C source corresponds to (u.mant[1], u.mant[0]) i.e. MSB-first in pseudoregister naming but LSB-first in memory.",
+    "CLAUDE.md 'Hallucination-risk callouts: umul_ppmm output args are first' -- if porting the C verbatim rather than via bigint division, observe the macro convention.",
+    "CLAUDE.md 'Hallucination-risk callouts: Ternary flag is the sign of (rounded - exact)'.",
+    "mpfr/tests/tdiv.c -- source for mined cases."
+  ]
+}

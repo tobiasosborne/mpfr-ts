@@ -1,0 +1,23 @@
+{
+  "function": "mpfr_nanflag_p",
+  "class": "misc",
+  "signature": {
+    "params": ["mask"],
+    "returns": "boolean"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_nanflag_p (mpfr/src/exceptions.c L357-L364). Five-line C body: reads the global `__gmpfr_flags` register and returns `__gmpfr_flags & MPFR_FLAGS_NAN` (bit 0x4) as an int (so 0 or non-zero). The TS port returns a boolean (per ADR 0001 idiomatic-TS lift for the `_p` predicate family). The MPFR_COLD_FUNCTION_ATTR is a GCC hint for branch-prediction; irrelevant in TS.\n\nDistinct from mpfr_nan_p, which is a *value* predicate (asks 'is this MPFR value NaN?'). nanflag_p is a *flag-register* predicate (asks 'has the NaN flag been raised by some preceding operation?'). The grader and the TS port must not confuse the two.\n\nThe predicate is stateless on the surface but state-dependent in reality: the value it returns depends on the global flag register's prior state. To make the golden grader-compatible, the wire form takes a `mask: bigint` input describing the flag register's desired state. The driver calls mpfr_clear_flags() + mpfr_flags_set(mask) before invoking the predicate; the TS port must perform the same composition.",
+  "c_signature": "int mpfr_nanflag_p(void)",
+  "prec_unit": "n/a",
+  "divergence_from_c": "Three divergences:\n\n  1. Return type: C returns `int` (0 or non-zero); TS returns `boolean` per ADR 0001 idiomatic-TS lift for the `_p` predicate family. The wire codec emits true/false via jl_output_scalar_bool; the runner's compareOutput uses strict `===` so the port MUST return a TS boolean, not 0/1.\n\n  2. Parameter list: C takes `void`. The wire form takes a `mask: bigint` input encoding the desired pre-test flag state (UNDERFLOW=1, OVERFLOW=2, NAN=4, INEXACT=8, ERANGE=16, DIVBY0=32; OR-combine for multiple). The C driver calls mpfr_clear_flags() then mpfr_flags_set(mask) before reading the predicate; the TS port must compose the equivalent set-then-read flow against a TS-side flag register.\n\n  3. Global flag state: C reads __gmpfr_flags, a static int in mpfr/src/exceptions.c (L37-L40). The TS substrate currently has NO __gmpfr_flags module -- flag-state is an open API gap. The sonnet porter must either (a) add a small src/internal/mpfr/flags.ts module exporting setFlags/clearFlags/getFlags with the same MPFR_FLAGS_* bit values and route the predicate through it, OR (b) the spec is parked pending a flag-state ADR. NOTE: mpfr_nanflag_p (flag-state) is distinct from mpfr_nan_p (value predicate); do not collapse them in the port.",
+  "refs": [
+    "mpfr/src/exceptions.c L357-L364 -- the C reference body.",
+    "mpfr/src/exceptions.c L37-L40 -- __gmpfr_flags declaration (mpfr_flags_t = unsigned int).",
+    "/usr/include/mpfr.h L77-L88 -- MPFR_FLAGS_* bit constants (UNDERFLOW=1, OVERFLOW=2, NAN=4, INEXACT=8, ERANGE=16, DIVBY0=32, ALL=63).",
+    "mpfr/tests/texceptions.c L327-L351 -- the mined source pattern: clear, set_overflow/set_underflow/set_divby0/set_nanflag, then verify each *_p returns the expected bit.",
+    "docs/adr/0001-spec-merge-policy.md -- the idiomatic-TS lift policy: _p predicates return boolean, not int.",
+    "src/ops/nan_p.ts -- the *value* predicate (do not confuse with the flag-state predicate).",
+    "src/core.ts -- locked schema (no flag-state API currently exposed; the gap is documented in divergence_from_c).",
+    "eval/functions/mpfr_get_default_prec/spec.json -- precedent for composing a setter+getter into a stateless grader-facing port (the `prev_set` input pattern).",
+    "CLAUDE.md 'Hallucination-risk callouts: NaN != NaN' -- but this predicate is about the global *flag*, not a value; the NaN-equality rule does not apply here."
+  ]
+}
