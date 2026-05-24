@@ -1,5 +1,9 @@
-# Upstream MPFR clone — large, cloned per machine
-mpfr/
+# Upstream MPFR clone — large, cloned per machine.
+# Leading slash anchors to repo root; without it the pattern matches
+# `mpfr/` at any depth (e.g. `src/internal/mpfr/`) and silently drops
+# substrate files. Verified bite: 2026-05-24 — 50→85 session lost 3
+# substrate ports for ~12hr before next agent caught it.
+/mpfr/
 
 # Runtime / package manager
 node_modules/
