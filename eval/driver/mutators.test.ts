@@ -34,6 +34,15 @@ describe('op-swap', () => {
     expect(out.applied).toBe(false);
     expect(out.mutated).toBe(src);
   });
+  it('skips function declarations (export function mpfr_add(...))', () => {
+    const out = applyMutation(`export function mpfr_add(a: number) { return a; }\n`, 'op-swap');
+    expect(out.mutated).toContain('function mpfr_add('); expect(out.mutated).not.toContain('mpfr_sub('); expect(transpiles(out.mutated)).toBe(true);
+  });
+  it('still applies to call sites when declaration is present', () => {
+    const out = applyMutation(`export function mpfr_add(a: number) { return a; }\nconst x = mpfr_add(1);\n`, 'op-swap');
+    expect(out.applied).toBe(true); expect(out.mutated).toContain('function mpfr_add(');
+    expect(out.mutated).toContain('mpfr_sub(1)'); expect(transpiles(out.mutated)).toBe(true);
+  });
 });
 
 describe('rnd-swap', () => {
@@ -66,6 +75,15 @@ describe('ternary-negate', () => {
   it('applied=false when ternary only in type declaration', () => {
     const src = `type X = { ternary: Ternary };\nexport function f(): number { return 0; }\n`;
     expect(applyMutation(src, 'ternary-negate').applied).toBe(false);
+  });
+  it('skips destructuring (const { ternary: tr } = ...)', () => {
+    const out = applyMutation(`function f() { const { ternary: tr } = g(); return tr; }\n`, 'ternary-negate');
+    expect(out.mutated).not.toContain('ternary: -(tr)'); expect(transpiles(out.mutated)).toBe(true);
+  });
+  it('still applies to object-literal returns when mixed with destructuring', () => {
+    const out = applyMutation(`function f() { const { ternary: tr } = g(); return { value: 0, ternary: tr }; }\n`, 'ternary-negate');
+    expect(out.applied).toBe(true); expect(out.mutated).toContain('ternary: -(tr)');
+    expect(out.mutated).toContain('{ ternary: tr } = g()'); expect(transpiles(out.mutated)).toBe(true);
   });
 });
 

@@ -13,9 +13,11 @@ const noop = (src: string, m: string): MutationResult => ({ mutated: src, applie
 
 function opSwap(src: string): MutationResult {
   // First pair where one side appears as a call (trailing `(`); imports lack
-  // the paren and stay intact.
+  // the paren and stay intact. Look-behind `(?<!function )` excludes the
+  // function's own declaration (`export function mpfr_add(`) so the file
+  // continues to export the expected name.
   for (const [a, b] of OP_PAIRS) {
-    const reA = new RegExp(`\\b${a}\\(`, 'g'), reB = new RegExp(`\\b${b}\\(`, 'g');
+    const reA = new RegExp(`(?<!function )\\b${a}\\(`, 'g'), reB = new RegExp(`(?<!function )\\b${b}\\(`, 'g');
     const na = (src.match(reA) ?? []).length, nb = (src.match(reB) ?? []).length;
     if (na > 0 && nb === 0) return { mutated: src.replace(reA, `${b}(`), applied: true, description: `op-swap: '${a}(' -> '${b}(' (${na} occurrence${s(na)})` };
     if (nb > 0 && na === 0) return { mutated: src.replace(reB, `${a}(`), applied: true, description: `op-swap: '${b}(' -> '${a}(' (${nb} occurrence${s(nb)})` };
@@ -41,11 +43,21 @@ function ternaryNegate(src: string): MutationResult {
   // Object-literal entries `, ternary: <value>` or `{ ternary: <value>`. The
   // leading `,` or `{` excludes variable declarations like `const ternary:
   // Ternary = 1;` (type annotation) and bare type-literal members where the
-  // value is a type identifier.
+  // value is a type identifier. Tail-brace `}` followed by `=` is a
+  // destructuring LHS (`const { ternary: tr } = ...`), where the rename
+  // target must be an identifier; skip those to avoid invalid TS.
   let count = 0;
-  const out = src.replace(/([{,])(\s*)ternary:\s*([^,};\n]+?)(\s*[,};])/g, (_f, head: string, ws: string, v: string, tail: string) => {
+  const out = src.replace(/([{,])(\s*)ternary:\s*([^,};\n]+?)(\s*[,};])/g, (_f, head: string, ws: string, v: string, tail: string, off: number) => {
     const t = v.trim();
     if (t === 'Ternary') return `${head}${ws}ternary: ${v}${tail}`;
+    if (tail.trimEnd().endsWith('}')) {
+      // Look past the `}` for an `=` (assignment), skipping whitespace.
+      let j = (off as number) + (_f as string).length;
+      while (j < src.length && /\s/.test(src[j] as string)) j++;
+      if (src[j] === '=' && src[j + 1] !== '=' && src[j + 1] !== '>') {
+        return `${head}${ws}ternary: ${v}${tail}`;
+      }
+    }
     count++; return `${head}${ws}ternary: -(${t})${tail}`;
   });
   if (count === 0) return noop(src, 'ternary-negate: no return-position ternary values found');
