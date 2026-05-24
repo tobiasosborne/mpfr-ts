@@ -135,6 +135,41 @@ function isConfusableChar(codepoint: number): boolean {
   );
 }
 
+/**
+ * Strip `import … from "…";` statements from the source so the
+ * REDECL_PATTERNS don't false-flag the `type` keyword inside an import
+ * specifier list (`import { type MPFR, … }`). Handles single-line and
+ * multi-line forms. We replace the matched span with newlines so line
+ * numbers reported elsewhere stay stable.
+ *
+ * The pattern is intentionally narrow: it matches only `import` followed
+ * by anything up to and including the closing quote of the source
+ * specifier (`from "…"` or `from '…'`) plus an optional trailing
+ * semicolon. Side-effect imports (`import "polyfill";`) and bare
+ * dynamic-import calls (`import("./x.ts")`) don't contain `type` keywords
+ * before any of the locked names, but we still match them to be safe.
+ *
+ * Note: this is a regex strip, not an AST walk. The contract we rely on
+ * is "an `import` token at a statement boundary begins an import
+ * declaration until the next source-specifier-string". A pathological
+ * file with a string literal containing the substring `import { type
+ * MPFR } from "…"` would slip past, but ports don't generate such
+ * strings, and the alternative — full TS-parsing — is overkill.
+ *
+ * Ref: mpfr-ts-wli (the false-positive), worklog 005 §3 (the fix
+ *   choice).
+ */
+const IMPORT_STATEMENT_RE =
+  /\bimport\b(?:[^'"\n;]|\n)*?\bfrom\s*['"][^'"]*['"]\s*;?|\bimport\s*['"][^'"]*['"]\s*;?/g;
+
+function stripImportStatements(source: string): string {
+  return source.replace(IMPORT_STATEMENT_RE, (match) => {
+    // Preserve newlines so line-number-sensitive code downstream stays
+    // aligned. Replace every non-newline char with a space.
+    return match.replace(/[^\n]/g, ' ');
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Main entry point
 // ---------------------------------------------------------------------------
@@ -196,8 +231,19 @@ export function astCheck(
   }
 
   // --- (2) Redeclaration of locked schema types ----------------------------
+  // The redeclaration patterns are deliberately fuzzy ("(?:^|[^.\w])type\s+
+  // MPFR\b") so they catch top-level `type MPFR = …` as well as indented
+  // ones. The same fuzziness false-flags the mixed type-import syntax —
+  // `import { type MPFR, … } from "../core.ts"` — because `{` is a
+  // non-word character before `type`, satisfying the `[^.\w]` anchor.
+  // Stripping import statements (single- and multi-line) before the scan
+  // is safe: imports cannot contain a real type/interface/class/enum
+  // declaration, only a re-export of names. We keep the original source
+  // for downstream checks (`any`, Cyrillic) so import-path text still
+  // gets the homoglyph scan. Ref: mpfr-ts-wli / worklog 005.
+  const importStripped = stripImportStatements(source);
   for (const pat of REDECL_PATTERNS) {
-    if (pat.re.test(source)) {
+    if (pat.re.test(importStripped)) {
       errors.push(
         `redeclares locked schema type '${pat.name}' (Law 4: import from ` +
           `src/core.ts; do not redeclare)`,
