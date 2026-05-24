@@ -75,7 +75,6 @@
  */
 
 const LIMB_BITS = 64n;
-const LIMB_MASK = (1n << LIMB_BITS) - 1n;
 const LIMB_ZERO = 0n;
 
 /**

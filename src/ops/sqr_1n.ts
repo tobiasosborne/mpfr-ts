@@ -64,7 +64,7 @@
  *     (rounded - exact), not 0/1.'
  */
 
-import type { MPFR, Result, RoundingMode, Sign, Ternary } from "../core.ts";
+import type { MPFR, Result, RoundingMode, Sign } from "../core.ts";
 import { MPFRError } from "../core.ts";
 import { mpfr_overflow } from "./overflow.ts";
 

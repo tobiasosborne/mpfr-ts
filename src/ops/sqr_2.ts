@@ -240,8 +240,7 @@ export function mpfr_sqr_2(
   const u_shl1_carry = u >> 63n;  // carry from u << 1 (top bit of u shifted out)
   const l_before = l;
   l = (l + u_shl1) & MASK64;
-  const l_carry = (l < l_before || (l_before + u_shl1 > MASK64)) ? 1n : 0n;  // l < u<<1 in C
-  // More precisely: l_carry is 1 if l_before + u_shl1 overflowed 64 bits
+  // l_carry is 1 if l_before + u_shl1 overflowed 64 bits
   const l_overflow = (l_before + u_shl1) >> GMP_NUMB_BITS;  // 0 or 1
   h = (h + l_overflow + u_shl1_carry) & MASK64;
   // Note: h can exceed 64 bits if it was near LIMB_MAX, but for valid MPFR mantissas

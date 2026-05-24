@@ -91,8 +91,6 @@ import {
   MPFRError,
   NAN_VALUE,
   NAN_VALUE as _NAN_VALUE,
-  PREC_MIN,
-  PREC_MAX,
   negInf,
   negZero,
   posInf,

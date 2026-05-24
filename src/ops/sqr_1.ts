@@ -351,7 +351,7 @@ function addOneUlp(
   ap0: bigint,
   ax: bigint,
   sh: bigint,
-  mask: bigint,
+  _mask: bigint,
   prec: bigint,
   rnd: RoundingMode,
   sign: 1,

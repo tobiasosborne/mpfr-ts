@@ -94,18 +94,6 @@ function isLikeRNDZ(rnd: RoundingMode, sign: Sign): boolean {
 }
 
 /**
- * TS analogue of MPFR_IS_LIKE_RNDA (mpfr-impl.h):
- * "does `rnd` round away from zero with respect to the sign?"
- * This is true when the mode rounds the magnitude upward.
- */
-function isLikeRNDA(rnd: RoundingMode, sign: Sign): boolean {
-  if (rnd === 'RNDA') return true;
-  if (rnd === 'RNDU' && sign === 1) return true;
-  if (rnd === 'RNDD' && sign === -1) return true;
-  return false;
-}
-
-/**
  * Produce an overflow result.
  * Ref: mpfr/src/exceptions.c L424-L448 — mpfr_overflow body.
  * Delegates to mpfr_setmax for the toward-zero branch, or returns ±Inf.
