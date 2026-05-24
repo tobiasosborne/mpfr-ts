@@ -1,0 +1,21 @@
+{
+  "function": "mpfr_d_div",
+  "class": "misc",
+  "signature": {
+    "params": ["b", "c", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_d_div (mpfr/src/d_div.c L25-L50). Compute b / c where b is a machine double and c is MPFR, rounded to `prec` bits under `rnd`. The reverse direction of mpfr_div_d: the double argument is the LEFT (numerator). The C reference: stack-allocate an mpfr_t at prec=53, mpfr_set_d (exact), then delegate to mpfr_div(rop, dMpfr, c, rnd). The TS port mirrors: convert b -> MPFR at prec=53, then mpfr_div(bMpfr, c, prec, rnd). TS argument naming -- (b, c) where b is the DOUBLE numerator and c is the MPFR denominator, matching the C `(double b, mpfr_srcptr c)` signature.",
+  "c_signature": "int mpfr_d_div(mpfr_ptr a, double b, mpfr_srcptr c, mpfr_rnd_t rnd_mode)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C mutates `a`; TS returns Result. b is bare JS number numerator; c is MPFR denominator. Singular dispatch via mpfr_div: NaN propagates; +/-Inf / +/-Inf = NaN; +/-Inf / finite = +/-Inf (sign product); finite / +/-Inf = +/-0; +/-0 / +/-0 = NaN; finite-nonzero / +/-0 = +/-Inf (sign product); +/-0 / finite-nonzero = +/-0 (sign product). Sign of normal quotient = b_sign * c.sign. The MPFR_SAVE_EXPO / mpfr_check_range pattern is dropped -- TS has no global emax/emin state.",
+  "refs": [
+    "mpfr/src/d_div.c L25-L50 -- the C reference body.",
+    "src/ops/div.ts -- load-bearing delegate.",
+    "src/ops/set_d.ts -- load-bearing for the double->MPFR step.",
+    "src/core.ts L173-L176 -- Result return shape.",
+    "CLAUDE.md 'Hallucination-risk callouts: Signed zero is real' -- division-by-zero specials.",
+    "CLAUDE.md 'Hallucination-risk callouts: Ternary flag is the sign of (rounded - exact)'.",
+    "eval/golden_master/common.h jl_kv_double."
+  ]
+}

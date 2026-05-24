@@ -1,0 +1,19 @@
+{
+  "function": "mpfr_div_1n",
+  "class": "misc",
+  "signature": {
+    "params": ["u", "v", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_div_1n (mpfr/src/div.c L256-L388). Single-limb division for prec(q) == GMP_NUMB_BITS (= 64) with prec(u), prec(v) <= 64. Algorithm: like div_1 but no `sh` shift (output prec fills the limb exactly); extra = (u0 >= v0); on extra, u0 -= v0; compute approximate q0 via Moller-Granlund (the asm-level invert_limb_approx), then refine via the same compare-and-subtract loop as div_1. The rb/sb extraction differs slightly: if extra==0, qp[0] = q0, rb based on whether 2*l >= v0 (the bit-1 of the remainder doubled); if extra==1, qp[0] = HIGHBIT | (q0 >> 1), rb is bit-0 of q0, sb = l, qx++.",
+  "c_signature": "static int mpfr_div_1n(mpfr_ptr q, mpfr_srcptr u, mpfr_srcptr v, mpfr_rnd_t rnd_mode)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C takes (q, u, v, rnd) with q's prec fixed at 64. TS takes (u, v, rnd) and returns Result; output prec is implicit (= 64n). TS can use bigint division directly. Sign = u.sign * v.sign. Overflow delegates; underflow omitted (per locked-schema).",
+  "refs": [
+    "mpfr/src/div.c L256-L388 -- the C reference body.",
+    "mpfr/src/div.c L846 -- dispatcher routes prec=64 here.",
+    "src/ops/div.ts -- general mpfr_div.",
+    "src/ops/mul_1n.ts -- analogous structure for multiplication.",
+    "src/ops/overflow.ts -- exp-overflow delegate."
+  ]
+}

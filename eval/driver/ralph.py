@@ -44,6 +44,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sqlite3
 import subprocess
 import sys
@@ -732,15 +733,40 @@ def _destination_path(fn: str, class_: str, repo_root: Path) -> Path:
     return repo_root / "src" / "ops" / f"{short}.ts"
 
 
-def _promote_port(src: Path, dst: Path) -> None:
-    """Copy ``src`` to ``dst``, creating parent directories as needed.
+_ABSPATH_RE = re.compile(
+    r"""(['"])((?:/[^/'"]+)+/(?:src|eval)/[^'"]+\.ts)\1"""
+)
 
-    Overwrites ``dst`` if it already exists. Idempotent: if dst already
-    contains the same bytes, the write is still performed (harmless) —
-    callers that care about idempotency can pre-check.
+
+def _promote_port(src: Path, dst: Path) -> None:
+    """Copy ``src`` to ``dst``, rewriting absolute imports to relative.
+
+    Sonnet ports written under /tmp use absolute paths to import from the
+    project's src/ tree (the /tmp port file can't resolve relative imports
+    to src/). On promote, every absolute path is rewritten to a path
+    relative to dst. Quoted-string forms (single or double quote) are both
+    handled. Non-string occurrences are left alone (e.g. comments that
+    happen to contain a path).
+
+    Idempotent: a port that already uses relative paths passes through
+    unchanged (the regex finds nothing to rewrite).
     """
+    text = src.read_text(encoding='utf-8')
+
+    def _rewrite(m: re.Match[str]) -> str:
+        quote, abs_path = m.group(1), m.group(2)
+        target = Path(abs_path).resolve()
+        try:
+            rel = os.path.relpath(target, start=dst.parent.resolve())
+        except ValueError:
+            return m.group(0)
+        if not rel.startswith('.'):
+            rel = './' + rel
+        return f"{quote}{rel}{quote}"
+
+    rewritten = _ABSPATH_RE.sub(_rewrite, text)
     dst.parent.mkdir(parents=True, exist_ok=True)
-    dst.write_bytes(src.read_bytes())
+    dst.write_text(rewritten, encoding='utf-8')
 
 
 def run_ship(

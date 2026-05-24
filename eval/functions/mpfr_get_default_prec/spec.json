@@ -1,0 +1,11 @@
+{
+  "function": "mpfr_get_default_prec",
+  "class": "substrate",
+  "signature": {
+    "params": ["prev_set"],
+    "returns": "bigint"
+  },
+  "doc": "Grader-facing composition: (prev_set: bigint) -> bigint. Calls mpfr_set_default_prec(prev_set) then mpfr_get_default_prec() internally. See spec.json divergence_from_c for details.",
+  "c_signature": "mpfr_prec_t mpfr_get_default_prec(void)",
+  "prec_unit": "bits"
+}

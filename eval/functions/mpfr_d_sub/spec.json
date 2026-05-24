@@ -1,0 +1,21 @@
+{
+  "function": "mpfr_d_sub",
+  "class": "misc",
+  "signature": {
+    "params": ["b", "c", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_d_sub (mpfr/src/d_sub.c L25-L50). Compute b - c where b is a machine double and c is MPFR, rounded to `prec` bits under `rnd`. The reverse direction of mpfr_sub_d: the double argument is the LEFT operand. The C reference: stack-allocate an mpfr_t at prec=53, mpfr_set_d (exact), then delegate to mpfr_sub(rop, dMpfr, c, rnd). The TS port mirrors: convert b -> MPFR at prec=53, then mpfr_sub(bMpfr, c, prec, rnd). Note the argument naming -- TS function takes (b, c) where b is the DOUBLE and c is the MPFR, matching the C `(double b, mpfr_srcptr c)` signature.",
+  "c_signature": "int mpfr_d_sub(mpfr_ptr a, double b, mpfr_srcptr c, mpfr_rnd_t rnd_mode)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C mutates `a`; TS returns Result. b is bare JS number; c is MPFR. Singular dispatch: NaN propagates; +Inf - +Inf = NaN; +/-Inf - finite = +/-Inf; signed-zero subtraction follows mpfr_sub conventions (b=+0, c=-0 -> +0 under RNDN, -0 under RNDD). The MPFR_SAVE_EXPO / mpfr_check_range pattern is dropped -- TS has no global emax/emin state.",
+  "refs": [
+    "mpfr/src/d_sub.c L25-L50 -- the C reference body.",
+    "src/ops/sub.ts -- load-bearing delegate.",
+    "src/ops/set_d.ts -- load-bearing for the double->MPFR step.",
+    "src/core.ts L173-L176 -- Result return shape.",
+    "CLAUDE.md 'Hallucination-risk callouts: NaN != NaN'.",
+    "CLAUDE.md 'Hallucination-risk callouts: Signed zero is real'.",
+    "eval/golden_master/common.h jl_kv_double."
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "function": "mpfr_set_flt",
+  "class": "misc",
+  "signature": {
+    "params": ["f", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_set_flt (mpfr/src/set_flt.c L25-L32). Convert a machine single-precision (binary32) float to MPFR. The C reference is a one-line delegate: cast `f` to double and call mpfr_set_d. The reasoning: every single-precision number is exactly representable in double (24-bit mantissa fits in 53), so the cast is lossless. NaN and +/-Inf propagate; the C source notes 'NaN and infinities should be preserved (except the sign bit for NaN)'. The TS port: take a JS `number` (which is binary64, so the caller's binary32 was promoted implicitly), and delegate to mpfr_set_d(f, prec, rnd). On the TS surface there is no distinct binary32 type -- the caller passes a JS number, and the function behaves identically to mpfr_set_d. The wire-side: the golden_driver receives a C float, promotes to double, and we emit it on the wire as a double -- the TS port treats it as a double too.",
+  "c_signature": "int mpfr_set_flt(mpfr_ptr r, float f, mpfr_rnd_t rnd_mode)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C: float input, mutates `r`; TS: number input (no distinct binary32 type -- caller passes a JS number, which is binary64; the function is semantically equivalent to mpfr_set_d for that number). Returns Result {value, ternary}. NaN/Inf/+/-0 propagate. The C source notes 'all single precision numbers are exactly representable in the double format, thus the conversion is always exact' -- this is preserved in TS because the JS number IS already binary64.",
+  "refs": [
+    "mpfr/src/set_flt.c L25-L32 -- the C reference (one-line delegate).",
+    "src/ops/set_d.ts -- the load-bearing delegate.",
+    "src/core.ts L19-L63 -- value model.",
+    "CLAUDE.md 'Hallucination-risk callouts: NaN != NaN'.",
+    "CLAUDE.md 'Hallucination-risk callouts: Signed zero is real'."
+  ]
+}

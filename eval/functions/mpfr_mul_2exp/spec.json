@@ -1,0 +1,18 @@
+{
+  "function": "mpfr_mul_2exp",
+  "class": "misc",
+  "signature": {
+    "params": ["x", "n", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_mul_2exp (mpfr/src/mul_2exp.c L28-L32). Multiply an MPFR `x` by 2^n where n is an UNSIGNED long, rounded to `prec` bits under `rnd`. This is an OBSOLETE alias for mpfr_mul_2ui -- the C reference body is a single-line delegate. The TS port mirrors: forward (x, n, prec, rnd) to mpfr_mul_2ui unchanged. Class 'misc' for the 1000ms budget; O(1) modulo mpfr_mul_2ui cost.",
+  "c_signature": "int mpfr_mul_2exp(mpfr_ptr y, mpfr_srcptr x, unsigned long int n, mpfr_rnd_t rnd_mode)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C mutates `y`; TS returns Result. The argument `n` is unsigned long (0..2^64-1) and is passed as a non-negative bigint on the TS side. Singular inputs (NaN, +/-Inf, +/-0) propagate through mpfr_mul_2ui unchanged -- multiplication by a finite power of two doesn't change kind. For normal x, only the exponent shifts; the mantissa and sign are preserved (modulo prec change). The MPFR_SAVE_EXPO / mpfr_check_range pattern is dropped -- TS has no global emax/emin state.",
+  "refs": [
+    "mpfr/src/mul_2exp.c L28-L32 -- the C reference body (single-line delegate).",
+    "src/ops/mul_2ui.ts -- the load-bearing delegate.",
+    "src/core.ts L173-L176 -- Result return shape.",
+    "CLAUDE.md 'Hallucination-risk callouts: Signed zero is real' -- preserved through 2^n multiplication."
+  ]
+}

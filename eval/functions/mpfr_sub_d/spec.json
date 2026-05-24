@@ -1,0 +1,22 @@
+{
+  "function": "mpfr_sub_d",
+  "class": "misc",
+  "signature": {
+    "params": ["b", "c", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_sub_d (mpfr/src/sub_d.c L25-L50). Compute b - c where b is MPFR and c is a machine double, rounded to `prec` bits under `rnd`. The C reference is a trivial wrapper: stack-allocate an mpfr_t at IEEE_DBL_MANT_DIG (= 53), set it from c via mpfr_set_d (always exact for doubles), then delegate to mpfr_sub. The TS port mirrors: convert c -> MPFR at prec=53 (exact for finite, NaN, +/-Inf), then mpfr_sub(b, dMpfr, prec, rnd). Class 'misc' for the 1000ms budget; O(1) modulo mpfr_sub cost.",
+  "c_signature": "int mpfr_sub_d(mpfr_ptr a, mpfr_srcptr b, double c, mpfr_rnd_t rnd_mode)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C takes (mpfr_ptr a, mpfr_srcptr b, double c, mpfr_rnd_t rnd_mode) -- `a` is the output slot, mutated in place, prec read from `a`. TS takes (b, c, prec, rnd) and returns Result. c is bare JS number (wire codec emits sentinels for NaN/+/-Inf/-0). NaN/Inf propagate through mpfr_set_d -> mpfr_sub: NaN +/- anything = NaN; +Inf - +Inf = NaN; +/-Inf - finite = +/-Inf; etc. The MPFR_SAVE_EXPO / mpfr_check_range pattern is dropped -- TS has no global emax/emin state.",
+  "refs": [
+    "mpfr/src/sub_d.c L25-L50 -- the C reference body.",
+    "src/ops/sub.ts -- load-bearing delegate after double->MPFR conversion.",
+    "src/ops/set_d.ts -- load-bearing for the double->MPFR step.",
+    "src/core.ts L19-L63 -- value model; double-as-string wire codec.",
+    "src/core.ts L173-L176 -- Result return shape.",
+    "CLAUDE.md 'Hallucination-risk callouts: NaN != NaN'.",
+    "CLAUDE.md 'Hallucination-risk callouts: Signed zero is real' -- RNDD of x - x = -0, RNDN = +0.",
+    "eval/golden_master/common.h jl_kv_double."
+  ]
+}

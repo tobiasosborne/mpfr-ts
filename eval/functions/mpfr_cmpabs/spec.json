@@ -1,0 +1,18 @@
+{
+  "function": "mpfr_cmpabs",
+  "class": "arithmetic",
+  "signature": {
+    "params": ["b", "c"],
+    "returns": "number"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_cmpabs (mpfr/src/cmpabs.c L30-L86). Compare |b| and |c|: returns positive if |b| > |c|, 0 if |b| = |c|, negative if |b| < |c|. Sets erange flag and returns 0 if either operand is NaN (C); the TS port throws MPFRError('EDOMAIN') instead (matches mpfr_cmp's NaN policy). Algorithm: (1) Singular dispatch -- NaN -> throw; +/-Inf vs +/-Inf -> 0; +/-Inf vs anything-finite -> 1; finite-nonzero vs zero -> 1; zero vs zero -> 0; zero vs finite-nonzero -> -1. (2) Both normal: compare exponents (larger exp -> larger magnitude); on tie, compare mantissas after MSB-alignment to max(prec). Returns -1/0/+1 (normalised at the function boundary, even though C may technically return any non-zero for >).",
+  "c_signature": "int mpfr_cmpabs(mpfr_srcptr b, mpfr_srcptr c)",
+  "divergence_from_c": "C sets erange + returns 0 on NaN; TS throws MPFRError('EDOMAIN') -- same divergence as mpfr_cmp per CLAUDE.md 'NaN != NaN'. C returns any positive int for >, any negative for <; TS normalises to {-1, 0, +1}. No rounding involved, no ternary. Sign is ignored -- only magnitudes compared.",
+  "refs": [
+    "mpfr/src/cmpabs.c L30-L86 -- the C reference body.",
+    "src/ops/cmp.ts -- sibling comparison; similar dispatch shape (but signed).",
+    "src/internal/mpfr/cmp_raw.ts -- shared compare core (uses sign in dispatch).",
+    "CLAUDE.md 'Hallucination-risk callouts: NaN != NaN' -- domain-error throw vs silent zero.",
+    "mpfr/tests/tcmpabs.c -- source for mined cases."
+  ]
+}

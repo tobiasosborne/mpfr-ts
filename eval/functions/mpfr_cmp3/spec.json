@@ -1,0 +1,20 @@
+{
+  "function": "mpfr_cmp3",
+  "class": "arithmetic",
+  "signature": {
+    "params": ["b", "c", "s"],
+    "returns": "number"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_cmp3 (mpfr/src/cmp.c L32-L98). Compare b against sign(s) * c -- i.e. flip c's sign when s is negative, then compare. Returns positive if b > sign(s)*c, 0 if equal, negative if b < sign(s)*c. The public mpfr_cmp(b, c) is just mpfr_cmp3(b, c, +1). Sets erange and returns 0 if either input is NaN (C); the TS port throws MPFRError('EDOMAIN') on NaN to mirror mpfr_cmp's policy. The TS port can be implemented either (a) as a one-line wrapper that creates a new MPFR `c2` with flipped sign and delegates to compareMPFR, or (b) by inlining the dispatch with the multiplied sign carried explicitly. Both are O(1) plus the underlying compare cost.",
+  "c_signature": "int mpfr_cmp3(mpfr_srcptr b, mpfr_srcptr c, int s)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C returns int (sign of difference); TS returns number normalised to {-1, 0, +1}. C uses s as int (any non-zero is positive or negative); TS takes s as a JS number; the conventional interpretation is sign(s). NaN dispatch matches mpfr_cmp: throw MPFRError('EDOMAIN'). `s` is conceptually a sign multiplier (typically +/-1), but the algorithm depends only on `sign(s)`; we recommend the TS port accept s as `number` and use `Math.sign(s)` (or equivalent) -- passing 0 is undefined per the C reference's MPFR_MULT_SIGN macro semantics (which multiplies signs as ints and treats 0 as 0).",
+  "refs": [
+    "mpfr/src/cmp.c L32-L98 -- the C reference body (the mpfr_cmp3 core).",
+    "mpfr/src/cmp.c L100-L105 -- mpfr_cmp uses mpfr_cmp3(b, c, +1).",
+    "src/ops/cmp.ts -- the public mpfr_cmp wrapper; documented divergence on NaN.",
+    "src/internal/mpfr/cmp_raw.ts -- non-throwing compare core; the sign-flip case can be implemented by creating a flipped-c temporary.",
+    "CLAUDE.md 'Hallucination-risk callouts: NaN != NaN' -- NaN throws, not silent zero.",
+    "mpfr/tests/tcmp.c -- source for mined cases."
+  ]
+}

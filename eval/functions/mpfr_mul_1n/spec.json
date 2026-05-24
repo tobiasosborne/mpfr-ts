@@ -1,0 +1,20 @@
+{
+  "function": "mpfr_mul_1n",
+  "class": "misc",
+  "signature": {
+    "params": ["b", "c", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_mul_1n (mpfr/src/mul.c L371-L461). Single-limb multiplication for prec(a) == GMP_NUMB_BITS (= 64) exactly, with prec(b), prec(c) <= 64. The 'n' suffix indicates 'native single limb'. Differs from mul_1: no `sh` shift needed (a's mantissa fills the limb exactly); rb is just the MSB of the low product limb (sb high bit), sb is the rest of the low limb. Output prec is 64. The TS port mirrors via bigint; the bit-arithmetic is the same.",
+  "c_signature": "static int mpfr_mul_1n(mpfr_ptr a, mpfr_srcptr b, mpfr_srcptr c, mpfr_rnd_t rnd_mode)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C takes (a, b, c, rnd) with a's prec fixed at 64. TS takes (b, c, rnd) and returns Result; output prec is implicit (= 64n). Asserts: b.kind == c.kind == 'normal', b.prec <= 64n, c.prec <= 64n, output prec implied as 64n (the function is parameterised only by the GMP_NUMB_BITS-specific calling convention). Sign = b.sign * c.sign. Overflow delegates to mpfr_overflow; underflow omitted.",
+  "refs": [
+    "mpfr/src/mul.c L371-L461 — the C reference body.",
+    "mpfr/src/mul.c L813 — dispatcher routes prec=64 here.",
+    "src/ops/sqr_1n.ts (sibling) — same shape with b==c.",
+    "src/ops/add1sp1n.ts — parallel structure for addition.",
+    "src/ops/overflow.ts — exp-overflow delegate.",
+    "CLAUDE.md 'Hallucination-risk callouts: umul_ppmm output args are first'."
+  ]
+}

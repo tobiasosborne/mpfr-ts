@@ -1,0 +1,24 @@
+{
+  "function": "mpfr_div2_approx",
+  "class": "substrate",
+  "signature": {
+    "params": [
+      "u1",
+      "u0",
+      "v1",
+      "v0"
+    ],
+    "returns": "{Q1: bigint, Q0: bigint}"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_div2_approx (mpfr/src/div.c L47-L103). Given u = u1*B + u0 < v = v1*B + v0 with v normalised (high bit of v1 set), compute Q = Q1*B + Q0 such that Q <= floor(u*B^2/v) <= Q + 21. The result is a LOWER APPROXIMATION of the true 2-limb quotient (off by at most 21). The C algorithm uses __gmpfr_invert_limb_approx for an inverse table lookup. The TS port can implement this via bigint: compute (u1*B + u0) * B^2 / (v1*B + v0) via bigint division, then return the quotient as (Q1, Q0). Alternatively, port the Moller-Granlund refinement faithfully. Either way, output the same 2-limb approximation. Class 'misc'.",
+  "c_signature": "static void mpfr_div2_approx(mpfr_limb_ptr Q1, mpfr_limb_ptr Q0, mp_limb_t u1, mp_limb_t u0, mp_limb_t v1, mp_limb_t v0)",
+  "prec_unit": "bits (single limb)",
+  "divergence_from_c": "C: returns void; out-params Q1, Q0 (mpfr_limb_ptr). TS: takes u1, u0, v1, v0 as bigints in [0, 2^64); returns object {Q1: bigint, Q0: bigint} (both in [0, 2^64)). IMPORTANT -- bit-exact reproduction note: the upstream C uses an asm-level __gmpfr_invert_limb_approx (mpfr/src/invert_limb.h) backed by a 256-entry LUT, which is x86-specific and not portably replicable in C or TS. The golden_driver REPLICATES the rest of the Moller-Granlund algorithm faithfully, but substitutes a portable approximate inverse computed via __uint128_t arithmetic (`floor((B^2 - B*v - 1) / v)`). The resulting (Q1, Q0) is still within the documented 21-unit band of the true quotient, but is NOT bit-identical to libmpfr's asm output. The TS port MUST mirror the golden_driver's portable algorithm exactly -- see golden_driver.c lines 28-50 for the inverse and overall algorithm. As long as the TS port matches the driver's algorithm bit-for-bit, the composite scores 1.0.",
+  "refs": [
+    "mpfr/src/div.c L47-L103 -- the C reference body.",
+    "mpfr/src/invert_limb.h -- __gmpfr_invert_limb_approx (LUT-based inverse).",
+    "src/ops/div_1.ts -- sibling fast-path that uses the same algorithm.",
+    "CLAUDE.md 'Hallucination-risk callouts: umul_ppmm output args are first'.",
+    "CLAUDE.md 'Hallucination-risk callouts: GMP mpn limbs are LITTLE-ENDIAN by limb index'."
+  ]
+}

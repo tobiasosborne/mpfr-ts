@@ -1,0 +1,21 @@
+{
+  "function": "mpfr_mpn_cmp_aux",
+  "class": "substrate",
+  "signature": {
+    "params": [
+      "ap",
+      "bp",
+      "extra"
+    ],
+    "returns": "number"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_mpn_cmp_aux (mpfr/src/div.c L662-L718). Compares two limb arrays {ap, an} and {bp, bn} >> extra, aligned by their MORE significant limbs (MSB-aligned, ie ap[an-1] and bp[bn-1] are the most significant). Returns +1 if a > b, -1 if a < b, 0 if equal. The shift by `extra` (0 or 1) right-shifts b by `extra` bits before the compare, taking into account bp[0] for extra=1 (the bit that 'falls off' the right after the shift). The TS port can collapse this to a single bigint compare: reassemble each array into a bigint (little-endian limb order), shift b right by `extra`, compare. Class 'arithmetic' (50ms).",
+  "c_signature": "static int mpfr_mpn_cmp_aux(mpfr_limb_ptr ap, mp_size_t an, mpfr_limb_ptr bp, mp_size_t bn, int extra)",
+  "prec_unit": "bits (limb-level)",
+  "divergence_from_c": "C: takes (ap, an, bp, bn, extra) \u2014 limb arrays as pointers + lengths, plus extra in {0, 1}. TS: takes (ap: bigint[], bp: bigint[], extra: number) \u2014 pass limb arrays as arrays of bigints (each in [0, 2^64)); the array lengths are implicit in .length. Returns a JS number in {-1, 0, +1}. The TS port can use bigint reassembly (limbs[0] is LSB per GMP convention) + a single compare, OR mirror the C loop limb-by-limb (more faithful to the C algorithm but slower). NB: the C signature uses mp_size_t which is signed long; lengths must be non-negative.",
+  "refs": [
+    "mpfr/src/div.c L662-L718 \u2014 the C reference body.",
+    "src/internal/mpn/cmp.ts \u2014 sibling limb-array compare (no shift).",
+    "CLAUDE.md 'Hallucination-risk callouts: GMP mpn limbs are LITTLE-ENDIAN by limb index' \u2014 limbs[0] is least-significant."
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "function": "mpfr_mul_2",
+  "class": "misc",
+  "signature": {
+    "params": ["b", "c", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_mul_2 (mpfr/src/mul.c L469-L588). Two-limb multiplication fast path: GMP_NUMB_BITS < prec(a) < 2*GMP_NUMB_BITS AND prec(b), prec(c) <= 2*GMP_NUMB_BITS AND prec(a) == prec(b) == prec(c). Algorithm: compute the 4-limb product via three umul_ppmm calls assembled into (h, l) and a sticky tail; if the low bits of l are not 0/-1/-2, the approximation is sufficient (sb=sb2=1); else compute b0*c0 fully. On a high < HIGHBIT, shift left by 1. Extract rb/sb and apply 5-mode rounding. Sign = b.sign * c.sign. The TS port uses bigint multiplication of the two mantissas (each <= 128 bits), giving the full product up to 256 bits; extract the top prec bits and the round/sticky tail. Class 'misc'.",
+  "c_signature": "static int mpfr_mul_2(mpfr_ptr a, mpfr_srcptr b, mpfr_srcptr c, mpfr_rnd_t rnd_mode, mpfr_prec_t p)",
+  "prec_unit": "bits",
+  "divergence_from_c": "Same as mul_1 but for 64 < prec < 128. Output prec equals input precs (asserted). TS bigint substrate does the full multiplication in one operation — no approximate-rounding fast path needed. Sign = b.sign * c.sign. Overflow delegates; underflow omitted.",
+  "refs": [
+    "mpfr/src/mul.c L469-L588 — the C reference body (64<prec<128 case).",
+    "mpfr/src/mul.c L810 — dispatcher routes here.",
+    "src/ops/sqr_2.ts (sibling) — same shape with b==c.",
+    "src/ops/add1sp2.ts — parallel two-limb same-prec arithmetic.",
+    "src/ops/overflow.ts — exp-overflow delegate.",
+    "CLAUDE.md 'Hallucination-risk callouts: umul_ppmm output args are first'."
+  ]
+}

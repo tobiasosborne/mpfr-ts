@@ -1,0 +1,18 @@
+{
+  "function": "mpfr_mpn_cmpzero",
+  "class": "substrate",
+  "signature": {
+    "params": [
+      "ap"
+    ],
+    "returns": "number"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_mpn_cmpzero (mpfr/src/div.c L648-L656). Returns 1 if the limb array {ap, an} is non-zero, 0 if all limbs are zero. C iterates from the high end down (likely-non-zero short-circuit). The TS port: check if any limb is non-zero (bigint OR-fold, or array.some(!== 0n)). Class 'arithmetic'.",
+  "c_signature": "static int mpfr_mpn_cmpzero(mpfr_limb_ptr ap, mp_size_t an)",
+  "prec_unit": "bits (limb-level)",
+  "divergence_from_c": "C: returns 1/0 as int; TS: returns 1/0 as number (or boolean, but matching C's int convention here for parity). C takes (ap, an) \u2014 array pointer + length; TS takes (ap: bigint[]) \u2014 array length implicit. Validates: each ap[i] is bigint in [0, 2^64).",
+  "refs": [
+    "mpfr/src/div.c L648-L656 \u2014 the C reference body.",
+    "CLAUDE.md 'Hallucination-risk callouts: GMP mpn limbs are LITTLE-ENDIAN by limb index'."
+  ]
+}

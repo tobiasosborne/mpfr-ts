@@ -1,0 +1,23 @@
+{
+  "function": "mpfr_mul_1",
+  "class": "misc",
+  "signature": {
+    "params": ["b", "c", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_mul_1 (mpfr/src/mul.c L270-L364; mpfr/src/mul_1_extracted.c L62-L324 is the F*-derived 'WANT_PROVEN_CODE' alternative). Single-limb multiplication fast path: prec(a) < GMP_NUMB_BITS (= 64) AND prec(b), prec(c) <= GMP_NUMB_BITS AND prec(a) == prec(b) == prec(c). Algorithm: ax = EXP(b) + EXP(c); (a0, sb) = umul_ppmm(b0, c0); if a0 < HIGHBIT, shift left by 1 and decrement ax; extract rb = bit (sh-1) of a0; sb |= (a0 & mask) ^ rb; sign = b.sign * c.sign; apply 5-mode rounding; on rounding-carry, bump ax. The TS port uses bigint multiplication. The C function is static; we grade through public mpfr_mul with prec(b) == prec(c) == prec(a) < 64.",
+  "c_signature": "static int mpfr_mul_1(mpfr_ptr a, mpfr_srcptr b, mpfr_srcptr c, mpfr_rnd_t rnd_mode, mpfr_prec_t p)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C takes (a, b, c, rnd, p) — `a` is the output; `p` is read off `a` and equals MPFR_PREC(b)==MPFR_PREC(c) per dispatcher. TS takes (b, c, prec, rnd) and returns Result. b.sign * c.sign determines output sign (the product-of-signs rule — CLAUDE.md callout). Preconditions: b.kind == c.kind == 'normal', b.prec == c.prec == prec, prec in [1, 63]. Underflow handling omitted (locked-schema unbounded exp); overflow delegates to mpfr_overflow. Note the C source has TWO versions: the regular `mpfr_mul_1` (mul.c L270) and the F*-derived `mpfr_mul_1` in mul_1_extracted.c (active only with MPFR_WANT_PROVEN_CODE). The TS port mirrors the regular version (the F* one is bit-equivalent but auto-generated, making it harder to read).",
+  "refs": [
+    "mpfr/src/mul.c L270-L364 — the regular C reference body.",
+    "mpfr/src/mul_1_extracted.c L62-L324 — F*-extracted alternative (equivalent).",
+    "mpfr/src/mul.c L807 — dispatcher routes prec<64 here.",
+    "src/ops/mul.ts — general mpfr_mul that dispatches here.",
+    "src/ops/sqr_1.ts (sibling) — same shape with b==c.",
+    "src/ops/add1sp1.ts — parallel single-limb same-prec arithmetic.",
+    "src/ops/overflow.ts — exp-overflow delegate.",
+    "CLAUDE.md 'Hallucination-risk callouts: umul_ppmm output args are first'.",
+    "CLAUDE.md 'Hallucination-risk callouts: Ternary flag is the sign of (rounded - exact)'."
+  ]
+}

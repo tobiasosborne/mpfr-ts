@@ -1,0 +1,21 @@
+{
+  "function": "mpfr_sqr_1n",
+  "class": "misc",
+  "signature": {
+    "params": ["b", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_sqr_1n (mpfr/src/sqr.c L133-L226). Single-limb square fast path for the special case prec == GMP_NUMB_BITS (= 64) exactly. Differs from sqr_1: no `sh` shift needed (mantissa already exactly fills the limb), rb is just the MSB of the low product limb, sb is the rest of the low limb. The output prec is fixed at 64 (read off `b` since b.prec == 64). On rounding-and-carry, the result mantissa stays at MPFR_LIMB_HIGHBIT (the only single-limb value that overflows on +1 ulp is all-ones, which becomes 2^63). Class 'misc'.",
+  "c_signature": "static int mpfr_sqr_1n(mpfr_ptr a, mpfr_srcptr b, mpfr_rnd_t rnd_mode)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C takes (a, b, rnd); a's prec is fixed at 64 by the dispatcher. TS takes (b, rnd) and returns Result; the output prec is implicit (= 64n = b.prec, which the TS port asserts via MPFRError('EPREC') if b.prec != 64n). The output sign is always +1. C uses umul_ppmm directly on b0; TS uses bigint multiplication of the mantissa (which is already MSB-aligned to 64). Overflow check delegates to mpfr_overflow. Underflow check omitted (per locked-schema policy).",
+  "refs": [
+    "mpfr/src/sqr.c L133-L226 — the C reference body (prec=64 specialization).",
+    "mpfr/src/sqr.c L548 — dispatcher routes prec=64 here.",
+    "src/ops/mul_1n.ts — analogous structure for multiplication.",
+    "src/ops/add1sp1n.ts — parallel single-limb same-prec fast path.",
+    "src/ops/overflow.ts — exponent-overflow delegate.",
+    "CLAUDE.md 'Hallucination-risk callouts: umul_ppmm output args are first'.",
+    "CLAUDE.md 'Hallucination-risk callouts: Ternary flag is the sign of (rounded - exact)'."
+  ]
+}

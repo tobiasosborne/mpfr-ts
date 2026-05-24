@@ -1,0 +1,21 @@
+{
+  "function": "mpfr_get_d_2exp",
+  "class": "misc",
+  "signature": {
+    "params": ["x", "rnd"],
+    "returns": "{value: number, exp: bigint}"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_get_d_2exp (mpfr/src/get_d.c L142-L187). Decomposes an MPFR `x` into a normalised mantissa `value` in [0.5, 1.0) (or in (-1.0, -0.5] for negative `x`) and an integer exponent `exp` such that x ~= value * 2^exp. The C signature passes the exponent through a `long *` out-parameter; the TS port returns an object `{value, exp}`. Singular dispatch: NaN -> value=NaN, exp=0; +/-Inf -> value=+/-Infinity, exp=0; +/-0 -> value=+/-0, exp=0. For normal x: alias `tmp` to x with exp set to 0 (so tmp in [0.5, 1.0) in magnitude), then call mpfr_get_d to get the rounded mantissa; the exponent returned is x.exp (MPFR_GET_EXP convention). If rounding bumps the mantissa to +/-1.0, halve it and bump exp.",
+  "c_signature": "double mpfr_get_d_2exp(long *expptr, mpfr_srcptr src, mpfr_rnd_t rnd_mode)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C: `double mpfr_get_d_2exp(long *expptr, mpfr_srcptr src, mpfr_rnd_t rnd_mode)` -- exp returned via pointer. TS: `mpfr_get_d_2exp(x: MPFR, rnd: RoundingMode) -> {value: number, exp: bigint}`. The mantissa value uses bare JS number (quoted sentinel wire form for NaN/+/-Inf/+/-0). The exp is a bigint (matching the rest of the schema). Note: for singular inputs the C sets *expptr=0; the TS port must return exp=0n. The C documents the invariant `0.5 <= |ret| < 1.0` for normal results; the TS port carries it. Rounding-bump (ret=1.0 -> ret=0.5, exp++) handled per the C source. C uses `long` for exp (typically 64-bit on amd64); the TS bigint can be larger but in practice the MPFR_GET_EXP(x) range is bounded by emax/emin.",
+  "refs": [
+    "mpfr/src/get_d.c L142-L187 -- the C reference body.",
+    "mpfr/src/get_d.c L34-L132 -- mpfr_get_d, the delegate.",
+    "src/ops/get_d.ts -- load-bearing for the mantissa-rounding step.",
+    "src/core.ts L19-L63 -- value model; this function returns a *number*, not an MPFR.",
+    "CLAUDE.md 'Hallucination-risk callouts: NaN != NaN' -- NaN/Inf mantissa.",
+    "CLAUDE.md 'Hallucination-risk callouts: Signed zero is real' -- +/-0 mantissa preserved.",
+    "mpfr/tests/tget_d_2exp.c -- source for mined cases."
+  ]
+}

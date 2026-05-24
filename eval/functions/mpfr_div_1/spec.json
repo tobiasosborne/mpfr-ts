@@ -1,0 +1,21 @@
+{
+  "function": "mpfr_div_1",
+  "class": "misc",
+  "signature": {
+    "params": ["u", "v", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_div_1 (mpfr/src/div.c L108-L251). Single-limb division fast path: prec(q) == prec(u) == prec(v) = p < GMP_NUMB_BITS (= 64). Algorithm: qx = EXP(u) - EXP(v); extra = (u0 >= v0) ? 1 : 0; if extra, u0 -= v0; compute approximate quotient via Moller-Granlund (1 / v0 approximation: inv = ~B/v0 - B; rb = u0 * inv high; q0 = rb >> extra); if low sh-1 bits of q0 are 0 or all-1, fall back to multi-iteration refinement (subtract, fix-up); extract rb (round bit) and sb (sticky), apply 5-mode rounding. Sign = u.sign * v.sign. The TS port can compute the quotient exactly using bigint division `(u0 << (2*sh+1)) / v0` or similar, then extract the round/sticky bits -- sidestepping the Moller-Granlund approximation entirely.",
+  "c_signature": "static int mpfr_div_1(mpfr_ptr q, mpfr_srcptr u, mpfr_srcptr v, mpfr_rnd_t rnd_mode)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C takes (q, u, v, rnd) -- q's prec is read off itself; the dispatcher enforces equality with u and v's prec. TS takes (u, v, prec, rnd) and returns Result. The C source uses an invert-limb-approx Moller-Granlund algorithm (mpfr/src/invert_limb.h, plus refinement loop); the TS port doesn't need this because bigint division gives the exact quotient and remainder. Sign = u.sign * v.sign. Overflow/underflow delegates to mpfr_overflow / mpfr_underflow as in the C source -- but the TS port omits underflow per locked-schema policy.",
+  "refs": [
+    "mpfr/src/div.c L108-L251 -- the C reference body (prec<64 case).",
+    "mpfr/src/div.c L839 -- dispatcher routes here.",
+    "mpfr/src/invert_limb.h -- Moller-Granlund inverse approximation; TS doesn't need.",
+    "src/ops/div.ts -- general mpfr_div that dispatches here.",
+    "src/ops/overflow.ts -- exp-overflow delegate.",
+    "CLAUDE.md 'Hallucination-risk callouts: Correct rounding does not mean unique output' -- division result is uniquely determined.",
+    "CLAUDE.md 'Hallucination-risk callouts: Ternary flag is the sign of (rounded - exact)'."
+  ]
+}

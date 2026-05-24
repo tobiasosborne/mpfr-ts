@@ -1,0 +1,18 @@
+{
+  "function": "mpfr_div_2exp",
+  "class": "misc",
+  "signature": {
+    "params": ["x", "n", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_div_2exp (mpfr/src/div_2exp.c L28-L32). Divide an MPFR `x` by 2^n where n is an UNSIGNED long, rounded to `prec` bits under `rnd`. This is an OBSOLETE alias for mpfr_div_2ui — the C reference body is a single-line delegate. The TS port mirrors: forward (x, n, prec, rnd) to mpfr_div_2ui unchanged. Class 'misc'; O(1) modulo mpfr_div_2ui cost.",
+  "c_signature": "int mpfr_div_2exp(mpfr_ptr y, mpfr_srcptr x, unsigned long int n, mpfr_rnd_t rnd_mode)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C mutates `y`; TS returns Result. The argument `n` is unsigned long (0..2^64-1) passed as a non-negative bigint. Singular inputs propagate through mpfr_div_2ui. For normal x, the exponent shifts by -n; the mantissa and sign are preserved. The MPFR_SAVE_EXPO / mpfr_check_range pattern is dropped — TS has no global emax/emin state.",
+  "refs": [
+    "mpfr/src/div_2exp.c L28-L32 — the C reference body (single-line delegate).",
+    "src/ops/div_2ui.ts — the load-bearing delegate.",
+    "src/core.ts L173-L176 — Result return shape.",
+    "CLAUDE.md 'Hallucination-risk callouts: Signed zero is real' — preserved through 2^-n division."
+  ]
+}

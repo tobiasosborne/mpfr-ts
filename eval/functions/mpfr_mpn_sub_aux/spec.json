@@ -1,0 +1,22 @@
+{
+  "function": "mpfr_mpn_sub_aux",
+  "class": "substrate",
+  "signature": {
+    "params": [
+      "ap",
+      "bp",
+      "cy",
+      "extra"
+    ],
+    "returns": "{result: bigint[], borrow: bigint}"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_mpn_sub_aux (mpfr/src/div.c L723-L744). Subtracts {bp, n} >> extra plus carry-in `cy` from {ap, n}, in-place, and returns the borrow-out. The shift by `extra` (0 or 1) right-shifts b by `extra` bits before the limb-by-limb subtraction (with bp[1] contributing the top bit of bp[0]'s shifted form). The TS port returns the modified ap array in `result` and the borrow in `borrow` (since TS has no in-place mutation contract \u2014 the locked schema is immutable). Class 'arithmetic'.",
+  "c_signature": "static mp_limb_t mpfr_mpn_sub_aux(mpfr_limb_ptr ap, mpfr_limb_ptr bp, mp_size_t n, mp_limb_t cy, int extra)",
+  "prec_unit": "bits (limb-level)",
+  "divergence_from_c": "C: mutates ap in place, returns borrow as mp_limb_t. TS: returns {result: bigint[], borrow: bigint} \u2014 the modified ap is in `result`, the borrow in `borrow`. Both result and borrow are bigints in [0, 2^64). Inputs ap, bp are arrays of bigints; cy is bigint in {0n, 1n}; extra is JS number in {0, 1}. The TS port can either (a) mirror the C limb-by-limb loop with explicit carry tracking, or (b) reassemble both arrays into bigints, perform `a - (b >> extra) - cy` with bigint arithmetic, then re-split into limbs (computing borrow from any underflow). Both produce identical results.",
+  "refs": [
+    "mpfr/src/div.c L723-L744 \u2014 the C reference body.",
+    "src/internal/mpn/sub_n.ts \u2014 sibling subtraction without the shift.",
+    "CLAUDE.md 'Hallucination-risk callouts: GMP mpn limbs are LITTLE-ENDIAN by limb index'."
+  ]
+}

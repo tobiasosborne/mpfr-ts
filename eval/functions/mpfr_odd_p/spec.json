@@ -1,0 +1,17 @@
+{
+  "function": "mpfr_odd_p",
+  "class": "arithmetic",
+  "signature": {
+    "params": ["x"],
+    "returns": "boolean"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_odd_p (mpfr/src/odd_p.c L25-L71): 'is odd integer' predicate. Returns true iff x is an exact odd integer. The C documentation says: assumes y is not singular (NaN/Inf/zero are not allowed). The TS port relaxes that — for singular inputs (NaN/Inf/zero), returns false (none are odd integers). Algorithm for normal x: (1) If exp <= 0, |x| < 1 → not odd integer (return false). (2) If exp > prec, x is a multiple of 2^(exp-prec) where exp-prec >= 1, so x is even → not odd (return false). (3) 0 < exp <= prec: x = 1xxxxxxxxxt.zzzzz where t is the unit bit and z are fractional bits. Odd iff t == 1 AND all z bits are zero. In bigint terms: bit at position (prec - exp) of mant must be 1, AND bits below position (prec - exp) must all be zero.",
+  "c_signature": "int mpfr_odd_p(mpfr_srcptr y)",
+  "divergence_from_c": "C asserts not singular via MPFR_ASSERTD (compiled out in release); TS handles singular inputs gracefully by returning false (NaN/Inf/zero are not odd integers). C returns int; TS returns boolean. The bit-level test in the C source uses limb-array iteration; the TS port uses a single bigint mask check.",
+  "refs": [
+    "mpfr/src/odd_p.c L25-L71 — the C reference body.",
+    "src/core.ts L113-L135 — MPFR value model.",
+    "CLAUDE.md 'Hallucination-risk callouts: mpfr_prec_t is in bits, not decimal digits'.",
+    "src/ops/integer_p.ts — sibling predicate; same prec/exp bit-arithmetic."
+  ]
+}

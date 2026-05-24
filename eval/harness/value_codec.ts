@@ -578,7 +578,11 @@ function compareField(actual: unknown, expected: unknown): string | null {
     return `expected bigint ${expected}, got ${typeof actual} (${String(actual)})`;
   }
   if (typeof expected === 'number') {
-    return actual === expected ? null : `expected ${expected}, got ${String(actual)}`;
+    // Use Object.is so NaN matches NaN, and +0/-0 are distinguished —
+    // mirrors the scalar branch in compareOutput. (`===` would reject
+    // NaN==NaN, breaking objects whose number fields can be NaN, e.g.
+    // mpfr_get_d_2exp's {value:number, exp:bigint} return shape.)
+    return Object.is(actual, expected) ? null : `expected ${expected}, got ${String(actual)}`;
   }
   if (typeof expected === 'string') {
     return actual === expected ? null : `expected "${expected}", got "${String(actual)}"`;

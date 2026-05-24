@@ -1,0 +1,17 @@
+{
+  "function": "mpfr_regular_p",
+  "class": "arithmetic",
+  "signature": {
+    "params": ["x"],
+    "returns": "boolean"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_regular_p: 'is regular' predicate. Returns true iff x is a finite, non-zero, non-NaN value — i.e. kind === 'normal' under the locked schema. The C body is a single-line `return MPFR_IS_SINGULAR(x) == 0` where MPFR_IS_SINGULAR detects NaN, Inf, or zero (mpfr/src/mpfr-impl.h via sentinel exponent). Trivial port. Class 'arithmetic' (50ms budget).",
+  "c_signature": "int mpfr_regular_p(mpfr_srcptr x)",
+  "divergence_from_c": "C returns int (non-zero/zero); TS returns boolean. Never throws — well-defined for every MPFR kind.",
+  "refs": [
+    "mpfr/src/isregular.c L24-L28 — the C reference body.",
+    "src/core.ts L73 — MPFRKind discriminant ('normal' is the regular case).",
+    "eval/functions/mpfr_inf_p/spec.json — sibling predicate; same shape.",
+    "mpfr/tests/tisnan.c — source for the `mined` cases (predicate family shares test file)."
+  ]
+}

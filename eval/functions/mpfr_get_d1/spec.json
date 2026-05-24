@@ -1,0 +1,20 @@
+{
+  "function": "mpfr_get_d1",
+  "class": "misc",
+  "signature": {
+    "params": ["x"],
+    "returns": "number"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_get_d1 (mpfr/src/get_d.c L134-L139). Returns the double closest to x, using the LIBRARY-DEFAULT rounding mode (__gmpfr_default_rounding_mode, settable via mpfr_set_default_rounding_mode). One-line delegate to mpfr_get_d with the default mode. The TS port mirrors: read the module-level default-rounding-mode (initialised to 'RNDN'), then call mpfr_get_d(x, that). This is an OBSOLETE function preserved for ABI compatibility; new code should use mpfr_get_d directly. Class 'misc' (1000ms budget).",
+  "c_signature": "double mpfr_get_d1(mpfr_srcptr src)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C reads global __gmpfr_default_rounding_mode (a thread-local); TS reads a module-level mutable RoundingMode (initialised to 'RNDN'). For testing: the golden driver does not set the default -- every TS test starts from the module's initial 'RNDN', so the golden compares against libmpfr-with-default-RNDN. (If the production port has a settable default-rounding-mode, the grader's stateless workers see the default.) C returns double; TS returns number. Singular handling per mpfr_get_d: NaN -> NaN; +/-Inf -> +/-Infinity; +/-0 -> +/-0.",
+  "refs": [
+    "mpfr/src/get_d.c L134-L139 -- the C reference body.",
+    "mpfr/src/get_d.c L34-L132 -- mpfr_get_d, the delegate.",
+    "src/ops/get_d.ts -- production port of the delegate.",
+    "src/core.ts L19-L63 -- value model.",
+    "CLAUDE.md 'Hallucination-risk callouts: Rounding mode count is FIVE' -- RNDN is the canonical default.",
+    "mpfr/tests/tget_d.c -- source for mined cases (sibling function)."
+  ]
+}

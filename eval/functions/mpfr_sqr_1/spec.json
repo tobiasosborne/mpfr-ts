@@ -1,0 +1,24 @@
+{
+  "function": "mpfr_sqr_1",
+  "class": "misc",
+  "signature": {
+    "params": ["b", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_sqr_1 (mpfr/src/sqr.c L32-L130). Single-limb square fast path: prec(b) <= GMP_NUMB_BITS (= 64) AND prec(a) == prec(b) < 64. Algorithm: ax = 2*EXP(b); compute (a0, sb) = umul_ppmm(b0, b0) — the 128-bit product as two 64-bit limbs; if a0 has unset MSB (top half < 2^63), shift left by 1 and decrement ax; extract round bit rb = bit (sh-1) of a0; compute sticky sb |= (a0 & mask) ^ rb; mask off the rounding bits of a0; sign is POS (squaring always yields +); apply 5-mode rounding per the standard MPFR rule; on rounding carry, bump exponent and re-check overflow. The TS port mirrors via bigint: convert b.mant (MSB-aligned to prec) to limb form via << sh, multiply, then run the same rb/sb/round dance. The C function is static; we exercise via the public mpfr_sqr with arguments forced into the dispatch path (mpfr/src/sqr.c L539-L554).",
+  "c_signature": "static int mpfr_sqr_1(mpfr_ptr a, mpfr_srcptr b, mpfr_rnd_t rnd_mode, mpfr_prec_t p)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C takes (a, b, rnd, p) — `a` is the output slot (mutated in place); `p` is the precision read from `a` (which the dispatcher guarantees equals MPFR_PREC(b)). TS takes (b, prec, rnd) and returns Result {value, ternary}. The implicit equal-prec constraint between input b and output prec is asserted in the TS port via MPFRError('EPREC') if prec != b.prec OR prec >= 64 OR prec < 1 OR b.kind != 'normal'. Sign of output is always +1 (squaring). The overflow check (ax > EMAX_DEFAULT = 2^30-1) delegates to mpfr_overflow with sign=+1. The underflow check in the C source is omitted in TS: per CLAUDE.md and ops/mul_2si.ts, the locked schema places no upper or lower bound on `exp`. Returning the unrounded normal value is acceptable; the test cases stay within the default range.",
+  "refs": [
+    "mpfr/src/sqr.c L32-L130 — the C reference body (prec < 64 specialization).",
+    "mpfr/src/sqr.c L539-L554 — mpfr_sqr dispatcher; routes prec=prec(b)<64 here.",
+    "src/ops/sqr.ts — general mpfr_sqr (if exists; check production).",
+    "src/ops/mul.ts — analogous fast paths reused for sqr.",
+    "src/ops/add1sp1.ts — parallel structure (single-limb fast path with bigint substrate).",
+    "src/ops/overflow.ts — exponent-overflow delegate.",
+    "src/core.ts L131-L134 — TS-side mantissa MSB-alignment.",
+    "src/core.ts L173-L176 — Result return shape.",
+    "CLAUDE.md 'Hallucination-risk callouts: umul_ppmm output args are first' — (hi, lo) = umul_ppmm(a, b).",
+    "CLAUDE.md 'Hallucination-risk callouts: Ternary flag is the sign of (rounded - exact)' — squaring always yields positive ternary direction."
+  ]
+}
