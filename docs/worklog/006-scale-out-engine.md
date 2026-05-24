@@ -213,6 +213,64 @@ The 85-port library is now a substantial chunk of MPFR. The remaining
    `docs/worklog/NNN-phase-transition.md` first).
 5. Begin transcendentals with explicit prec-extension prompt template.
 
+## Addendum (end-of-session user directive)
+
+The user has set the next-session target explicitly: **try a 30-function
+mega-batch** as the first move. Cost-discipline is the optimization
+target, not wall time.
+
+Concrete contract for the next agent:
+
+- **One opus prep dispatch of 30 functions**. This stress-tests the
+  empirical ceiling discussed in §"Recommended next moves". Cost
+  envelope: ~700K opus tokens / ~75-90 min wall (linear extrapolation
+  from the 15-fn batch at 387K / 45 min). If opus hits context
+  exhaustion mid-prep, that's the discovery; capture it.
+- **Sonnet dispatches in WAVES of 5-10 in parallel, not all 30 at
+  once.** The user's framing: spawning all 30 sonnets together risks
+  ~5-10 simultaneous failures or near-miss iterations that burn tokens.
+  Smaller waves let each wave's signal (one-shot rate, iteration count,
+  any prompt-issue patterns) inform the next wave's dispatch.
+- **Wave sequencing**: dispatch wave 1 (5-10 sonnets), await all,
+  spot-check + --grade the subset. If clean, dispatch wave 2. If any
+  fail, diagnose before launching wave 3. Continue until all 30 are
+  graded.
+- **Then commit + push**. The `--ship` mode (mpfr-ts-9vb) handles the
+  atomic commit+push once all 30 are graded. Run it once with all 30
+  function names after the final wave completes. If `mpfr-ts-NEW1`
+  (--ship path rewrite) has been landed first, --ship handles
+  promote-with-rewrite too; otherwise the orchestrator does the manual
+  python rewrite as in this session's mega-batch.
+
+**Picking the 30**: bias toward coherent themes (so the opus prep can
+share insights across functions). Suggested groupings the next agent
+can pick from:
+
+- Conversion family (~15): `mpfr_set_q`, `mpfr_set_str`, `mpfr_get_str`,
+  `mpfr_get_z_2exp` already in callgraph but check if not done,
+  `mpfr_set_si_2exp`, `mpfr_set_ui_2exp`, `mpfr_get_si_2exp`,
+  `mpfr_set_d_2exp` variants, `mpfr_set_f`, `mpfr_get_f`, etc.
+- Modular/remainder (~10): `mpfr_fmod`, `mpfr_fmod_ui`, `mpfr_modf`,
+  `mpfr_remainder`, `mpfr_remquo`, `mpfr_fmodquo`, etc.
+- Division variants (~5): `mpfr_div_si`, `mpfr_div_ui`,
+  `mpfr_si_div`, `mpfr_ui_div`, plus the single-limb fast paths
+  if pickable.
+
+Or, to maximize coherence-per-batch: pick 30 conversion-family functions
+in one batch. The opus prep's "shared subtleties" advantage is highest
+when the 30 are structurally similar.
+
+**Why cost-not-time matters**: parallel waves smaller than the
+theoretical max have a marginal-time penalty but a real cost upside —
+failed sonnets cost full prompt+output tokens with no port produced. A
+30-wide simultaneous dispatch with 2-3 failures wastes ~150K sonnet
+tokens; 3-6 sequenced waves of 5-10 with a single failure waste ~30K
+and the issue can be diagnosed before launching the next wave.
+
+**Empirical headroom check still applies**: if the 30-fn opus prep
+exhausts context mid-run, the next iteration is N parallel preps of
+~10-15 each — the SDK-direct path worklog 005 deferred.
+
 ## File map (post-session)
 
 ```
