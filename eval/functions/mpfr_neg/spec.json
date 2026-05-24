@@ -1,0 +1,20 @@
+{
+  "function": "mpfr_neg",
+  "class": "arithmetic",
+  "signature": {
+    "params": ["x", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_neg: negate an MPFR value, round per rnd at the caller-supplied prec, return {value, ternary}. The C function mutates rop in place (rop's prec is set independently) and returns the ternary as int; the TS port takes prec explicitly and returns the canonical Result shape from src/core.ts. Class is 'arithmetic' (50ms per-case budget): mpfr_neg is a trivial sign-flip plus an optional rounding step that bottoms out in the shared roundMantissa substrate (src/internal/mpfr/round_raw.ts) — same hot-loop complexity as mpfr_set, comfortably inside 50ms even at PREC_MAX-neighbourhood. The signed-zero observability rule and the new-sign rounding-direction rule are the two subtle bits.",
+  "c_signature": "int mpfr_neg(mpfr_t rop, mpfr_srcptr op, mpfr_rnd_t rnd)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C mutates rop (which carries prec) and returns the ternary as a separate int; TS takes prec as a positional argument and returns {value, ternary} per the locked Result schema (src/core.ts L173–L176). Behaviour matches the C reference exactly: NaN → NaN (canonical NAN_VALUE; C sets ERANGE but our schema collapses every NaN to one sentinel); ±Inf → flipped-sign Inf; ±0 → flipped-sign zero (signed zero is observable); normal → rounded magnitude with flipped sign, using the NEW sign for rounding direction (mpfr_set4's signb parameter, mpfr/src/set.c L58).",
+  "refs": [
+    "mpfr/src/neg.c L24–L37 — the C reference. The alias-case in-place branch just flips the sign bit (MPFR_CHANGE_SIGN); the general path delegates to mpfr_set4(a, b, rnd_mode, -MPFR_SIGN(b)), which is the load-bearing primitive.",
+    "mpfr/src/set.c L25–L64 — mpfr_set4. The same-prec branch (L45–L52) copies mantissa with ternary 0; the general branch (L54–L63) calls MPFR_RNDRAW with the signb passed in (so rounding direction follows the OUTPUT's sign, not the source's).",
+    "src/internal/mpfr/round_raw.ts — the shared substrate primitive used for the prec < x.prec rounding step.",
+    "src/ops/abs.ts — sibling op with structurally identical dispatch; differs only in sign override (always +1 there).",
+    "src/core.ts — locked MPFR / RoundingMode / Result / Sign types; posInf / negInf / posZero / negZero / NAN_VALUE.",
+    "CLAUDE.md 'Hallucination-risk callouts' — Signed zero is observable (sign flip propagates); ternary is sign of (rounded - exact) AT THE RESULT SIGN; rounding-mode count is FIVE; NaN ≠ NaN (NaN propagates to NAN_VALUE without ERANGE in our schema)."
+  ]
+}

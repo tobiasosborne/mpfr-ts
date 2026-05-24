@@ -1,0 +1,17 @@
+{
+  "function": "mpfr_sgn",
+  "class": "arithmetic",
+  "signature": {
+    "params": ["x"],
+    "returns": "number"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_sgn: return -1/0/+1 reflecting the sign of an MPFR value. Class is 'arithmetic' (50ms per-case budget): a single kind dispatch + sign read; comfortably inside 50ms at any prec. Return TYPE is plain JS `number`, NOT bigint — the result {-1, 0, +1} fits trivially and matches the C `int` return.",
+  "c_signature": "int mpfr_sgn(mpfr_srcptr op)",
+  "divergence_from_c": "C returns 0 AND sets the erange flag on NaN input; the idiomatic TS port THROWS MPFRError('EDOMAIN', ...) on any NaN operand. This is the documented domain-error divergence per CLAUDE.md 'Hallucination-risk callouts: NaN ≠ NaN', and matches the convention already established by mpfr_cmp (which uses the same EDOMAIN throw on NaN). The grader therefore CANNOT exercise NaN cases (a throw is graded as n_throw, not a pass) — the golden master skips them. For all four non-NaN kinds the behaviour mirrors C exactly: zero (regardless of sign field) returns 0; ±Inf returns the sign; normal returns the sign.",
+  "refs": [
+    "mpfr/src/sgn.c L24–L39 — the C reference. NaN sets ERANGE and returns 0 (L31–L35); zero returns 0 unconditionally (L29–L30); ±Inf and normal both return MPFR_INT_SIGN (L38).",
+    "src/ops/cmp.ts — adjacent port establishing the 'throw EDOMAIN on NaN, return plain number' convention this port follows.",
+    "src/core.ts — locked MPFR value type, MPFRError class.",
+    "CLAUDE.md 'Hallucination-risk callouts' — NaN ≠ NaN (throws here, not return 0); signed zero is observable for arithmetic but NOT for sgn (sgn(±0) == 0)."
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "function": "mpfr_sub",
+  "class": "arithmetic",
+  "signature": {
+    "params": ["a", "b", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_sub: subtract two MPFR values at the caller-supplied prec, rounded per rnd, returning {value, ternary}. Implemented as composition over mpfr_add via struct-rebuild sign flip on b — no mpfr_neg call (which would risk a double-rounding bug on the prec<x.prec path); no rnd_mode inversion (which the C sub.c does for sub1/add1sp dispatch but isn't needed when delegating to the public mpfr_add). NaN is short-circuited to NAN_VALUE before the sign-flip because flipping NaN's canonical sign=1 to -1 would violate validate()'s NaN-shape invariant. Aliasing (sub(x, x)) is alias-correct by construction — cancellation routes through addNormalNormal's |a|==|b| branch.",
+  "c_signature": "int mpfr_sub(mpfr_t rop, mpfr_srcptr op1, mpfr_srcptr op2, mpfr_rnd_t rnd)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C mutates rop (rop's prec is set independently) and returns the ternary as a separate int; TS takes prec as a positional argument and returns {value, ternary} per the locked Result schema. Behaviour matches the C reference exactly: NaN propagation, Inf-Inf=NaN, ±0-±0 follows rnd_mode (RNDD → -0 unless both signs cancel exactly to +; other modes → +0), cancellation produces signed zero per cancellationZeroSign rule inherited from mpfr_add.",
+  "refs": [
+    "mpfr/src/sub.c L24–L133 — the C reference. The fast-path branches (mpfr_sub1sp / mpfr_add1sp) are perf optimisations the TS port does not need; mpfr_add's bigint arithmetic is already exact.",
+    "src/ops/add.ts — the delegate; mpfr_sub is composition over it.",
+    "src/core.ts L113–L135 — MPFR value shape; spread is safe because all fields are primitive.",
+    "CLAUDE.md 'Hallucination-risk callouts: Signed zero is real' — sign flip propagates; 'NaN ≠ NaN' — NaN short-circuit preserves the canonical NAN_VALUE.",
+    "mpfr/tests/tsub.c — source for the mined cases."
+  ]
+}

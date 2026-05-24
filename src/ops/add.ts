@@ -126,7 +126,7 @@
  *     direction, rounding-mode count.
  */
 
-import type { MPFR, Result, RoundingMode, Sign, Ternary } from '../core.ts';
+import type { MPFR, Result, RoundingMode, Sign } from '../core.ts';
 import {
   MPFRError,
   NAN_VALUE,
@@ -139,110 +139,15 @@ import {
 } from '../core.ts';
 import { mpn_add_n } from '../internal/mpn/add_n.ts';
 import { mpn_sub_n } from '../internal/mpn/sub_n.ts';
+import { roundMantissa } from '../internal/mpfr/round_raw.ts';
 
-// ---------------------------------------------------------------------------
-// Rounding primitive — duplicated from set_d.ts / get_d.ts pending the
-// substrate extraction noted in those files. Once mpfr_add, mpfr_set_d,
-// and mpfr_get_d all need this we have three consumers — the trigger to
-// extract a `src/internal/mpfr/round_raw.ts` helper. Holding off here to
-// match the convention already established in set_d.ts.
-// ---------------------------------------------------------------------------
-
-interface RoundedMantissa {
-  readonly mant: bigint;
-  readonly exp: bigint;
-  readonly ternary: Ternary;
-}
-
-/**
- * Round a source-precision mantissa down to `outPrec` bits per `rnd`.
- *
- * Pre-conditions:
- *   - `srcMant >= 2^(srcPrec - 1)` and `srcMant < 2^srcPrec` — MSB-aligned.
- *   - `srcPrec > outPrec` — the lossless `srcPrec <= outPrec` case is
- *     handled by the caller without entering this function.
- *   - `outPrec >= 1`.
- *
- * Algorithm and ternary computation mirror set_d.ts's roundMantissa
- * exactly; see that file for full commentary on the RNDN tie-to-even
- * branch and the carry-out handling.
- *
- * Ref: src/ops/set_d.ts § roundMantissa.
- * Ref: mpfr/src/round_raw_generic.c — the canonical primitive.
- */
-function roundMantissa(
-  srcMant: bigint,
-  srcPrec: bigint,
-  srcExp: bigint,
-  outPrec: bigint,
-  sign: Sign,
-  rnd: RoundingMode,
-): RoundedMantissa {
-  const k = srcPrec - outPrec;
-  const trunc = srcMant >> k;
-  const droppedMask = (1n << k) - 1n;
-  const dropped = srcMant & droppedMask;
-
-  if (dropped === 0n) {
-    return { mant: trunc, exp: srcExp, ternary: 0 };
-  }
-
-  let increment: boolean;
-  switch (rnd) {
-    case 'RNDZ':
-      increment = false;
-      break;
-    case 'RNDA':
-      increment = true;
-      break;
-    case 'RNDD':
-      increment = sign === -1;
-      break;
-    case 'RNDU':
-      increment = sign === 1;
-      break;
-    case 'RNDN': {
-      const half = 1n << (k - 1n);
-      if (dropped > half) {
-        increment = true;
-      } else if (dropped < half) {
-        increment = false;
-      } else {
-        // Tie: ties-to-even.
-        increment = (trunc & 1n) === 1n;
-      }
-      break;
-    }
-    default: {
-      const _exhaustive: never = rnd;
-      void _exhaustive;
-      throw new MPFRError('EROUND', `unknown rounding mode: ${String(rnd)}`);
-    }
-  }
-
-  if (!increment) {
-    return {
-      mant: trunc,
-      exp: srcExp,
-      ternary: sign === 1 ? -1 : 1,
-    };
-  }
-
-  const incremented = trunc + 1n;
-  const upperBound = 1n << outPrec;
-  if (incremented === upperBound) {
-    return {
-      mant: upperBound >> 1n,
-      exp: srcExp + 1n,
-      ternary: sign === 1 ? 1 : -1,
-    };
-  }
-  return {
-    mant: incremented,
-    exp: srcExp,
-    ternary: sign === 1 ? 1 : -1,
-  };
-}
+// Note: the local copy of `roundMantissa` previously defined here has
+// been promoted to the substrate at `src/internal/mpfr/round_raw.ts`
+// alongside identical duplicates that lived in `set_d.ts`, `get_d.ts`,
+// and `mul.ts`. The extraction was triggered when `mul.ts` became the
+// fourth caller (see CLAUDE.md "don't extract until N callers force
+// it"). All four ops now import the same primitive. Ref:
+// src/internal/mpfr/round_raw.ts for the algorithm commentary.
 
 /**
  * Validate the public-boundary arguments. Throws `MPFRError` on bad

@@ -1,0 +1,18 @@
+{
+  "function": "mpfr_set_inf",
+  "class": "misc",
+  "signature": {
+    "params": ["prec", "sign"],
+    "returns": "MPFR"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_set_inf: construct a signed-infinity MPFR at the requested precision. The immutable schema carries prec on Inf values (downstream ops read it; see mpfr_add(+Inf, x, prec, rnd) which uses the explicit prec). The C side accepts any int as sign with 'non-negative → +Inf' coercion; the TS surface restricts sign to 1|-1 strictly, same reasoning as set_zero.",
+  "c_signature": "void mpfr_set_inf(mpfr_ptr x, int sign)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C takes a pre-allocated mpfr_t (prec is implicit) and silently coerces non-negative to +Inf; TS takes prec as a positional bigint and a strict Sign (1|-1), throwing on anything else so the call site commits.",
+  "refs": [
+    "mpfr/src/set_inf.c L24–L32 — the C reference: MPFR_SET_INF(x); if (sign >= 0) MPFR_SET_POS(x); else MPFR_SET_NEG(x).",
+    "src/core.ts L258–L271 — posInf / negInf constructors.",
+    "src/core.ts L75–L90 — Sign discriminant.",
+    "CLAUDE.md Law 4 — library coherence."
+  ]
+}

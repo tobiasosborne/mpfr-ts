@@ -1,0 +1,20 @@
+{
+  "function": "mpfr_abs",
+  "class": "arithmetic",
+  "signature": {
+    "params": ["x", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_abs: take the absolute value of an MPFR, round per rnd at the caller-supplied prec, return {value, ternary}. The C function mutates rop in place and returns the ternary as int; the TS port takes prec explicitly and returns the canonical Result shape from src/core.ts. Class is 'arithmetic' (50ms per-case budget): same complexity as mpfr_neg — a sign override plus an optional shared roundMantissa call. The |±0| = +0 collapse is the most subtle invariant; the new-sign rounding-direction rule (always +1) makes RNDU/RNDD behave correctly when prec < x.prec.",
+  "c_signature": "int mpfr_abs(mpfr_t rop, mpfr_srcptr op, mpfr_rnd_t rnd)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C is a macro (mpfr/src/mpfr.h L970: #define mpfr_abs(a,b,r) mpfr_set4(a,b,r,1)) plus an out-of-line same-name definition for the alias case (mpfr/src/set.c L83–L96); both reduce to 'copy b with sign forced positive, rounded to prec'. TS takes prec explicitly and returns {value, ternary} per the locked Result schema. Behaviour: NaN → NaN; ±Inf → +Inf; ±0 → +0 (signed-zero collapse, contrast with arithmetic where +0/-0 differ); normal → +|x| rounded to prec, using +1 as the rounding-direction sign (mpfr_set4's signb parameter).",
+  "refs": [
+    "mpfr/src/set.c L83–L96 — the out-of-line mpfr_abs alias handler (a == b case). The general path is the macro at mpfr/src/mpfr.h L970, expanding to mpfr_set4(a, b, r, 1) — sign forced positive.",
+    "mpfr/src/set.c L25–L64 — mpfr_set4. The signb parameter (here always +1 for abs) drives MPFR_RNDRAW; the same-prec branch copies the mantissa exactly with ternary 0.",
+    "src/internal/mpfr/round_raw.ts — the shared substrate primitive used for the prec < x.prec rounding step. Pass sign=1.",
+    "src/ops/neg.ts — sibling op with structurally identical dispatch; differs only in sign override (-x.sign there; always +1 here).",
+    "src/core.ts — locked types; posInf / posZero / NAN_VALUE constructors.",
+    "CLAUDE.md 'Hallucination-risk callouts' — Signed zero observable in arithmetic but |±0| = +0 in abs; ternary direction is sign of (rounded - exact) AT THE RESULT SIGN (which is always +1 for non-NaN abs results); rounding-mode count is FIVE."
+  ]
+}

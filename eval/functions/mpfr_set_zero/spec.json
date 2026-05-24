@@ -1,0 +1,19 @@
+{
+  "function": "mpfr_set_zero",
+  "class": "misc",
+  "signature": {
+    "params": ["prec", "sign"],
+    "returns": "MPFR"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_set_zero: construct a signed-zero MPFR at the requested precision. Signed zero is observable in MPFR rounding (CLAUDE.md 'Signed zero is real'), so +0 and -0 are distinct return values — a port that drops sign on zero loses the rounding-edge-case observability. The C side accepts any int and treats non-negative as +; the TS surface restricts sign to 1|-1 strictly, throwing MPFRError(EPREC) on anything else so the contract is explicit at the call site.",
+  "c_signature": "void mpfr_set_zero(mpfr_ptr x, int sign)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C takes a pre-allocated mpfr_t (prec is implicit in the slot) and accepts any int as sign with 'non-negative → +0' coercion; TS takes prec as a positional bigint argument and a strict Sign (1|-1) — runtime sign=0 or other values throw MPFRError(EPREC) rather than silently producing +0. The strict shape forces callers to commit to a sign at the call site; the C silent-coerce-on-zero rule is the wrong default for an immutable-schema port.",
+  "refs": [
+    "mpfr/src/set_zero.c L24–L30 — the C reference: mpfr_set_ui(x, 0, MPFR_RNDN); if (sign < 0) MPFR_SET_NEG(x).",
+    "src/core.ts L278–L292 — posZero / negZero constructors; both run the assertPrec bounds check.",
+    "src/core.ts L75–L90 — Sign discriminant; signed zero is observable.",
+    "CLAUDE.md 'Hallucination-risk callouts: Signed zero is real' — +0 and -0 are distinct MPFR values; the sign must survive through every op.",
+    "CLAUDE.md Law 4 — library coherence."
+  ]
+}

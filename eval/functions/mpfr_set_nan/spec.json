@@ -1,0 +1,19 @@
+{
+  "function": "mpfr_set_nan",
+  "class": "misc",
+  "signature": {
+    "params": [],
+    "returns": "MPFR"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_set_nan: return the canonical NAN_VALUE. The C function mutates an mpfr_t slot in place to NaN at the slot's pre-existing precision; the immutable TS schema folds every NaN to a single sentinel (NAN_VALUE, src/core.ts L243) with prec=0n by convention, so the TS port takes no arguments and returns the singleton. The function form (rather than just exposing the constant) lets the harness grade this as its own port-and-golden pair and gives downstream library code an idiomatic call shape that mirrors the C namespace.",
+  "c_signature": "void mpfr_set_nan(mpfr_ptr x)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C takes a pre-allocated mpfr_t whose prec is preserved across the call and sets a global NaN flag; TS takes no arguments and returns the prec=0n NAN_VALUE singleton (src/core.ts L103–L107 documents the schema convention that NaN has no meaningful precision since no downstream op preserves it).",
+  "refs": [
+    "mpfr/src/set_nan.c L25–L30 — the C reference: MPFR_SET_NAN(x); __gmpfr_flags |= MPFR_FLAGS_NAN.",
+    "src/core.ts L243–L249 — NAN_VALUE constant (Object.frozen).",
+    "src/core.ts L380–L393 — validate() requires NaN to match the canonical shape (prec=0n, sign=1, exp=0n, mant=0n).",
+    "CLAUDE.md 'Hallucination-risk callouts: NaN ≠ NaN' — IEEE 754 NaN-equality rules; the grader's compareMpfr short-circuits on both sides being kind:'nan'.",
+    "CLAUDE.md Law 4 — library coherence: public ports must import the locked schema."
+  ]
+}
