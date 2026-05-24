@@ -1,0 +1,24 @@
+{
+  "function": "mpfr_sub1sp1n",
+  "class": "misc",
+  "signature": {
+    "params": ["b", "c", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_sub1sp1n (mpfr/src/sub1sp.c L325-L510): the same-precision same-sign subtraction fast path for p == GMP_NUMB_BITS (= 64 on x86_64), i.e. exactly one limb, no sub-limb padding (sh == 0). Pre-conditions (MPFR_ASSERTD in C, MPFRError in TS): both operands kind='normal', same sign, both with prec exactly 64. Output preserves prec (= 64). The algorithm splits on whether exponents are equal (Case A: bx == cx; subtraction is exact, normalise) or not (Case B: align c right by d bits; further split into B1: d < 64 with sticky tracking from the bits falling off the bottom, and B2: d >= 64 where c contributes only through b - ulp(b) and the rb/sb depend on the exact value of c0). The sticky bit is computed as the negation of the part of c that fell below the precision window. The result sign depends on which operand is larger in magnitude when exponents are equal — that's the only place sub1sp1n diverges from add1sp1's algorithm. On cancellation (a0 == 0 in Case A), the result is exactly zero and the sign per the rnd rule (RNDD → neg, all others → pos). For Case B1 when d=1 and the high bits cancel, the result may shift left by 64 bits (an exponent decrease of GMP_NUMB_BITS).",
+  "c_signature": "static int mpfr_sub1sp1n(mpfr_ptr a, mpfr_srcptr b, mpfr_srcptr c, mpfr_rnd_t rnd_mode)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C takes (mpfr_ptr a, mpfr_srcptr b, mpfr_srcptr c, mpfr_rnd_t rnd_mode) — `a` is the output slot, mutated in place; precision is implicit (== 64 == GMP_NUMB_BITS). TS takes (b, c, rnd): output prec is implicit (= 64). Returns Result {value, ternary} instead of mutating `a` and returning int. The C side asserts preconditions via MPFR_ASSERTD; TS elevates to MPFRError('EPREC') / MPFRError('EROUND'). Underflow check (bx < emin) delegates to mpfr_underflow in C; TS delegates to src/ops/underflow.ts (the public underflow surface). NO MPFR flag state changes. The C internal-static linkage is dropped — exported for the harness. The Case A cancellation-zero sign rule (RNDD → neg, else pos) is preserved.",
+  "refs": [
+    "mpfr/src/sub1sp.c L325-L510 — the C reference body for the p==64 specialization.",
+    "mpfr/src/sub1sp.c L1481-L1484 — dispatcher routes p == GMP_NUMB_BITS here AFTER sub1sp2.",
+    "mpfr/src/sub1.c L66-L74 — cancellation-zero sign rule (RNDD negative, else positive).",
+    "mpfr/src/mpfr-impl.h L1233-L1234 — MPFR_IS_LIKE_RNDZ macro.",
+    "src/ops/underflow.ts — delegate on bx < emin.",
+    "src/ops/add1sp1.ts — sister op for SAME-sign add; sub1sp1n is the SUB-sign analogue but with cancellation handling that add1sp1 lacks.",
+    "src/core.ts L131-L134 — TS-side mantissa MSB-alignment (prec-bits; for p=64 this coincides with C limb-alignment, sh=0).",
+    "src/core.ts L173-L176 — Result return shape.",
+    "CLAUDE.md 'Hardwon lessons #7: Catastrophic cancellation requires post-cancel bit-length recompute' — load-bearing for Case A.",
+    "CLAUDE.md 'Hallucination-risk callouts: Signed zero is real' — RNDD-cancellation gives -0."
+  ]
+}

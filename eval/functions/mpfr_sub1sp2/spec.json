@@ -1,0 +1,23 @@
+{
+  "function": "mpfr_sub1sp2",
+  "class": "misc",
+  "signature": {
+    "params": ["b", "c", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_sub1sp2 (mpfr/src/sub1sp.c L513-L772): the same-precision same-sign subtraction fast path for GMP_NUMB_BITS < p < 2*GMP_NUMB_BITS (i.e. 65 <= p <= 127 on x86_64), two-limb mantissas with sh = 128 - p. Pre-conditions: both operands kind='normal', same sign, same prec in (64, 128). The TS port uses bigint extended-precision arithmetic to produce the same mathematically-rounded result as the C reference; faithfulness is at the I/O contract level (the dispatcher routes here for the matching prec range, so libmpfr's mpfr_sub on these inputs == sub1sp2). Algorithm: (1) compare |b| vs |c| to determine output sign and which operand is larger; (2) if |b|==|c|, exact cancellation → ±0 per rnd_mode; (3) compute D = (large.mant << d) - small.mant where d = large.exp - small.exp; this is the exact mantissa-difference at extended scale; (4) compute bitLen(D) and the natural exponent bxIn = bitLen + (small.exp - p); (5) if bitLen <= p, lossless pad; else round via roundMantissa with the new sign; (6) underflow check with RNDN narrowing per C's L731-L740.",
+  "c_signature": "static int mpfr_sub1sp2(mpfr_ptr a, mpfr_srcptr b, mpfr_srcptr c, mpfr_rnd_t rnd_mode, mpfr_prec_t p)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C takes (mpfr_ptr a, mpfr_srcptr b, mpfr_srcptr c, mpfr_rnd_t rnd_mode, mpfr_prec_t p). TS takes (b, c, rnd): prec is implicit (= b.prec). Returns Result. The C body operates on 2-limb arrays with explicit borrow propagation across the limb boundary; the TS body uses single-bigint extended-precision arithmetic. Both approaches produce the same mathematically-rounded answer per the I/O contract; the C-level micro-optimizations (borrow merging, MPFR_FULLSUB alt path) don't change correctness, only performance. The C internal-static linkage is dropped — exported for the harness. Underflow delegates to src/ops/underflow.ts; no MPFR flag state.",
+  "refs": [
+    "mpfr/src/sub1sp.c L513-L772 — the C reference body.",
+    "mpfr/src/sub1sp.c L1478-L1479 — dispatcher routing.",
+    "mpfr/src/sub1.c L66-L74 — cancellation-zero sign rule.",
+    "src/internal/mpfr/round_raw.ts — substrate primitive.",
+    "src/ops/underflow.ts — delegate on bx < emin.",
+    "src/ops/sub1sp1n.ts — sister op for p == 64.",
+    "src/core.ts — locked schema.",
+    "CLAUDE.md 'Hard-won lessons #7' — cancellation requires post-cancel bit-length recompute (handled via bitLen(D)).",
+    "CLAUDE.md 'Hallucination-risk callouts: Signed zero is real' — RNDD-cancellation gives -0."
+  ]
+}
