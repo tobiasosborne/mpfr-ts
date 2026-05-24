@@ -8,6 +8,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import pytest
+
 DRIVER_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(DRIVER_DIR))
 
@@ -52,10 +54,10 @@ def test_cmp_no_rop_int_return(tmp_path: Path) -> None:
 
 
 def test_init2_void_return(tmp_path: Path) -> None:
+    """void mpfr_init2 with mpfr_ptr rop -> returns=MPFR (rop-mutating semantics)."""
     c = _w(tmp_path, "init2.c", "void\nmpfr_init2 (mpfr_ptr x, mpfr_prec_t p)\n{ }\n")
     spec = gen_spec.extract_spec(c, "mpfr_init2")
-    assert spec["signature"]["returns"].startswith("TODO:")
-    assert "void" in spec["signature"]["returns"]
+    assert spec["signature"]["returns"] == "MPFR"
     assert "prec" in spec["signature"]["params"]
     assert "rnd" not in spec["signature"]["params"]
     assert spec["class"] == "misc"
@@ -109,3 +111,70 @@ def test_mpn_path_is_substrate(tmp_path: Path) -> None:
     c = _w(sub, "add_n.c", "void mpn_add_n (mp_ptr r, mp_srcptr a, mp_srcptr b, mp_size_t n) { }\n")
     spec = gen_spec.extract_spec(c, "mpn_add_n")
     assert spec["class"] == "substrate"
+
+
+# ----- bug-fix coverage: parens-name (P1), static decls (P2/P3), type tables (P7/P8) -----
+
+def test_parens_name_macro_override(tmp_path: Path) -> None:
+    """P1: `int (mpfr_zero_p) (mpfr_srcptr x)` macro-override idiom."""
+    c = _w(tmp_path, "iszero.c", "int\n(mpfr_zero_p) (mpfr_srcptr x)\n{ return 0; }\n")
+    spec = gen_spec.extract_spec(c, "mpfr_zero_p")
+    assert spec["c_signature"] == "int mpfr_zero_p (mpfr_srcptr x)"
+    assert spec["signature"]["params"] == ["x"]
+    assert spec["signature"]["returns"] == "number"
+
+
+def test_static_decl_when_callgraph_lists_it(tmp_path: Path) -> None:
+    """P2: when a static helper IS the target, extract its decl."""
+    c = _w(tmp_path, "add1sp1_extracted.c",
+           "static int\nmpfr_add1sp1 (mpfr_ptr a, mpfr_srcptr b, mpfr_srcptr c, mpfr_rnd_t rnd, mpfr_prec_t p)\n"
+           "{ return 0; }\n")
+    spec = gen_spec.extract_spec(c, "mpfr_add1sp1")
+    assert spec["c_signature"].startswith("static int mpfr_add1sp1 (mpfr_ptr a, mpfr_srcptr b")
+    assert spec["signature"]["returns"] == "Result"
+    assert "prec" in spec["signature"]["params"] and "rnd" in spec["signature"]["params"]
+
+
+def test_call_site_inside_dispatcher_rejected(tmp_path: Path) -> None:
+    """P3: static decl AND a dispatcher with a call site -- must land on the decl, not the call."""
+    c = _w(tmp_path, "add1sp.c",
+           "static int\nmpfr_add1sp1n (mpfr_ptr a, mpfr_srcptr b, mpfr_srcptr c, mpfr_rnd_t rnd_mode)\n"
+           "{ return 0; }\n"
+           "int\nmpfr_add1sp (mpfr_ptr a, mpfr_srcptr b, mpfr_srcptr c, mpfr_rnd_t rnd_mode)\n"
+           "{ if (p == GMP_NUMB_BITS) return mpfr_add1sp1n (a, b, c, rnd_mode); return 0; }\n")
+    spec = gen_spec.extract_spec(c, "mpfr_add1sp1n")
+    assert spec["c_signature"].startswith("static int mpfr_add1sp1n")
+    assert "if" not in spec["c_signature"] and "return mpfr_add1sp1n" not in spec["c_signature"]
+    assert spec["signature"]["returns"] == "Result"
+    assert spec["signature"]["params"] == ["b", "c", "prec", "rnd"]
+
+
+def test_known_type_long_int(tmp_path: Path) -> None:
+    """P7: `long int u` was a TODO leak."""
+    c = _w(tmp_path, "add_si.c",
+           "int\nmpfr_add_si (mpfr_ptr y, mpfr_srcptr x, long int u, mpfr_rnd_t rnd)\n{ return 0; }\n")
+    spec = gen_spec.extract_spec(c, "mpfr_add_si")
+    assert spec["signature"]["params"] == ["x", "u", "prec", "rnd"]
+
+
+def test_known_type_mpz_ptr(tmp_path: Path) -> None:
+    """P7: `mpz_ptr z` non-const handle -- must NOT TODO-leak."""
+    c = _w(tmp_path, "get_z.c", "int\nmpfr_get_z (mpz_ptr z, mpfr_srcptr f, mpfr_rnd_t rnd)\n{ return 0; }\n")
+    spec = gen_spec.extract_spec(c, "mpfr_get_z")
+    assert "TODO" not in " ".join(spec["signature"]["params"])
+    assert spec["signature"]["params"] == ["z", "f", "rnd"]
+
+
+@pytest.mark.parametrize("ret,body,fn,expected", [
+    ("double", "(mpfr_srcptr x, mpfr_rnd_t rnd)", "mpfr_get_d", "number"),
+    ("void", "(mpfr_ptr x, mpfr_prec_t p)", "mpfr_init2", "MPFR"),
+    ("void", "(int emin, int emax)", "mpfr_set_emin_max", "TODO: void"),
+    ("mpfr_prec_t", "(mpfr_srcptr x)", "mpfr_get_prec", "bigint"),
+    ("mpfr_exp_t", "(mpfr_srcptr x)", "mpfr_get_exp", "bigint"),
+    ("long int", "(void)", "mpfr_get_emin", "bigint"),
+])
+def test_return_type_table(tmp_path: Path, ret, body, fn, expected) -> None:
+    """P8: extended _classify_return mapping covers double/void+rop/prec_t/exp_t/long."""
+    c = _w(tmp_path, f"{fn}.c", f"{ret}\n{fn} {body}\n{{ }}\n")
+    spec = gen_spec.extract_spec(c, fn)
+    assert spec["signature"]["returns"] == expected

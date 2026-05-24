@@ -3,7 +3,10 @@
 `extract_spec(path, name, class_hint=None)` returns the dict the ralph
 loop hands a porter agent. Strategy: strip comments+#directives, flatten
 whitespace, walk back from `<name>(` to the prior `;`/`}` for the decl
-head. Static decls are skipped. Unknown C types emit "TODO:" not guesses.
+head. Static decls ARE extracted (callgraph.json is the authority on
+which functions to port). The matched head is then validated to end in
+a return-type token to reject call-site false-positives. Unknown C
+types emit "TODO:" not guesses.
 """
 
 from __future__ import annotations
@@ -15,11 +18,32 @@ from typing import Any
 _ARITH = ("add", "sub", "mul", "div", "sqr", "sqrt")
 _TRANS = ("exp", "log", "sin", "cos", "tan", "asin", "acos",
           "atan", "sinh", "cosh", "tanh")
-_KNOWN_TYPES = {"mpfr_srcptr", "double", "long", "int", "unsigned long",
-                "unsigned int", "mpz_srcptr", "mpq_srcptr", "mpf_srcptr",
-                "float", "long double", "size_t"}
+_KNOWN_TYPES = {
+    # scalar / built-in
+    "int", "unsigned int", "long", "long int", "unsigned long",
+    "unsigned long int", "signed long", "signed long int",
+    "float", "double", "long double", "size_t", "mpfr_exp_t",
+    # const handles (read-only inputs)
+    "mpfr_srcptr", "mpz_srcptr", "mpq_srcptr", "mpf_srcptr",
+    # non-const handles (mutated outputs / aux)
+    "mpz_ptr", "mpq_ptr", "mpf_ptr", "mpfr_limb_ptr",
+}
 _SKIP_ATTR = re.compile(
     r"\b(MPFR_HOT_FUNCTION_ATTR|MPFR_COLD_FUNCTION_ATTR|__attribute__\s*\(\([^)]*\)\))\s*"
+)
+# A valid decl head must END in a return-type token (possibly with `*` or
+# `static`). This guards against the call-site false-positive where the
+# look-back captures `... return` or `if (...)` as the "head". Examples
+# of accepted tails: `int`, `static int`, `mpfr_prec_t`, `char *`,
+# `mp_size_t`, `MPFR_HOT_FUNCTION_ATTR int`, `static void`.
+_TYPE_TAIL = re.compile(
+    r"(?:^|\s)"
+    r"(?:static\s+)?"
+    r"(?:unsigned\s+|signed\s+)?"
+    r"(?:long\s+(?:long\s+)?)?"
+    r"(?:int|void|char|short|long|float|double|size_t"
+    r"|mp_\w+|mpz_\w+|mpq_\w+|mpf_\w+|mpfr_\w+|MPFR_\w+|MP_\w+)"
+    r"\s*\*?\s*$"
 )
 
 
@@ -42,11 +66,25 @@ def _strip_noise(src: str) -> str:
 
 def _find_signature(src: str, name: str) -> str | None:
     flat = re.sub(r"\s+", " ", _strip_noise(src)).strip()
-    pat = re.compile(r"\b" + re.escape(name) + r"\s*\(")
+    # The parameter list opener may be preceded by `)` + whitespace when
+    # the function name is wrapped in parens to override a same-named
+    # macro (P1): `int (mpfr_zero_p) (mpfr_srcptr x)`.
+    pat = re.compile(r"\b" + re.escape(name) + r"\s*\)?\s*\(")
     for m in pat.finditer(flat):
         start = max(flat.rfind(";", 0, m.start()), flat.rfind("}", 0, m.start())) + 1
         head = _SKIP_ATTR.sub("", flat[start:m.start()].strip()).strip()
-        if not head or head.startswith("static "):
+        # P1: handle the parens-around-name macro-override idiom
+        # `int (mpfr_zero_p) (...)`. The look-back grabs `int (` as
+        # head; strip a lone trailing `(` so the tail is a clean type.
+        if head.endswith("("):
+            head = head[:-1].rstrip()
+        if not head:
+            continue
+        # P2/P3: do NOT skip static. Instead, validate the head ends in
+        # a real return-type token. This rejects call-site captures like
+        # `if (p == X) return` while accepting both static and non-static
+        # decls when the callgraph lists them.
+        if not _TYPE_TAIL.search(head):
             continue
         depth, i = 0, m.end() - 1
         while i < len(flat):
@@ -66,7 +104,13 @@ def _find_signature(src: str, name: str) -> str | None:
 
 def _return_type(decl: str, name: str) -> str:
     idx = decl.find(" " + name + " ")
-    return decl[:idx].strip() if idx >= 0 else ""
+    ret = decl[:idx].strip() if idx >= 0 else ""
+    # Strip a leading `static` storage-class so the type classifier sees
+    # the bare return type (e.g. `static int` -> `int`). Other qualifiers
+    # like `inline`, `extern` would go here if MPFR ever uses them.
+    if ret.startswith("static "):
+        ret = ret[len("static "):].strip()
+    return ret
 
 
 def _map_param(raw: str) -> str | None:
@@ -112,6 +156,17 @@ def _classify_return(ret: str, dropped_first_ptr: bool) -> str:
         return "Result" if dropped_first_ptr else "number"
     if r == "mpfr_ptr":
         return "MPFR"
+    # `void f(mpfr_ptr rop, ...)` -- rop-mutating; conceptually returns
+    # an MPFR. Without a dropped rop, void stays a TODO for curation.
+    if r == "void":
+        return "MPFR" if dropped_first_ptr else "TODO: void"
+    if r == "double":
+        return "number"
+    # Scalar C integer types lift to bigint in the TS API (see
+    # decision_api_shape memory + curated `mpfr_get_prec`-style specs).
+    if r in {"mpfr_prec_t", "mpfr_exp_t", "long", "long int",
+             "unsigned long", "unsigned long int", "unsigned int"}:
+        return "bigint"
     return f"TODO: {r}" if r else "TODO: (empty)"
 
 
