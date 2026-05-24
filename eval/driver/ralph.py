@@ -55,6 +55,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
+from gen_spec import extract_spec
 from prompts import build_prompt
 
 
@@ -269,6 +270,37 @@ def _render_prep_prompt(
         lines.append(f"    - eval/reference_ports/correct/{cand.name}.ts")
         lines.append(f"    - eval/reference_ports/broken/{cand.name}.ts")
     lines.append("")
+    lines.append(
+        "Spec scaffold (machine-extracted; see ADR 0001 for merge policy):"
+    )
+    lines.append("")
+    lines.append(
+        "The structural fields below are extracted from the C source by\n"
+        "gen_spec.extract_spec. They are CORRECT for the C definition but\n"
+        "require these overrides for the idiomatic TS port:\n"
+        "\n"
+        "  - signature.returns: int -> 'boolean' for _p predicates;\n"
+        "    void -> 'MPFR' when first dropped C ptr is the output slot;\n"
+        "    long/mpfr_prec_t/mpfr_exp_t -> 'bigint'\n"
+        "  - signature.params: may add wire-codec inputs (e.g. 'mask' for\n"
+        "    flag-state predicates) not present in the C signature\n"
+        "  - prec_unit: override to 'n/a' if the function has no `prec`\n"
+        "    parameter (predicates, comparators)\n"
+        "\n"
+        "The c_signature field is authoritative; do not edit it."
+    )
+    lines.append("")
+    for cand in selected:
+        c_source_path = repo_root / "mpfr" / "src" / cand.defined_in
+        try:
+            scaffold = extract_spec(c_source_path, cand.name, class_hint=cand.class_)
+        except (FileNotFoundError, ValueError) as exc:
+            raise RuntimeError(
+                f"gen_spec failed for {cand.name}: {exc}"
+            ) from exc
+        lines.append(f"--- spec scaffold for {cand.name} ---")
+        lines.append(json.dumps(scaffold, indent=2))
+        lines.append("")
     lines.append("Workflow (the orchestrator runs the build/run scripts AFTER you finish):")
     lines.append("")
     lines.append("  1. Read the C source for each function listed above.")

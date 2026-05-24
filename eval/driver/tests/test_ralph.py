@@ -258,12 +258,28 @@ def test_next_batch_size_limit(
     assert [c.name for c in selected] == ["fn0", "fn1"]
 
 
+def _stub_extract_spec(c_source_path, function_name, class_hint=None):
+    """Minimal extract_spec stub for tests that use fake callgraph (non-existent .c files)."""
+    return {
+        "function": function_name,
+        "class": class_hint or "misc",
+        "signature": {"params": [], "returns": "Result"},
+        "c_signature": f"int {function_name} (void)",
+        "prec_unit": "bits",
+        "doc": "TODO: stub",
+        "divergence_from_c": "TODO: stub",
+        "refs": [f"mpfr/src/stub.c -- stub.", "src/core.ts -- value model."],
+    }
+
+
 def test_next_seeds_state_db(
     tmp_path: Path, fresh_db: Path, fake_callgraph: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Selected functions get state.db rows with correct fields."""
     # Re-route /tmp to tmp_path to keep test side effects contained.
     monkeypatch.setattr(ralph, "TMP_ROOT", tmp_path / "tmp")
+    # Stub extract_spec so fake callgraph's non-existent .c files don't cause errors.
+    monkeypatch.setattr(ralph, "extract_spec", _stub_extract_spec)
     rc = ralph.run_next(
         db_path=fresh_db,
         callgraph_path=fake_callgraph,
@@ -299,6 +315,7 @@ def test_next_creates_tmp_dirs(
     """/tmp/eval_<fn>/ directories are created for each selected function."""
     tmp_root = tmp_path / "tmp"
     monkeypatch.setattr(ralph, "TMP_ROOT", tmp_root)
+    monkeypatch.setattr(ralph, "extract_spec", _stub_extract_spec)
     ralph.run_next(
         db_path=fresh_db,
         callgraph_path=fake_callgraph,
@@ -318,6 +335,7 @@ def test_next_output_has_selected_lines_and_prep_separator(
 ) -> None:
     """Stdout has machine-parseable SELECTED lines + ---PREP-PROMPT--- separator."""
     monkeypatch.setattr(ralph, "TMP_ROOT", tmp_path / "tmp")
+    monkeypatch.setattr(ralph, "extract_spec", _stub_extract_spec)
     ralph.run_next(
         db_path=fresh_db,
         callgraph_path=fake_callgraph,
@@ -1249,3 +1267,274 @@ def test_ship_promote_overwrites_different_content(
     # File was overwritten with the new port content.
     new_content = dst.read_text()
     assert "old content" not in new_content
+
+
+# ---------------------------------------------------------------------------
+# Spec scaffold in _render_prep_prompt (gen_spec integration)
+# ---------------------------------------------------------------------------
+#
+# All tests below use real mpfr/src/*.c files that are present in the
+# repo (cloned upstream under ./mpfr/, gitignored).  Two anchors:
+#   mpfr_abs        defined in mpfr/src/set.c
+#   mpfr_underflow_p defined in mpfr/src/exceptions.c
+# ---------------------------------------------------------------------------
+
+# Verbatim addendum text that must appear in the prompt (exact match).
+_ADDENDUM = (
+    "The structural fields below are extracted from the C source by\n"
+    "gen_spec.extract_spec. They are CORRECT for the C definition but\n"
+    "require these overrides for the idiomatic TS port:\n"
+    "\n"
+    "  - signature.returns: int -> 'boolean' for _p predicates;\n"
+    "    void -> 'MPFR' when first dropped C ptr is the output slot;\n"
+    "    long/mpfr_prec_t/mpfr_exp_t -> 'bigint'\n"
+    "  - signature.params: may add wire-codec inputs (e.g. 'mask' for\n"
+    "    flag-state predicates) not present in the C signature\n"
+    "  - prec_unit: override to 'n/a' if the function has no `prec`\n"
+    "    parameter (predicates, comparators)\n"
+    "\n"
+    "The c_signature field is authoritative; do not edit it."
+)
+
+_EXPECTED_KEYS = {
+    "function", "class", "signature", "c_signature",
+    "prec_unit", "doc", "divergence_from_c", "refs",
+}
+
+
+def _make_cand(
+    name: str,
+    defined_in: str,
+    class_: str = "misc",
+    topo_rank: int = 0,
+) -> ralph.CandidateFn:
+    return ralph.CandidateFn(
+        name=name,
+        class_=class_,
+        topo_rank=topo_rank,
+        deps=(),
+        defined_in=defined_in,
+    )
+
+
+def test_prep_prompt_contains_addendum_verbatim() -> None:
+    """The verbatim addendum text must appear in the prep prompt."""
+    cand = _make_cand("mpfr_abs", "set.c")
+    prompt = ralph._render_prep_prompt([cand], repo_root=REPO_ROOT)
+    assert _ADDENDUM in prompt
+
+
+def test_prep_prompt_contains_scaffold_header() -> None:
+    """A '--- spec scaffold for <fn> ---' header appears in the prompt."""
+    cand = _make_cand("mpfr_abs", "set.c")
+    prompt = ralph._render_prep_prompt([cand], repo_root=REPO_ROOT)
+    assert "--- spec scaffold for mpfr_abs ---" in prompt
+
+
+def test_prep_prompt_scaffold_json_parses() -> None:
+    """The embedded JSON block for the scaffold is valid and parses round-trip."""
+    cand = _make_cand("mpfr_abs", "set.c")
+    prompt = ralph._render_prep_prompt([cand], repo_root=REPO_ROOT)
+    header = "--- spec scaffold for mpfr_abs ---"
+    idx = prompt.index(header) + len(header)
+    # The JSON block follows the header line.
+    rest = prompt[idx:].lstrip("\n")
+    # Extract up to the next blank line or the next '---' marker.
+    json_text_lines = []
+    for line in rest.splitlines():
+        if line.startswith("---") and json_text_lines:
+            break
+        if not line.strip() and json_text_lines:
+            break
+        json_text_lines.append(line)
+    json_text = "\n".join(json_text_lines).strip()
+    parsed = json.loads(json_text)
+    assert json.dumps(parsed) == json.dumps(json.loads(json_text))
+
+
+def test_prep_prompt_scaffold_has_expected_keys() -> None:
+    """Scaffold JSON contains all required top-level keys."""
+    cand = _make_cand("mpfr_abs", "set.c")
+    prompt = ralph._render_prep_prompt([cand], repo_root=REPO_ROOT)
+    header = "--- spec scaffold for mpfr_abs ---"
+    idx = prompt.index(header) + len(header)
+    rest = prompt[idx:].lstrip("\n")
+    json_text_lines = []
+    for line in rest.splitlines():
+        if line.startswith("---") and json_text_lines:
+            break
+        if not line.strip() and json_text_lines:
+            break
+        json_text_lines.append(line)
+    parsed = json.loads("\n".join(json_text_lines).strip())
+    missing = _EXPECTED_KEYS - set(parsed.keys())
+    assert not missing, f"Scaffold missing keys: {missing}"
+
+
+def test_prep_prompt_scaffold_function_field_matches_name() -> None:
+    """scaffold['function'] equals the function name passed in."""
+    cand = _make_cand("mpfr_abs", "set.c")
+    prompt = ralph._render_prep_prompt([cand], repo_root=REPO_ROOT)
+    assert '"function": "mpfr_abs"' in prompt
+
+
+def test_prep_prompt_scaffold_c_signature_present() -> None:
+    """c_signature field is non-empty and contains the function name."""
+    cand = _make_cand("mpfr_abs", "set.c")
+    prompt = ralph._render_prep_prompt([cand], repo_root=REPO_ROOT)
+    # Quick parse to verify c_signature.
+    header = "--- spec scaffold for mpfr_abs ---"
+    idx = prompt.index(header) + len(header)
+    rest = prompt[idx:].lstrip("\n")
+    json_text_lines = []
+    for line in rest.splitlines():
+        if line.startswith("---") and json_text_lines:
+            break
+        if not line.strip() and json_text_lines:
+            break
+        json_text_lines.append(line)
+    parsed = json.loads("\n".join(json_text_lines).strip())
+    assert "mpfr_abs" in parsed["c_signature"]
+    assert parsed["c_signature"].strip()
+
+
+def test_prep_prompt_scaffold_class_uses_hint() -> None:
+    """class_hint passed to CandidateFn propagates into the scaffold JSON."""
+    cand = _make_cand("mpfr_abs", "set.c", class_="arithmetic")
+    prompt = ralph._render_prep_prompt([cand], repo_root=REPO_ROOT)
+    # Extract scaffold JSON.
+    header = "--- spec scaffold for mpfr_abs ---"
+    idx = prompt.index(header) + len(header)
+    rest = prompt[idx:].lstrip("\n")
+    json_text_lines = []
+    for line in rest.splitlines():
+        if line.startswith("---") and json_text_lines:
+            break
+        if not line.strip() and json_text_lines:
+            break
+        json_text_lines.append(line)
+    parsed = json.loads("\n".join(json_text_lines).strip())
+    assert parsed["class"] == "arithmetic"
+
+
+def test_prep_prompt_missing_c_file_raises_runtime_error() -> None:
+    """defined_in pointing at a nonexistent file raises RuntimeError."""
+    cand = _make_cand("mpfr_abs", "does_not_exist.c")
+    with pytest.raises(RuntimeError, match="gen_spec failed for mpfr_abs"):
+        ralph._render_prep_prompt([cand], repo_root=REPO_ROOT)
+
+
+def test_prep_prompt_missing_c_file_error_has_cause() -> None:
+    """RuntimeError raised for missing file chains to FileNotFoundError."""
+    cand = _make_cand("mpfr_abs", "does_not_exist.c")
+    try:
+        ralph._render_prep_prompt([cand], repo_root=REPO_ROOT)
+        pytest.fail("Expected RuntimeError")
+    except RuntimeError as exc:
+        assert isinstance(exc.__cause__, FileNotFoundError)
+
+
+def test_prep_prompt_unparseable_function_raises_runtime_error() -> None:
+    """Function name not found in C source raises RuntimeError (ValueError cause)."""
+    # mpfr_totally_bogus_fn_xyz does not exist in set.c.
+    cand = _make_cand("mpfr_totally_bogus_fn_xyz", "set.c")
+    with pytest.raises(RuntimeError, match="gen_spec failed for mpfr_totally_bogus_fn_xyz"):
+        ralph._render_prep_prompt([cand], repo_root=REPO_ROOT)
+
+
+def test_prep_prompt_unparseable_function_error_has_cause() -> None:
+    """RuntimeError for unparseable function chains to ValueError."""
+    cand = _make_cand("mpfr_totally_bogus_fn_xyz", "set.c")
+    try:
+        ralph._render_prep_prompt([cand], repo_root=REPO_ROOT)
+        pytest.fail("Expected RuntimeError")
+    except RuntimeError as exc:
+        assert isinstance(exc.__cause__, ValueError)
+
+
+def test_prep_prompt_multi_function_batch_has_one_scaffold_per_function() -> None:
+    """Two-function batch emits two scaffold blocks, one per function."""
+    cands = [
+        _make_cand("mpfr_abs", "set.c", class_="misc", topo_rank=0),
+        _make_cand("mpfr_underflow_p", "exceptions.c", class_="misc", topo_rank=1),
+    ]
+    prompt = ralph._render_prep_prompt(cands, repo_root=REPO_ROOT)
+    assert "--- spec scaffold for mpfr_abs ---" in prompt
+    assert "--- spec scaffold for mpfr_underflow_p ---" in prompt
+    # Both function names appear in their own scaffold JSON.
+    assert '"function": "mpfr_abs"' in prompt
+    assert '"function": "mpfr_underflow_p"' in prompt
+
+
+def test_prep_prompt_multi_function_scaffold_json_each_valid() -> None:
+    """Each scaffold block in a multi-function batch is individually valid JSON."""
+    cands = [
+        _make_cand("mpfr_abs", "set.c", class_="misc", topo_rank=0),
+        _make_cand("mpfr_underflow_p", "exceptions.c", class_="misc", topo_rank=1),
+    ]
+    prompt = ralph._render_prep_prompt(cands, repo_root=REPO_ROOT)
+    for fn in ("mpfr_abs", "mpfr_underflow_p"):
+        header = f"--- spec scaffold for {fn} ---"
+        idx = prompt.index(header) + len(header)
+        rest = prompt[idx:].lstrip("\n")
+        json_lines: list[str] = []
+        for line in rest.splitlines():
+            if line.startswith("---") and json_lines:
+                break
+            if not line.strip() and json_lines:
+                break
+            json_lines.append(line)
+        parsed = json.loads("\n".join(json_lines).strip())
+        assert set(parsed.keys()) >= _EXPECTED_KEYS, f"{fn} scaffold missing keys"
+
+
+def test_prep_prompt_scaffold_appears_after_deliverables_before_workflow() -> None:
+    """Scaffold section is ordered: deliverables block < scaffold < Workflow."""
+    cand = _make_cand("mpfr_abs", "set.c")
+    prompt = ralph._render_prep_prompt([cand], repo_root=REPO_ROOT)
+    deliverables_idx = prompt.index("Per-function deliverables")
+    scaffold_idx = prompt.index("Spec scaffold (machine-extracted")
+    workflow_idx = prompt.index("Workflow (the orchestrator runs")
+    assert deliverables_idx < scaffold_idx < workflow_idx, (
+        f"Expected deliverables({deliverables_idx}) < "
+        f"scaffold({scaffold_idx}) < workflow({workflow_idx})"
+    )
+
+
+def test_prep_prompt_section_header_present() -> None:
+    """'Spec scaffold (machine-extracted; see ADR 0001 for merge policy)' header present."""
+    cand = _make_cand("mpfr_abs", "set.c")
+    prompt = ralph._render_prep_prompt([cand], repo_root=REPO_ROOT)
+    assert "Spec scaffold (machine-extracted; see ADR 0001 for merge policy):" in prompt
+
+
+def test_prep_prompt_addendum_after_section_header() -> None:
+    """Addendum text follows the section header (ordering check)."""
+    cand = _make_cand("mpfr_abs", "set.c")
+    prompt = ralph._render_prep_prompt([cand], repo_root=REPO_ROOT)
+    header_idx = prompt.index("Spec scaffold (machine-extracted")
+    addendum_idx = prompt.index(_ADDENDUM)
+    assert header_idx < addendum_idx
+
+
+def test_prep_prompt_scaffold_refs_list_nonempty() -> None:
+    """Scaffold 'refs' field is a non-empty list containing the C source path."""
+    cand = _make_cand("mpfr_underflow_p", "exceptions.c")
+    prompt = ralph._render_prep_prompt([cand], repo_root=REPO_ROOT)
+    header = "--- spec scaffold for mpfr_underflow_p ---"
+    idx = prompt.index(header) + len(header)
+    rest = prompt[idx:].lstrip("\n")
+    json_lines: list[str] = []
+    for line in rest.splitlines():
+        if line.startswith("---") and json_lines:
+            break
+        if not line.strip() and json_lines:
+            break
+        json_lines.append(line)
+    parsed = json.loads("\n".join(json_lines).strip())
+    assert isinstance(parsed["refs"], list)
+    assert len(parsed["refs"]) >= 1
+    # First ref should reference the C source file.
+    assert "exceptions.c" in parsed["refs"][0]
+
+
