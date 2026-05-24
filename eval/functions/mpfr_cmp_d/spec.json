@@ -1,0 +1,19 @@
+{
+  "function": "mpfr_cmp_d",
+  "class": "arithmetic",
+  "signature": {
+    "params": ["x", "d"],
+    "returns": "number"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_cmp_d: compare an MPFR value against an IEEE 754 binary64. Returns -1/0/+1. Throws MPFRError('EDOMAIN') on NaN x OR NaN d. Strategy: build a 53-bit exact-representation temp MPFR via mpfr_set_d (lossless because 53 bits IS the double's full information) and delegate to compareMPFR. Class 'arithmetic' (50ms budget).",
+  "c_signature": "int mpfr_cmp_d(mpfr_srcptr op, double d)",
+  "divergence_from_c": "Two NaN throw paths: NaN x AND NaN d both raise MPFRError('EDOMAIN'). The C reference handles NaN d by letting mpfr_set_d emit an MPFR-NaN tmp, which then triggers the mpfr_cmp NaN→ERANGE side-channel; we short-circuit and throw before constructing tmp. ±Inf d and ±0 d are handled correctly (set_d preserves the singular kind; compareMPFR's kind dispatch produces the right answer). Golden EXCLUDES NaN x and NaN d cases (throws are n_throw, not pass) — but does include ±Inf d, ±0 d, and subnormal d.",
+  "refs": [
+    "mpfr/src/cmp_d.c L24–L44 — the C reference: builds a 53-bit tmp via mpfr_set_d(RNDN), asserts ternary == 0 (exactness), delegates to mpfr_cmp.",
+    "src/ops/set_d.ts — the d-to-MPFR exact conversion this port composes; the lossless-pad branch (prec >= 53) triggers.",
+    "src/internal/mpfr/cmp_raw.ts — shared comparison core.",
+    "src/ops/cmp.ts — sibling MPFR-vs-MPFR throwing surface.",
+    "mpfr/tests/tcmp_d.c L36–L131 — mined cases (2.34763465 ≈ exact, +0 vs 0.0, +Inf vs 0.0, NaN cases).",
+    "CLAUDE.md \"Hallucination-risk callouts\": NaN ≠ NaN (throw on either NaN); Signed zero is real (set_d preserves the sign of -0, but cmp collapses ±0 to equal); rounding-mode count is FIVE (set_d uses RNDN since the conversion is exact)."
+  ]
+}

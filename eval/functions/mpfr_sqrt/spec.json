@@ -1,0 +1,22 @@
+{
+  "function": "mpfr_sqrt",
+  "class": "arithmetic",
+  "signature": {
+    "params": ["x", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_sqrt: square root of an MPFR value at the caller-supplied prec, rounded per rnd, returning {value, ternary}. Class is 'arithmetic' (50ms per-case budget). The general path computes the integer square root of (x.mant << k) where k is chosen so the returned isqrt root carries prec+1 bits and the round/sticky decision is exact. Specifically: form n = x.mant << (2*(prec+1) - x.prec) with parity adjustment so the result exponent (x.exp + k)/2 stays integral; compute (root, remainder) = isqrt(n); root has prec+1 bits, and the remainder gives sticky = (remainder !== 0n). Then drop one bit via roundMantissa(srcPrec=prec+1, ...). The bigint isqrt itself is Newton's method seeded by a power-of-2 initial estimate; convergence in O(log prec) iterations.",
+  "c_signature": "int mpfr_sqrt(mpfr_t rop, mpfr_srcptr x, mpfr_rnd_t rnd)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C mutates rop (which carries prec) and returns the ternary as a separate int; TS takes prec as a positional argument and returns {value, ternary} per the locked Result schema. Behaviour for specials matches the C reference (mpfr/src/sqrt.c L522-L554): NaN -> NaN; +-0 -> +-0 (sign preserved, ternary 0); +Inf -> +Inf; -Inf -> NaN; any negative normal -> NaN (mpfr/src/sqrt.c L550). The +0 / -0 case preserving sign is the canonical IEEE-754 sqrt(-0) = -0 convention which MPFR follows verbatim (L532 MPFR_SET_SAME_SIGN(r, u)). Normal +ve: integer square root of an MSB-aligned bigint, with bit-parity exponent adjustment so the result has prec+1 bits exactly.",
+  "refs": [
+    "mpfr/src/sqrt.c L505-L600 — top-level mpfr_sqrt. L522-L554 is the singular/negative dispatch we mirror. L555-L600+ is the general algorithm: bit-parity check (odd_exp = MPFR_GET_EXP(u) & 1), then mpn_sqrtrem on the limb buffer; we replace that with a single bigint isqrt.",
+    "mpfr/src/sqrt.c L550-L554 — the negative-finite case: any normal x with sign=-1 produces NaN; mirrored byte-for-byte in the TS port's first dispatch branch. This is the trap that catches a port which only checks 'kind===nan' and forgets the sqrt-of-negative branch.",
+    "mpfr/src/sqrt1.c, sqrt2.c, sqrt1n.c — prec-class fast paths. Reference for the round/sticky decomposition under explicit limb arithmetic. The TS port is faithful to their I/O contract via bigint isqrt.",
+    "src/core.ts — locked MPFR / RoundingMode / Result / Ternary types; validate() invariants. sqrt always returns sign=+1 for normal positive inputs (verified by validate's MSB invariant on mantissas).",
+    "src/internal/mpfr/round_raw.ts — used to round the (prec+1)-bit root down to prec bits. The sticky bit is synthesised by ORing (remainder !== 0n) into the LSB-below-round position before invoking roundMantissa with srcPrec=prec+1.",
+    "src/ops/mul.ts — reference for the arithmetic-class structure (specials dispatch then a normal core function).",
+    "mpfr/tests/tsqrt.c — source for the mined cases.",
+    "CLAUDE.md 'Hallucination-risk callouts' — sqrt(-0) = -0 (signed-zero preserved); sqrt(-finite) = NaN; ternary direction is sign of (rounded - exact); rounding-mode count is FIVE; mpfr_prec_t in bits not digits."
+  ]
+}

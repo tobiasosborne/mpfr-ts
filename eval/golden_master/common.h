@@ -157,6 +157,21 @@ static inline void jl_kv_int(FILE *f, int first, const char *key, int v) {
     fprintf(f, "%d", v);
 }
 
+/* Emit ,"key":true or ,"key":false — bare JSON boolean. Use for inputs
+ * whose TS-side type is `boolean` (e.g. mpfr_setsign's `sign` flag,
+ * where the C side takes an int `s` but the idiomatic TS port reads a
+ * boolean). The runner's value_codec.decodeInputValue passes booleans
+ * through unchanged, so the port receives a real TS boolean.
+ *
+ * The argument `v` is the C int the driver wants to convey; we
+ * normalise non-zero to JSON `true`, zero to `false`. This is the same
+ * normalisation pattern as jl_output_scalar_bool, just on the input
+ * side. */
+static inline void jl_kv_bool(FILE *f, int first, const char *key, int v) {
+    jl__key(f, first, key);
+    fputs(v ? "true" : "false", f);
+}
+
 /* Emit ,"key":"<token>" where <token> is one of "NaN" / "+Infinity" /
  * "-Infinity" / a "%.17g" lossless decimal — for the IEEE 754 double
  * input type used by ports like mpfr_set_d.

@@ -1,0 +1,18 @@
+{
+  "function": "mpfr_signbit",
+  "class": "arithmetic",
+  "signature": {
+    "params": ["x"],
+    "returns": "boolean"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_signbit: 'is the sign bit set?' predicate. Returns true iff x.sign === -1 — i.e. x is negative, including signed -0 and -Inf. Defined for every kind including NaN; per the locked schema the TS NaN is canonically positive (sign === 1) so signbit(NaN) === false in this port. The libmpfr golden agrees because mpfr_set_nan initialises NaN with positive sign — the canonical-NaN-only ambiguity does not manifest on the C side of golden generation. Class 'arithmetic' (50ms budget).",
+  "c_signature": "int mpfr_signbit(mpfr_srcptr x)",
+  "divergence_from_c": "C returns int (0/non-zero); TS returns boolean. The C side reads `_mpfr_sign < 0`; TS reads `x.sign === -1`. The TS schema canonicalises NaN to sign === 1 (src/core.ts L83–L85, L243–L249) — libmpfr's NaN can carry either sign in principle but the golden uses mpfr_set_nan which produces sign-positive NaN, so the answers agree.",
+  "refs": [
+    "mpfr/src/signbit.c L24–L29 — the C reference (one-line body returning MPFR_IS_NEG(x)).",
+    "src/core.ts L77–L90 — Sign type and NaN convention (sign === 1).",
+    "src/core.ts L243–L249 — NAN_VALUE constant.",
+    "src/ops/signbit.ts — the production port.",
+    "CLAUDE.md \"Hallucination-risk callouts: Signed zero is real\" — signbit IS the right way to test 'is this -0?' (zero_p collapses signs)."
+  ]
+}

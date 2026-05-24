@@ -1,0 +1,19 @@
+{
+  "function": "mpfr_nan_p",
+  "class": "arithmetic",
+  "signature": {
+    "params": ["x"],
+    "returns": "boolean"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_nan_p: NaN predicate. Returns true iff x is the NaN value, false for any other kind (normal, zero, inf). Trivial one-line port: reads the locked-schema kind discriminant directly. Class 'arithmetic' (50ms per-case budget).",
+  "c_signature": "int mpfr_nan_p(mpfr_srcptr x)",
+  "divergence_from_c": "C returns int (0/non-zero); TS returns boolean. Predicate never throws — `is NaN?` is well-defined for every well-formed MPFR kind including NaN itself. The C side dispatches on a sentinel exponent value (__MPFR_EXP_NAN) inspected by MPFR_IS_NAN; the TS locked schema makes the kind an explicit discriminant, so the port is a single field comparison.",
+  "refs": [
+    "mpfr/src/isnan.c L24–L28 — the C reference (one-line body returning MPFR_IS_NAN(x)).",
+    "src/core.ts L73 — MPFRKind discriminant ('normal' | 'zero' | 'inf' | 'nan').",
+    "src/core.ts L243–L249 — NAN_VALUE canonical constant.",
+    "src/ops/nan_p.ts — the production port.",
+    "mpfr/tests/tisnan.c — source for the `mined` cases (exercises every kind plus signed zero / signed inf coverage).",
+    "CLAUDE.md \"Hallucination-risk callouts: NaN ≠ NaN\" — for nan_p the predicate is unambiguous (it returns true on NaN itself); the rule about IEEE-equality NaN traps applies to other functions, not to this one."
+  ]
+}

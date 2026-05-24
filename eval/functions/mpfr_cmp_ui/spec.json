@@ -1,0 +1,20 @@
+{
+  "function": "mpfr_cmp_ui",
+  "class": "arithmetic",
+  "signature": {
+    "params": ["x", "n"],
+    "returns": "number"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_cmp_ui: compare an MPFR value against an unsigned 64-bit integer. Returns -1/0/+1. Throws MPFRError('EDOMAIN') on NaN x; throws MPFRError('EPREC') on n outside uint64. Specialisation of cmp_si with implicit sign=+1 and widened range [0, 2^64-1]. Class 'arithmetic' (50ms budget).",
+  "c_signature": "int mpfr_cmp_ui(mpfr_srcptr op, unsigned long ui)",
+  "divergence_from_c": "Same NaN-throw divergence as cmp_si. Out-of-range n (negative or above ULONG_MAX) throws MPFRError('EPREC').",
+  "refs": [
+    "mpfr/src/cmp_ui.c L33–L92 — the C reference body (mpfr_cmp_ui_2exp with f=0).",
+    "mpfr/src/cmp_ui.c L113–L118 — the public entry.",
+    "src/internal/mpfr/cmp_raw.ts — shared comparison core.",
+    "src/ops/cmp_si.ts — signed sibling.",
+    "src/ops/set_ui.ts — the n-to-MPFR construction.",
+    "mpfr/tests/tcmp_ui.c — mined cases.",
+    "CLAUDE.md \"Hallucination-risk callouts\": NaN ≠ NaN."
+  ]
+}

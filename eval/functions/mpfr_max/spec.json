@@ -1,0 +1,21 @@
+{
+  "function": "mpfr_max",
+  "class": "arithmetic",
+  "signature": {
+    "params": ["a", "b", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_max: return the larger of two operands per IEEE 754-2008 `maxNum` semantics — NaN propagates only when both are NaN. Signed zero is ordered `+0 > -0` via a special pre-test. Class is 'arithmetic' (50ms per-case budget). Sibling to mpfr_min — structurally identical with compare branches and signed-zero polarity flipped (tie goes to `b` instead of `a` per the C reference at mpfr/src/minmax.c L87–L90).",
+  "c_signature": "int mpfr_max(mpfr_t rop, mpfr_srcptr x, mpfr_srcptr y, mpfr_rnd_t rnd)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C mutates rop and returns ternary as int; TS takes prec positional and returns {value, ternary}. Behaviour matches mpfr/src/minmax.c L65–L91 exactly. IEEE 754-2008 maxNum, not 754-2019 maximum (which would propagate NaN). Both-zero pre-test is load-bearing for the same reason as mpfr_min.",
+  "refs": [
+    "mpfr/src/minmax.c L65–L91 — the C reference for mpfr_max.",
+    "mpfr/src/cmp.c L32–L98 — mpfr_cmp3.",
+    "src/internal/mpfr/cmp_raw.ts — substrate compareMPFR.",
+    "src/internal/mpfr/round_raw.ts — substrate rounding for the prec-refit step.",
+    "src/ops/min.ts — direct sibling.",
+    "src/core.ts — locked types; posZero / negZero factories.",
+    "CLAUDE.md 'Hallucination-risk callouts' — Signed zero is real (max(+0, -0) = +0); NaN ≠ NaN (IEEE 754-2008 maxNum); rounding-mode count is FIVE."
+  ]
+}

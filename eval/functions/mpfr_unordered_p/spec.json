@@ -1,0 +1,18 @@
+{
+  "function": "mpfr_unordered_p",
+  "class": "arithmetic",
+  "signature": {
+    "params": ["a", "b"],
+    "returns": "boolean"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_unordered_p: true iff a or b is NaN. NEVER throws (predicate family pattern; documented as accepting out-of-range inputs in mpfr/src/comparisons.c L36). One-line discriminant check — does not delegate to compareMPFR because no ordering is needed. Class 'arithmetic' (50ms budget).",
+  "c_signature": "int mpfr_unordered_p(mpfr_srcptr a, mpfr_srcptr b)",
+  "divergence_from_c": "C returns int; TS returns boolean. Predicate does NOT throw on NaN — that's its defining purpose: detect NaN. Per mpfr/src/comparisons.c L36, x and y are allowed to be out of range (the predicate exists so callers can probe NaN-ness without normalising). Truth-table row: 0/0/0/1 (false for less/equal/greater, true ONLY on unordered).",
+  "refs": [
+    "mpfr/src/comparisons.c L75–L79 — the C reference (one-line `MPFR_IS_NAN(x) || MPFR_IS_NAN(y)`).",
+    "mpfr/src/comparisons.c L24–L37 — the truth table comment.",
+    "src/ops/less_p.ts — sibling predicate; shares the non-throwing-NaN contract.",
+    "mpfr/tests/tcomparisons.c L26–L84 — cmp_tests routine asserts `unordered_p == (cmpbool == 0x40)` for the NaN-only branch (i <= 2 → x or y forced to NaN; cmpbool must equal 0x40, i.e. only the unordered bit set).",
+    "CLAUDE.md \"Hallucination-risk callouts: NaN ≠ NaN\" — unordered_p's `true` on NaN IS the IEEE 754 'NaN is unordered' rule."
+  ]
+}

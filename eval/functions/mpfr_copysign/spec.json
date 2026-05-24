@@ -1,0 +1,21 @@
+{
+  "function": "mpfr_copysign",
+  "class": "arithmetic",
+  "signature": {
+    "params": ["x", "y", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_copysign: produce a value with the magnitude of x and the sign of y, rounded per rnd at prec. The C function takes two operands and a rounding mode; the TS port mirrors that shape. Class is 'arithmetic' (50ms per-case budget). Sibling to setsign — the only difference is that the sign comes from y.sign rather than a boolean flag. Subtleties: same as setsign re: signed zero and the new-sign rounding-direction rule. NaN-sign divergence is documented in divergence_from_c below — both the schema-canonical NaN and the wire-folded NaN side carry sign=1, so this is grader-invisible as long as the driver does not construct a NaN y with a non-default sign.",
+  "c_signature": "int mpfr_copysign(mpfr_t rop, mpfr_srcptr op, mpfr_srcptr y, mpfr_rnd_t rnd)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C mutates rop and returns ternary as int; TS takes prec positional and returns {value, ternary}. NaN x → NAN_VALUE in TS regardless of y's sign (the C reference would preserve y's sign on a NaN result via MPFR_SET_SAME_SIGN(z, y), see mpfr/src/copysign.c L40 + the comment at L25–L30, but the locked schema canonicalises NaN to sign=1). The grader's wire emitter jl_kv_mpfr (common.h L383) writes NaN as sign=1 regardless of libmpfr's internal NaN sign — so the divergence is grader-invisible. Golden driver MUST avoid constructing a NaN y whose sign was set negative on the C side (e.g. via MPFR_SET_NEG on a NaN); using mpfr_set_nan only is safe.",
+  "refs": [
+    "mpfr/src/copysign.c L24–L46 — the C reference. The comment at L25–L30 documents the NaN-sign-preservation rule that the locked schema collapses.",
+    "mpfr/src/set.c L25–L64 — mpfr_set4 with MPFR_SIGN(y) for sign.",
+    "src/ops/setsign.ts — direct sibling; sign derived from boolean instead of y.sign.",
+    "src/ops/abs.ts / src/ops/neg.ts — siblings.",
+    "src/internal/mpfr/round_raw.ts — substrate primitive.",
+    "src/core.ts — locked types; NaN canonicalisation (sign=1).",
+    "CLAUDE.md 'Hallucination-risk callouts' — NaN ≠ NaN; signed zero observable; ternary direction; rounding-mode count is FIVE."
+  ]
+}

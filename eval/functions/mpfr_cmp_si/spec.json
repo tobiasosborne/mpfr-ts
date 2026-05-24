@@ -1,0 +1,20 @@
+{
+  "function": "mpfr_cmp_si",
+  "class": "arithmetic",
+  "signature": {
+    "params": ["x", "n"],
+    "returns": "number"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_cmp_si: compare an MPFR value against a signed 64-bit integer. Returns -1/0/+1. Throws MPFRError('EDOMAIN') on NaN x (matching the mpfr_cmp throw-on-NaN divergence); throws MPFRError('EPREC') on n outside int64. Strategy: build an exact-representation temp MPFR of n and delegate to compareMPFR — composes set_si-style integer-to-MPFR construction with the shared cmp core. Class 'arithmetic' (50ms budget).",
+  "c_signature": "int mpfr_cmp_si(mpfr_srcptr op, long si)",
+  "divergence_from_c": "C returns 0 AND sets ERANGE on NaN x; TS throws MPFRError('EDOMAIN') — same divergence as mpfr_cmp. The golden therefore CANNOT include NaN-x cases (a throw is graded n_throw, not pass). C accepts a raw `long` (out-of-range cast is UB); TS takes a bigint and throws MPFRError('EPREC') on out-of-range. The C return is normalised to {-1, 0, +1} in the driver via normalise_cmp().",
+  "refs": [
+    "mpfr/src/cmp_si.c L33–L98 — the C reference body (mpfr_cmp_si_2exp with f=0): dispatches NaN-throw, ±Inf, ±0, sign-mismatch, then exponent + limb compare on positive operands.",
+    "mpfr/src/cmp_si.c L120–L123 — the public entry, trivial wrapper.",
+    "src/internal/mpfr/cmp_raw.ts — shared comparison core; the temp-MPFR delegation strategy means cmp_si is one bigint allocation + one compareMPFR call.",
+    "src/ops/set_si.ts — the n-to-MPFR construction this port mirrors (bit-length, MSB-aligned mantissa, zero shortcut).",
+    "src/ops/cmp.ts — sibling MPFR-vs-MPFR throwing surface; shares the NaN→EDOMAIN translation.",
+    "mpfr/tests/tcmp_ui.c L60–L185 — mined cases (NaN check_nan tests; check_macros test with n=17 and n=0).",
+    "CLAUDE.md \"Hallucination-risk callouts\": NaN ≠ NaN (we throw on NaN x); rounding-mode count is FIVE (does not apply here; no rnd parameter)."
+  ]
+}

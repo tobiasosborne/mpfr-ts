@@ -1,0 +1,17 @@
+{
+  "function": "mpfr_inf_p",
+  "class": "arithmetic",
+  "signature": {
+    "params": ["x"],
+    "returns": "boolean"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_inf_p: infinity predicate. Returns true iff x is ±Inf (sign-agnostic), false for any other kind. Trivial one-line port: reads kind discriminant. Class 'arithmetic' (50ms budget).",
+  "c_signature": "int mpfr_inf_p(mpfr_srcptr x)",
+  "divergence_from_c": "C returns int; TS returns boolean. Never throws.",
+  "refs": [
+    "mpfr/src/isinf.c L24–L28 — the C reference (one-line body returning MPFR_IS_INF(x)).",
+    "src/core.ts L73 — MPFRKind discriminant.",
+    "src/ops/inf_p.ts — the production port.",
+    "mpfr/tests/tisnan.c — source for the `mined` cases (the predicate-family tests share a test file)."
+  ]
+}

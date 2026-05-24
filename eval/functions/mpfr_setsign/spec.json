@@ -1,0 +1,21 @@
+{
+  "function": "mpfr_setsign",
+  "class": "arithmetic",
+  "signature": {
+    "params": ["x", "sign", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_setsign: produce a value with the magnitude of x and the caller-chosen sign bit, rounded per rnd at prec. The C function takes an int s (s != 0 → negative); the TS port takes a TS boolean for clarity. Class is 'arithmetic' (50ms per-case budget) — structurally identical to mpfr_abs / mpfr_neg, a sign override followed by an optional roundMantissa step. Subtleties: signed-zero observability (setsign forces the requested sign on ±0, unlike abs which collapses to +0), and the new-sign rounding-direction rule (RNDU/RNDD route via the imposed sign, not x's original sign — same C wiring as mpfr_set4's signb).",
+  "c_signature": "int mpfr_setsign(mpfr_t rop, mpfr_srcptr op, int s, mpfr_rnd_t rnd)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C takes `int s` (truthy = negative) and mutates rop; TS takes a TS `boolean` (true = negative) and prec positional, returns {value, ternary}. Wire emits sign as a JSON boolean (true/false) via jl_kv_bool; decoder produces a TS boolean (decodeInputValue at value_codec.ts L168 passes booleans through). NaN handling diverges: the C reference imposes the requested sign on a NaN result, but the TS locked schema collapses every NaN to NAN_VALUE (sign=1). The grader's wire decoder folds C-side NaN sign to 1 in jl_kv_mpfr (common.h L383), so the divergence is invisible to the grader for NaN x — the golden expects NAN_VALUE in both cases.",
+  "refs": [
+    "mpfr/src/setsign.c L25–L38 — the C reference. Alias-case flips sign in place; general path delegates to mpfr_set4(z, x, rnd, s ? MPFR_SIGN_NEG : MPFR_SIGN_POS).",
+    "mpfr/src/set.c L25–L64 — mpfr_set4. The signb argument drives MPFR_RNDRAW direction.",
+    "src/ops/neg.ts — direct sibling; the 'new-sign rounding-direction rule' is identical here.",
+    "src/ops/abs.ts — sibling (always +1).",
+    "src/internal/mpfr/round_raw.ts — substrate rounding primitive.",
+    "src/core.ts — locked types and factories.",
+    "CLAUDE.md 'Hallucination-risk callouts' — Signed zero observable; ternary direction; rounding-mode count is FIVE."
+  ]
+}

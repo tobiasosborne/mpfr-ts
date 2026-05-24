@@ -1,0 +1,17 @@
+{
+  "function": "mpfr_zero_p",
+  "class": "arithmetic",
+  "signature": {
+    "params": ["x"],
+    "returns": "boolean"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_zero_p: zero predicate. Returns true iff x is ±0 (sign-agnostic), false otherwise. Note: signed zero is observable in arithmetic (RNDD breaks +0+(-0)), but zero_p collapses both signs to a single true — they share the 'zero' kind. Class 'arithmetic' (50ms budget).",
+  "c_signature": "int mpfr_zero_p(mpfr_srcptr x)",
+  "divergence_from_c": "C returns int; TS returns boolean. Never throws.",
+  "refs": [
+    "mpfr/src/iszero.c L24–L28 — the C reference.",
+    "src/core.ts L73 — MPFRKind discriminant.",
+    "src/core.ts L77–L90 — Sign type, signed-zero doc.",
+    "src/ops/zero_p.ts — the production port."
+  ]
+}

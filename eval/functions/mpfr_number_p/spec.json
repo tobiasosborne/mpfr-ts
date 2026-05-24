@@ -1,0 +1,18 @@
+{
+  "function": "mpfr_number_p",
+  "class": "arithmetic",
+  "signature": {
+    "params": ["x"],
+    "returns": "boolean"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_number_p: 'ordinary number' (finite) predicate. Returns true iff x is finite — kind 'normal' or 'zero' — and false for ±Inf or NaN. Includes signed zero. The C reference defers to the MPFR_IS_FP macro (`!IS_NAN && !IS_INF`); we express it positively. Class 'arithmetic' (50ms budget).",
+  "c_signature": "int mpfr_number_p(mpfr_srcptr x)",
+  "divergence_from_c": "C returns int; TS returns boolean. Never throws. Note that NaN reaching this predicate is fully expected and produces false — this is the only one of the predicate family whose answer is 'NaN → false' from an intent perspective (the others happen to return false on NaN as a consequence of the kind dispatch).",
+  "refs": [
+    "mpfr/src/isnum.c L24–L28 — the C reference (one-line body returning MPFR_IS_FP(x)).",
+    "mpfr/src/mpfr-impl.h §MPFR_IS_FP — the macro definition (NOT NaN AND NOT Inf).",
+    "src/core.ts L300–L302 — isFinite helper has identical semantics.",
+    "src/core.ts L73 — MPFRKind discriminant.",
+    "src/ops/number_p.ts — the production port."
+  ]
+}

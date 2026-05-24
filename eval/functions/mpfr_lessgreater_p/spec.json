@@ -1,0 +1,19 @@
+{
+  "function": "mpfr_lessgreater_p",
+  "class": "arithmetic",
+  "signature": {
+    "params": ["a", "b"],
+    "returns": "boolean"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_lessgreater_p: true iff a < b OR a > b (i.e. strictly ordered AND unequal). Returns false on equal (including +0 vs -0, which cmp collapses to equal) and on NaN (the 'unordered' case). Delegates to compareMPFR. Class 'arithmetic' (50ms budget).",
+  "c_signature": "int mpfr_lessgreater_p(mpfr_srcptr a, mpfr_srcptr b)",
+  "divergence_from_c": "C returns int; TS returns boolean. Predicate does NOT throw on NaN — returns false (the C's `MPFR_IS_NAN(x) || MPFR_IS_NAN(y) ? 0 : ...` short-circuit). Truth-table row: 0/1/1/0 (false on equal AND unordered, true only on strict-less or strict-greater). +0 vs -0 returns false because cmp does not order signed zero.",
+  "refs": [
+    "mpfr/src/comparisons.c L63–L67 — the C reference (`mpfr_cmp(x, y) != 0` with NaN guard).",
+    "mpfr/src/comparisons.c L24–L37 — the truth table.",
+    "src/internal/mpfr/cmp_raw.ts — shared comparison core.",
+    "src/ops/equal_p.ts — the dual predicate; `!equal_p(a,b) && !unordered_p(a,b)` is the decomposition (we implement directly via compareMPFR to save a call).",
+    "mpfr/tests/tcomparisons.c L26–L84 — cmp_tests asserts `lessgreater_p` is true iff cmp result is nonzero AND both operands are non-NaN. L107 in eq_tests asserts lessgreater_p(equal pair) is false.",
+    "CLAUDE.md \"Hallucination-risk callouts\": NaN ≠ NaN (predicates return false for unordered); Signed zero is real (NOT for cmp, so +0 vs -0 → lessgreater_p false)."
+  ]
+}
