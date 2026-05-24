@@ -1,0 +1,20 @@
+{
+  "function": "mpfr_set_ui",
+  "class": "misc",
+  "signature": {
+    "params": ["n", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_set_ui: convert an unsigned 64-bit integer to an MPFR at the requested precision, rounded per rnd, returning {value, ternary}. Specialisation of set_si for non-negative inputs only; sign is always +1. Class is 'misc' (1000ms per-case budget) for the same reason as set_si — the port is sub-millisecond in practice, but the runner enum lacks an 'arithmetic'-like tier this op fits cleanly into.",
+  "c_signature": "int mpfr_set_ui(mpfr_t rop, unsigned long int op, mpfr_rnd_t rnd)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C takes a literal `unsigned long` (64 bits on the target platforms); TS takes a `bigint` and validates [0, ULONG_MAX] = [0, 2^64 - 1], throwing MPFRError('EPREC') on out-of-range. C mutates rop and returns the ternary; TS takes prec positionally and returns {value, ternary}. C sets +0 on n=0; TS matches.",
+  "refs": [
+    "mpfr/src/set_ui.c L25–L29 — the C reference; trivial delegate to mpfr_set_ui_2exp.",
+    "mpfr/src/set_ui_2exp.c L26–L90 — the load-bearing implementation: zero short-circuit, leading-zero-count MSB-align, mpfr_round_raw on prec mismatch, sign assignment (always positive for unsigned).",
+    "src/internal/mpfr/round_raw.ts — shared substrate primitive.",
+    "src/ops/set_si.ts — signed sibling; this port is a direct specialisation with sign=+1 and widened range.",
+    "src/core.ts — locked schema.",
+    "CLAUDE.md 'Hallucination-risk callouts' — ternary direction is sign of (rounded - exact); rounding-mode count is FIVE."
+  ]
+}

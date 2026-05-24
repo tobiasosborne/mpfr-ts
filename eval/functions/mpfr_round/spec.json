@@ -1,0 +1,21 @@
+{
+  "function": "mpfr_round",
+  "class": "arithmetic",
+  "signature": {
+    "params": ["x", "prec"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_round: round an MPFR value to the nearest integer with ties away from zero (RNDNA), at the caller-supplied prec, returning {value, ternary}. The C function mutates rop in place and returns the ternary as int; the TS port takes prec explicitly and returns the canonical Result shape from src/core.ts. No rnd parameter — direction is implicit (nearest, ties away from zero). Critical: mpfr_round uses ties-away-from-zero, NOT IEEE 754's ties-to-even (RNDN). So mpfr_round(0.5) = 1, mpfr_round(2.5) = 3, mpfr_round(-0.5) = -1. Class is 'arithmetic' (50ms per-case budget): integer extraction + a prec-fit step are both O(prec) bigint shifts; no transcendental complexity.",
+  "c_signature": "int mpfr_round(mpfr_t r, mpfr_srcptr u)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C mutates rop (which carries prec) and returns the ternary as a separate int; TS takes prec as a positional argument and returns {value, ternary} per the locked Result schema. Behaviour: NaN → NaN; ±Inf → ±Inf (sign preserved); ±0 → ±0 (sign preserved per MPFR_SET_SAME_SIGN); normal → nearest integer (RNDNA) rounded to fit prec. The C ternary can be ±2 (mpfr_rint returns ±uflags where uflags ∈ {0,1,2}); jl_output_result normalises to ±1 for the wire.",
+  "refs": [
+    "mpfr/src/rint.c L317–L320 — mpfr_round defers to mpfr_rint(r, u, MPFR_RNDNA).",
+    "mpfr/src/rint.c L35–L304 — mpfr_rint engine; the exp<=0 branch (L80–L98) handles |u|<1 and uses mpfr_powerof2_raw to detect the exact 0.5 boundary for RNDNA ties-away handling.",
+    "mpfr/tests/trint.c L112–L132 — coverage tests: round(2.5)=3 at prec=2 confirms RNDNA ties-away.",
+    "src/internal/mpfr/round_raw.ts — shared substrate primitive for RNDN/RNDZ/RNDU/RNDD/RNDA; mpfr_round bypasses it for the RNDNA-tie inline-handling (~10 LOC of custom logic).",
+    "src/ops/trunc.ts, src/ops/ceil.ts, src/ops/floor.ts — sibling integer-rounding ops with shared scaffolding.",
+    "src/core.ts — locked types.",
+    "CLAUDE.md 'Hallucination-risk callouts' — Ternary is sign of (rounded - exact); rounding-mode count is FIVE (no RNDNA on the public surface but mpfr_round/mpfr_rint accept it internally as a special rule)."
+  ]
+}

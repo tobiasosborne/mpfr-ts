@@ -448,6 +448,21 @@ static inline void jl_output_scalar_u64(FILE *f, uint64_t v) {
     fprintf(f, ",\"output\":\"%" PRIu64 "\"", v);
 }
 
+/* Emit ,"output":"<decimal>" — scalar int64 result as decimal
+ * string (signed; negative values get the minus sign). Distinct from
+ * `jl_output_scalar_u64` so callers don't accidentally widen a signed
+ * negative into the unsigned 2's-complement form. The TS-side
+ * `decodeExpectedOutput` matches the decimal-integer string regex
+ * (`/^-?\d+$/`) and decodes to `{kind:'scalar', value:<bigint>}`, then
+ * `compareOutput`'s bigint branch (value_codec.ts L429–L446) accepts a
+ * bigint actual or coerces an integer JS number — so a port returning
+ * a JS `bigint` like `-9223372036854775808n` grades correctly against
+ * a `"-9223372036854775808"` golden line. Use for ops whose return
+ * type is a signed C `long` (mpfr_get_si etc.). */
+static inline void jl_output_scalar_i64(FILE *f, int64_t v) {
+    fprintf(f, ",\"output\":\"%" PRId64 "\"", v);
+}
+
 /* Emit ,"output":N — scalar int as a bare JS number, NOT stringified.
  * Use for ops whose return type is a small signed int that comfortably
  * fits in a JS number — comparison ops (sign of difference: -1/0/+1),

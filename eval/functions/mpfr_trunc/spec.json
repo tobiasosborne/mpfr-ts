@@ -1,0 +1,19 @@
+{
+  "function": "mpfr_trunc",
+  "class": "arithmetic",
+  "signature": {
+    "params": ["x", "prec"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_trunc: truncate an MPFR value toward zero to an integer at the caller-supplied prec, returning {value, ternary}. No rnd parameter — direction is implicit (toward zero). Behaviour: drops the fractional part regardless of magnitude or sign, so trunc(2.7)=2, trunc(-2.7)=-2, trunc(0.99)=+0, trunc(-0.99)=-0. Class is 'arithmetic'.",
+  "c_signature": "int mpfr_trunc(mpfr_t r, mpfr_srcptr u)",
+  "prec_unit": "bits",
+  "divergence_from_c": "Same divergence pattern as mpfr_round/ceil/floor. C mutates rop; TS returns {value, ternary}. Behaviour matches mpfr_rint(r, u, MPFR_RNDZ). NaN→NaN; ±Inf→±Inf; ±0→±0 (signed zero preserved); normal→integer part of magnitude with original sign.",
+  "refs": [
+    "mpfr/src/rint.c L325–L328 — mpfr_trunc defers to mpfr_rint(r, u, MPFR_RNDZ).",
+    "mpfr/src/rint.c L35–L304 — mpfr_rint engine.",
+    "mpfr/tests/ttrunc.c — coverage tests.",
+    "src/ops/round.ts, src/ops/ceil.ts, src/ops/floor.ts — sibling ops.",
+    "src/core.ts — locked types."
+  ]
+}

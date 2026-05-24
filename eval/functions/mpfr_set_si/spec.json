@@ -1,0 +1,20 @@
+{
+  "function": "mpfr_set_si",
+  "class": "misc",
+  "signature": {
+    "params": ["n", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_set_si: convert a signed 64-bit integer to an MPFR at the requested precision, rounded per rnd, returning {value, ternary}. The C function mutates rop in place; the TS port takes prec explicitly and returns the canonical Result. Class is 'misc' (1000ms per-case budget): the port runs in O(bitLength(|n|)) bigint ops (≤ 64 iterations) plus one substrate roundMantissa call at most — comfortably under 1ms even at PREC_MAX, but 'arithmetic' (50ms) is not in the runner.ts enum for this function family and 'misc' is the closest fit. The signed-zero observability rule (mpfr_set_si forces +0 on n=0), the int64 range check (throwing EPREC outside [LONG_MIN, LONG_MAX]), and the new-sign rounding direction are the subtle bits.",
+  "c_signature": "int mpfr_set_si(mpfr_t rop, long int op, mpfr_rnd_t rnd)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C takes a literal `long` (platform-dependent width; 64 bits on x86_64/aarch64 Linux); TS takes a `bigint` and validates that it lies in [LONG_MIN, LONG_MAX] = [-(2^63), 2^63 - 1], throwing MPFRError('EPREC') if not (rather than UB on out-of-range coercion). C mutates rop and returns the ternary as int; TS takes prec positionally and returns {value, ternary} per src/core.ts. C sets +0 (sign forced positive) on n=0; TS matches (mpfr/src/set_si_2exp.c L31–L33).",
+  "refs": [
+    "mpfr/src/set_si.c L25–L29 — the C reference; trivial delegate to mpfr_set_si_2exp.",
+    "mpfr/src/set_si_2exp.c L27–L92 — the load-bearing implementation: zero short-circuit, abs+leading-zero-count MSB-align, mpfr_round_raw on prec mismatch, sign assignment, exponent bump on carry-out.",
+    "src/internal/mpfr/round_raw.ts — shared substrate primitive; carries the carry-out renormalisation.",
+    "src/ops/set_d.ts — sibling op for the double input path; shares the 'MSB-align + lossless pad or round' structure.",
+    "src/core.ts — locked MPFR / RoundingMode / Result / Sign types; posZero / PREC_MIN / PREC_MAX.",
+    "CLAUDE.md 'Hallucination-risk callouts' — signed zero forced positive on n=0; ternary direction is sign of (rounded - exact); rounding-mode count is FIVE."
+  ]
+}

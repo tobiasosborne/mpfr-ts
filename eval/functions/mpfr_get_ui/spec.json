@@ -1,0 +1,20 @@
+{
+  "function": "mpfr_get_ui",
+  "class": "misc",
+  "signature": {
+    "params": ["x", "rnd"],
+    "returns": "bigint"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_get_ui: round an MPFR value to the nearest unsigned 64-bit integer per rnd. Throws on NaN / ±Inf / overflow / negative-not-rounding-to-0, matching the C reference's ERANGE flag semantics but surfaced as a throw (no flag surface in the locked schema). The 'negative value that rounds to 0' edge case (e.g. -0.4 under RNDN) returns 0n successfully — mirrors mpfr_fits_ulong_p (mpfr/src/fits_u.h L39–L43).",
+  "c_signature": "unsigned long mpfr_get_ui(mpfr_srcptr op, mpfr_rnd_t rnd)",
+  "prec_unit": "bits",
+  "divergence_from_c": "Same as get_si: throws MPFRError('EPREC') rather than saturating with a flag. Return type is `bigint` (ULONG_MAX = 2^64 - 1 exceeds Number.MAX_SAFE_INTEGER). Negative-value-rounds-to-0 returns 0n (consistent with C's fits_ulong_p contract). NaN / Inf / negative-not-rounding-to-0 / >ULONG_MAX cases are EXCLUDED from the golden because they would throw and the harness can't grade expected-throw cases.",
+  "refs": [
+    "mpfr/src/get_ui.c L25–L83 — C reference.",
+    "mpfr/src/fits_u.h L39–L43 — the negative-fits-iff-rounds-to-0 logic.",
+    "src/internal/mpfr/round_raw.ts — shared substrate.",
+    "src/ops/get_si.ts — signed sibling; same algorithm structure.",
+    "src/core.ts — locked schema.",
+    "CLAUDE.md 'Hallucination-risk callouts' — NaN ≠ NaN; rounding-mode count is FIVE."
+  ]
+}

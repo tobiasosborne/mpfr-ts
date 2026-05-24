@@ -1,0 +1,18 @@
+{
+  "function": "mpfr_floor",
+  "class": "arithmetic",
+  "signature": {
+    "params": ["x", "prec"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_floor: round an MPFR value toward -∞ to an integer at the caller-supplied prec, returning {value, ternary}. No rnd parameter — direction is implicit (toward negative infinity). Behaviour: floor(2.7)=2, floor(-2.7)=-3 (more negative!), floor(0.3)=+0, floor(-0.3)=-1. Watch out: sign matters for floor — it's the SIGNED value that rounds toward -∞, not the magnitude. Class is 'arithmetic'.",
+  "c_signature": "int mpfr_floor(mpfr_t r, mpfr_srcptr u)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C mutates rop; TS returns {value, ternary}. Behaviour matches mpfr_rint(r, u, MPFR_RNDD). NaN→NaN; ±Inf→±Inf; ±0→±0 (sign preserved); positive normal→trunc; negative normal with fractional bits→trunc - 1.",
+  "refs": [
+    "mpfr/src/rint.c L341–L344 — mpfr_floor defers to mpfr_rint(r, u, MPFR_RNDD).",
+    "mpfr/src/rint.c L67–L72 — rnd_away = sign<0 for RNDD: floor of negatives rounds magnitude up (away from zero).",
+    "src/ops/ceil.ts — symmetric sibling.",
+    "src/core.ts — locked types."
+  ]
+}
