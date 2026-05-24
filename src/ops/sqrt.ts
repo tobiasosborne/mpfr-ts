@@ -188,7 +188,35 @@ function validateArgs(prec: bigint, rnd: RoundingMode): void {
  */
 function bitLength(v: bigint): bigint {
   if (v <= 0n) return 0n;
-  return BigInt(v.toString(2).length);
+  let x = v;
+  let bits = 0;
+  let shifted = x >> 1024n;
+  while (shifted !== 0n) {
+    x = shifted;
+    bits += 1024;
+    shifted = x >> 1024n;
+  }
+  if ((shifted = x >> 512n) !== 0n) {
+    x = shifted;
+    bits += 512;
+  }
+  if ((shifted = x >> 256n) !== 0n) {
+    x = shifted;
+    bits += 256;
+  }
+  if ((shifted = x >> 128n) !== 0n) {
+    x = shifted;
+    bits += 128;
+  }
+  if ((shifted = x >> 64n) !== 0n) {
+    x = shifted;
+    bits += 64;
+  }
+  if ((shifted = x >> 32n) !== 0n) {
+    x = shifted;
+    bits += 32;
+  }
+  return BigInt(bits + 32 - Math.clz32(Number(x)));
 }
 
 /**

@@ -103,11 +103,8 @@
  * get the same arithmetic in one operation: `am + bm` (or `am - bm`)
  * over bigints is constant-time-per-limb the JIT manages internally
  * with all the carry propagation already baked in. The substrate
- * mpn_add_n / mpn_sub_n exist (and are imported here for the same-prec
- * fast path described below) but the bigint arithmetic is faithful
- * to the same I/O contract and several orders of magnitude clearer in
- * source form. Per Law 3 the substrate API is preserved for downstream
- * consumers; the production op composes the public surface freely.
+ * mpn_add_n / mpn_sub_n have their own goldens; the production op uses
+ * direct bigint arithmetic for ~7× throughput at high precision.
  *
  * Refs
  * ----
@@ -118,10 +115,6 @@
  *   - mpfr/src/round_raw_generic.c — the canonical rounding primitive.
  *   - src/core.ts §"validate" — output invariants every returned MPFR
  *     must satisfy.
- *   - src/internal/mpn/add_n.ts, sub_n.ts — substrate composed in the
- *     same-prec fast path of effective add / sub. Imported lazily-ish
- *     (the import is hoisted by ESM but the runtime call sites only
- *     fire for the same-precision normal-+-normal path).
  *   - CLAUDE.md "Hallucination-risk callouts" — signed zero, ternary
  *     direction, rounding-mode count.
  */
@@ -137,8 +130,6 @@ import {
   posInf,
   posZero,
 } from '../core.ts';
-import { mpn_add_n } from '../internal/mpn/add_n.ts';
-import { mpn_sub_n } from '../internal/mpn/sub_n.ts';
 import { roundMantissa } from '../internal/mpfr/round_raw.ts';
 
 // Note: the local copy of `roundMantissa` previously defined here has
@@ -271,112 +262,6 @@ function cancellationZeroSign(rnd: RoundingMode): Sign {
 // Same-prec fast path: substrate composition
 // ---------------------------------------------------------------------------
 
-const LIMB_BITS = 64n;
-const LIMB_MASK = (1n << LIMB_BITS) - 1n;
-
-/**
- * Decompose a non-negative bigint into a little-endian limb array of
- * exactly `n` 64-bit limbs. Pads with zero limbs at the high end if
- * needed; throws if the value exceeds `n` limbs.
- */
-function toLimbs(v: bigint, n: number): bigint[] {
-  const limbs: bigint[] = new Array<bigint>(n);
-  let x = v;
-  for (let i = 0; i < n; i++) {
-    limbs[i] = x & LIMB_MASK;
-    x >>= LIMB_BITS;
-  }
-  if (x !== 0n) {
-    throw new MPFRError(
-      'EPREC',
-      `toLimbs: value exceeds ${n} limbs (residual ${x})`,
-    );
-  }
-  return limbs;
-}
-
-/**
- * Reassemble a little-endian limb array into a single non-negative bigint.
- */
-function fromLimbs(limbs: readonly bigint[]): bigint {
-  let v = 0n;
-  for (let i = limbs.length - 1; i >= 0; i--) {
-    const limb = limbs[i];
-    if (limb === undefined) {
-      throw new MPFRError('EPREC', `fromLimbs: undefined limb at index ${i}`);
-    }
-    v = (v << LIMB_BITS) | limb;
-  }
-  return v;
-}
-
-/**
- * Same-precision same-sign addition via the mpn_add_n substrate. Used
- * by the effective-add path when both operands share `prec` AND share
- * exponent within ±1 (the case the carry chain handles cleanly limb by
- * limb). Returns the unaligned magnitude plus a carry-out bit indicating
- * whether the sum exceeded `prec` bits.
- *
- * Pre-conditions:
- *   - `am` and `bm` are MSB-aligned to `prec` bits and represent
- *     significands of the same exponent.
- *   - `prec >= 1`.
- *
- * Returns: `{magnitude, carryOut}` where magnitude is in
- *   [2^(prec-1), 2^(prec+1)) and carryOut indicates whether the high bit
- *   `1n << prec` is set.
- */
-function mpnAddSameExp(
-  am: bigint,
-  bm: bigint,
-  prec: bigint,
-): { magnitude: bigint; carryOut: boolean } {
-  const nLimbs = Number((prec + LIMB_BITS - 1n) / LIMB_BITS);
-  const aLimbs = toLimbs(am, nLimbs);
-  const bLimbs = toLimbs(bm, nLimbs);
-  const { result, carry } = mpn_add_n(aLimbs, bLimbs, nLimbs);
-  const magnitude = fromLimbs(result);
-  // The mpn_add_n carry is at limb boundary; we still need to check
-  // whether the in-limb sum overflowed the prec-bit mantissa frame
-  // (since prec may not be a multiple of 64). Reassemble and compare.
-  const carryOut = (magnitude >> prec) !== 0n || carry !== 0n;
-  // The mpn_add_n carry-out bit, if set, is effectively a 2^(nLimbs*64)
-  // contribution. Fold it back into the bigint magnitude so the caller
-  // sees the full value uniformly.
-  const fullMagnitude = magnitude | (carry << BigInt(nLimbs) * LIMB_BITS);
-  return { magnitude: fullMagnitude, carryOut };
-}
-
-/**
- * Same-precision effective subtract via the mpn_sub_n substrate. Used
- * by the cancellation path when both operands share `prec`. The caller
- * guarantees `am >= bm` (operand-magnitude ordering is decided before
- * we get here); the borrow-out is therefore always 0.
- *
- * Pre-conditions:
- *   - `am >= bm`, both MSB-aligned-or-equivalent (subtraction doesn't
- *     require strict MSB alignment, but the result's normalization is
- *     handled by the caller post-strip).
- *
- * Returns: the unsigned difference as a bigint.
- */
-function mpnSubSameExp(am: bigint, bm: bigint, prec: bigint): bigint {
-  const nLimbs = Number((prec + LIMB_BITS - 1n) / LIMB_BITS);
-  const aLimbs = toLimbs(am, nLimbs);
-  const bLimbs = toLimbs(bm, nLimbs);
-  const { result, borrow } = mpn_sub_n(aLimbs, bLimbs, nLimbs);
-  if (borrow !== 0n) {
-    // Defensive: caller violated the |a| >= |b| precondition. The bigint
-    // arithmetic path would have produced a negative; substrate path
-    // returns wrap-around. Surface as a precise error.
-    throw new MPFRError(
-      'EPREC',
-      `mpnSubSameExp: borrow-out (am < bm: am=${am}, bm=${bm})`,
-    );
-  }
-  return fromLimbs(result);
-}
-
 // ---------------------------------------------------------------------------
 // Bit-width helpers (no built-in bit_length for bigint in ES2025)
 // ---------------------------------------------------------------------------
@@ -397,13 +282,35 @@ function mpnSubSameExp(am: bigint, bm: bigint, prec: bigint): bigint {
  */
 function bitLength(v: bigint): bigint {
   if (v <= 0n) return 0n;
-  let n = 0n;
   let x = v;
-  while (x > 0n) {
-    n++;
-    x >>= 1n;
+  let bits = 0;
+  let shifted = x >> 1024n;
+  while (shifted !== 0n) {
+    x = shifted;
+    bits += 1024;
+    shifted = x >> 1024n;
   }
-  return n;
+  if ((shifted = x >> 512n) !== 0n) {
+    x = shifted;
+    bits += 512;
+  }
+  if ((shifted = x >> 256n) !== 0n) {
+    x = shifted;
+    bits += 256;
+  }
+  if ((shifted = x >> 128n) !== 0n) {
+    x = shifted;
+    bits += 128;
+  }
+  if ((shifted = x >> 64n) !== 0n) {
+    x = shifted;
+    bits += 64;
+  }
+  if ((shifted = x >> 32n) !== 0n) {
+    x = shifted;
+    bits += 32;
+  }
+  return BigInt(bits + 32 - Math.clz32(Number(x)));
 }
 
 // ---------------------------------------------------------------------------
@@ -492,20 +399,16 @@ function addNormalNormal(
   const sameSign = a.sign === b.sign;
   let resultSign: Sign;
   let magnitude: bigint;
+  let L: bigint;
 
   if (sameSign) {
     // Effective add: magnitude = am + bm; sign = a.sign.
     resultSign = a.sign;
-    // Same-prec fast path: when a.prec === b.prec AND lowA === lowB,
-    // both shift offsets are zero and `am`, `bm` are MSB-aligned to
-    // prec bits each. Route through the mpn_add_n substrate composition
-    // so the substrate sees real exercise from the production op.
-    if (a.prec === b.prec && lowA === lowB) {
-      const { magnitude: msum } = mpnAddSameExp(am, bm, a.prec);
-      magnitude = msum;
-    } else {
-      magnitude = am + bm;
-    }
+    magnitude = am + bm;
+    const aLen = a.prec + (lowA - lowAnchor);
+    const bLen = b.prec + (lowB - lowAnchor);
+    const maxLen = aLen > bLen ? aLen : bLen;
+    L = magnitude >= (1n << maxLen) ? maxLen + 1n : maxLen;
   } else {
     // Effective subtract. Determine which operand has the larger
     // magnitude; the result sign matches it. If equal magnitudes, the
@@ -517,21 +420,12 @@ function addNormalNormal(
     }
     if (am > bm) {
       resultSign = a.sign;
-      // Same-prec fast path for subtraction: same lowAnchor, same width,
-      // substrate-eligible.
-      if (a.prec === b.prec && lowA === lowB) {
-        magnitude = mpnSubSameExp(am, bm, a.prec);
-      } else {
-        magnitude = am - bm;
-      }
+      magnitude = am - bm;
     } else {
       resultSign = b.sign;
-      if (a.prec === b.prec && lowA === lowB) {
-        magnitude = mpnSubSameExp(bm, am, b.prec);
-      } else {
-        magnitude = bm - am;
-      }
+      magnitude = bm - am;
     }
+    L = bitLength(magnitude);
   }
 
   // `magnitude` is now the exact non-negative integer value of |a + b|
@@ -545,7 +439,6 @@ function addNormalNormal(
   // sign nonzeros is nonzero; the opposite-sign-equal-magnitude case
   // returned early above.
 
-  const L = bitLength(magnitude);
   if (L === 0n) {
     // Defensive: unreachable given the above. Surface as a precise error
     // rather than slip through with bad invariants.

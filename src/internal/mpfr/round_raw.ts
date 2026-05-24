@@ -151,8 +151,7 @@ export function roundMantissa(
 ): RoundedMantissa {
   const k = srcPrec - outPrec;
   const trunc = srcMant >> k;
-  const droppedMask = (1n << k) - 1n;
-  const dropped = srcMant & droppedMask;
+  const dropped = srcMant - (trunc << k);
 
   if (dropped === 0n) {
     // Exact: the low k bits are all zero, so truncation IS the exact
@@ -219,14 +218,13 @@ export function roundMantissa(
 
   // Incrementing: rounded magnitude > exact magnitude.
   const incremented = trunc + 1n;
-  const upperBound = 1n << outPrec;
-  if (incremented === upperBound) {
+  if ((incremented >> outPrec) !== 0n) {
     // Carry-out: the rounded value is exactly 2^outPrec, but the
     // MSB-alignment invariant requires `< 2^outPrec`. Renormalise by
     // shifting right one position (becoming 2^(outPrec-1)) and bumping
     // the exponent: same numeric value, valid storage form.
     return {
-      mant: upperBound >> 1n,
+      mant: 1n << (outPrec - 1n),
       exp: srcExp + 1n,
       ternary: sign === 1 ? 1 : -1,
     };

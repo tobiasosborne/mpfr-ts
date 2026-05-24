@@ -233,36 +233,6 @@ function multSign(a: Sign, b: Sign): Sign {
 }
 
 // ---------------------------------------------------------------------------
-// Bit-width helper
-// ---------------------------------------------------------------------------
-
-/**
- * Number of significant bits in `v`. For `v > 0` this is the position
- * (1-indexed) of the topmost set bit. For `v === 0n` returns `0n`.
- *
- * Used to detect the "MSB-of-product is one bit short" case
- * (mpfr/src/mul.c L131 — `if (b1 == 0) mpn_lshift(tmp, tmp, tn, 1)`):
- * the product of two MSB-aligned p- and q-bit mantissas has bit-length
- * in {p+q-1, p+q}; the difference shifts the result exponent by -1.
- *
- * Uses bigint's `toString(2).length` which is the fastest portable
- * bit-length for bigint in V8/Bun — internally a single binary-radix
- * conversion, not an iterative shift. For 400-bit products (PREC_MAX-
- * neighbourhood) this is sub-microsecond; the alternative loop-based
- * helper in add.ts (introduced before this optimisation was
- * benchmarked) is kept there for consistency but mul.ts uses the
- * faster form.
- *
- * Ref: V8 BigInt-to-string is O(n^1.585) Karatsuba-bounded; for n=400
- * the constant beats a 400-iteration `while (x > 0n) { x >>= 1n; }`
- * loop comfortably.
- */
-function bitLength(v: bigint): bigint {
-  if (v <= 0n) return 0n;
-  return BigInt(v.toString(2).length);
-}
-
-// ---------------------------------------------------------------------------
 // Normal * normal core
 // ---------------------------------------------------------------------------
 
@@ -310,7 +280,8 @@ function mulNormalNormal(
     );
   }
 
-  const L = bitLength(product);
+  const fullBits = a.prec + b.prec;
+  const L = product >= (1n << (fullBits - 1n)) ? fullBits : fullBits - 1n;
   // The exact value of |a*b| is product * 2^(a.exp - a.prec + b.exp -
   // b.prec); writing this in MPFR's normalised form |a*b| ∈
   // [2^(E-1), 2^E) we get E = (lowAnchor) + L where lowAnchor = a.exp

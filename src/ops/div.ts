@@ -175,8 +175,6 @@ import {
   posInf,
   posZero,
 } from '../core.ts';
-import { roundMantissa } from '../internal/mpfr/round_raw.ts';
-
 /**
  * Validate the public-boundary arguments. See add.ts / mul.ts for the
  * rationale: only the scalar `prec` / `rnd` arguments are checked here;
@@ -210,23 +208,6 @@ function validateArgs(prec: bigint, rnd: RoundingMode): void {
  */
 function multSign(a: Sign, b: Sign): Sign {
   return (a * b) as Sign;
-}
-
-/**
- * Number of significant bits in `v`. For `v > 0` this is the position
- * (1-indexed) of the topmost set bit. For `v === 0n` returns `0n`.
- *
- * Used to detect whether the bigint quotient has bit-length `prec+1`
- * (a.mant >= b.mant case) or `prec` (a.mant < b.mant case); the
- * decision feeds the exponent computation and the one-extra-shift
- * normalisation step in `divNormalNormal`.
- *
- * Uses bigint's `toString(2).length` which is the fastest portable
- * bit-length for bigint in V8/Bun. Same form as mul.ts.
- */
-function bitLength(v: bigint): bigint {
-  if (v <= 0n) return 0n;
-  return BigInt(v.toString(2).length);
 }
 
 /**
@@ -306,21 +287,23 @@ function divNormalNormal(
   }
 
   let quot = num / divisor;
-  let rem = num % divisor;
+  let rem = num - quot * divisor;
 
-  // Bit-length of quot is in {prec+1, prec+2}.
-  let L = bitLength(quot);
-  if (L !== prec + 1n && L !== prec + 2n) {
+  // Bit-length of quot is in {prec+1, prec+2}. Avoid a general bitLength:
+  // the single threshold at 2^(prec+1) decides which case we are in.
+  const highThreshold = 1n << (prec + 1n);
+  const highQuot = quot >= highThreshold;
+  if (quot < (highThreshold >> 1n) || quot >= (highThreshold << 1n)) {
     // Defensive: a contract violation in the shift accounting above
     // would land here.
     throw new MPFRError(
       'EPREC',
-      `divNormalNormal: unexpected quotient bit-length L=${L} (expected ${prec + 1n} or ${prec + 2n})`,
+      `divNormalNormal: unexpected quotient outside ${prec + 1n}/${prec + 2n}-bit range`,
     );
   }
 
   let resultExp: bigint;
-  if (L === prec + 1n) {
+  if (!highQuot) {
     resultExp = a.exp - b.exp;
   } else {
     // L == prec + 2. Right-shift quot by 1, fold the dropped bit into
@@ -341,7 +324,6 @@ function divNormalNormal(
       rem = 1n;
     }
     // else: rem unchanged.
-    L = prec + 1n;
     resultExp = a.exp - b.exp + 1n;
   }
 
@@ -374,33 +356,62 @@ function finishDiv(
   rnd: RoundingMode,
   sticky: boolean,
 ): Result {
-  // Form `padded = (quot << 1) | (sticky ? 1 : 0)`. This is a (prec+2)-bit
-  // value whose top `prec` bits are quot's top `prec` bits, whose bit
-  // 1 is quot's bit 0 (the round bit), and whose bit 0 is the sticky.
-  // Passing it to roundMantissa with srcPrec=prec+2, outPrec=prec drops
-  // the lowest 2 bits. roundMantissa's "dropped" mask becomes
-  //     dropped = (roundBit << 1) | sticky
-  //     half    = 1 << (k - 1) = 1 << 1 = 2
-  // so for RNDN: dropped > half (i.e. (roundBit << 1) | sticky > 2)
-  // iff roundBit == 1 AND sticky == 1; dropped == half iff roundBit
-  // == 1 AND sticky == 0 (a clean tie); dropped < half iff roundBit
-  // == 0. This is exactly the IEEE 754 round-to-nearest-even rule.
-  //
-  // For RNDZ / RNDA / RNDU / RNDD, the round-or-truncate decision only
-  // looks at "dropped != 0" (round-or-truncate based on rnd and sign),
-  // which still works correctly because the sticky bit ensures
-  // (dropped == 0) iff (roundBit == 0 && sticky == false).
-  const stickyBit = sticky ? 1n : 0n;
-  const padded = (quot << 1n) | stickyBit;
-  const srcPrec = prec + 2n;
-  const { mant, exp, ternary } = roundMantissa(
-    padded,
-    srcPrec,
-    srcExp,
-    prec,
-    sign,
-    rnd,
-  );
+  const trunc = quot >> 1n;
+  const roundBitSet = (quot & 1n) !== 0n;
+  const inexact = roundBitSet || sticky;
+
+  if (!inexact) {
+    const value: MPFR = {
+      kind: 'normal',
+      sign,
+      prec,
+      exp: srcExp,
+      mant: trunc,
+    };
+    return { value, ternary: 0 };
+  }
+
+  let increment: boolean;
+  switch (rnd) {
+    case 'RNDN':
+      increment = roundBitSet && (sticky || (trunc & 1n) !== 0n);
+      break;
+    case 'RNDZ':
+      increment = false;
+      break;
+    case 'RNDA':
+      increment = true;
+      break;
+    case 'RNDD':
+      increment = sign === -1;
+      break;
+    case 'RNDU':
+      increment = sign === 1;
+      break;
+    default: {
+      const _exhaustive: never = rnd;
+      void _exhaustive;
+      throw new MPFRError('EROUND', `unknown rounding mode: ${String(rnd)}`);
+    }
+  }
+
+  if (!increment) {
+    const value: MPFR = {
+      kind: 'normal',
+      sign,
+      prec,
+      exp: srcExp,
+      mant: trunc,
+    };
+    return { value, ternary: sign === 1 ? -1 : 1 };
+  }
+
+  const incremented = trunc + 1n;
+  const upperBound = 1n << prec;
+  const carried = incremented === upperBound;
+  const mant = carried ? upperBound >> 1n : incremented;
+  const exp = carried ? srcExp + 1n : srcExp;
+  const ternary = sign === 1 ? 1 : -1;
   const value: MPFR = {
     kind: 'normal',
     sign,
