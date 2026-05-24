@@ -88,6 +88,63 @@ describe('sign-flip', () => {
   });
 });
 
+describe('bigint-bump', () => {
+  it('bumps the FIRST bigint literal whose value is >= 2 by 1', () => {
+    const out = applyMutation(`const p = 53n; const q = 64n;\n`, 'bigint-bump');
+    expect(out.applied).toBe(true);
+    expect(out.mutated).toContain('54n');
+    expect(out.mutated).toContain('64n');  // second occurrence untouched
+    expect(transpiles(out.mutated)).toBe(true);
+  });
+  it('skips 0n and 1n; applied=false when only those present', () => {
+    const src = `const a = 0n; const b = 1n; const c = 1n;\n`;
+    const out = applyMutation(src, 'bigint-bump');
+    expect(out.applied).toBe(false);
+    expect(out.mutated).toBe(src);
+  });
+  it('applied=false on a file with no bigint literals', () => {
+    expect(applyMutation(`export const x = 42;\n`, 'bigint-bump').applied).toBe(false);
+  });
+});
+
+describe('comparison-swap', () => {
+  it('swaps < to <= and >= to > in the first applicable occurrence', () => {
+    const a = applyMutation(`if (a < b) return 1;\n`, 'comparison-swap');
+    expect(a.applied).toBe(true); expect(a.mutated).toContain('a <= b'); expect(transpiles(a.mutated)).toBe(true);
+    const b = applyMutation(`if (x >= y) return 0;\n`, 'comparison-swap');
+    expect(b.applied).toBe(true); expect(b.mutated).toContain('x > y'); expect(transpiles(b.mutated)).toBe(true);
+  });
+  it('does NOT match generic type params like Map<K, V>', () => {
+    const src = `const m: Map<K, V> = new Map<K, V>(); const a: Array<T> = [];\n`;
+    expect(applyMutation(src, 'comparison-swap').applied).toBe(false);
+  });
+  it('applied=false on a file with no comparisons', () => {
+    expect(applyMutation(`export const x = 42;\n`, 'comparison-swap').applied).toBe(false);
+  });
+});
+
+describe('shift-direction-swap', () => {
+  it('swaps >> and << bidirectionally across the whole file', () => {
+    const src = `const a = x >> 5n; const b = y << 3n; const c = z >> 1n;\n`;
+    const out = applyMutation(src, 'shift-direction-swap');
+    expect(out.applied).toBe(true);
+    expect(out.mutated).toContain('x << 5n');
+    expect(out.mutated).toContain('y >> 3n');
+    expect(out.mutated).toContain('z << 1n');
+    expect(transpiles(out.mutated)).toBe(true);
+  });
+  it('swaps >>= and <<= compound assignments too', () => {
+    const out = applyMutation(`let h = 0n; h >>= 4n; h <<= 2n;\n`, 'shift-direction-swap');
+    expect(out.applied).toBe(true);
+    expect(out.mutated).toContain('h <<= 4n');
+    expect(out.mutated).toContain('h >>= 2n');
+    expect(transpiles(out.mutated)).toBe(true);
+  });
+  it('applied=false on a file with no shifts', () => {
+    expect(applyMutation(`export const x = 42;\n`, 'shift-direction-swap').applied).toBe(false);
+  });
+});
+
 describe('listApplicableMutations', () => {
   it('returns only mutations whose patterns are present', () => {
     const list = listApplicableMutations(`export function f() { const r = mpfr_add(1, 2); return { value: r, sign: 1 }; }\n`);
@@ -95,5 +152,11 @@ describe('listApplicableMutations', () => {
     expect(list).toContain('sign-flip');
     expect(list).not.toContain('rnd-swap');
     expect(list).not.toContain('ternary-negate');
+  });
+  it('includes new mutations when their patterns are present', () => {
+    const list = listApplicableMutations(`const p = 53n; if (a < b) { return x >> 1n; }\n`);
+    expect(list).toContain('bigint-bump');
+    expect(list).toContain('comparison-swap');
+    expect(list).toContain('shift-direction-swap');
   });
 });

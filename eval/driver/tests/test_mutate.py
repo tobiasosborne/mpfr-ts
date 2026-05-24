@@ -1,4 +1,4 @@
-"""Tests for eval/driver/mutate.py — mutation-prove orchestrator.
+"""Tests for eval/driver/mutate.py - mutation-prove orchestrator.
 
 Calibration tests run the real grader against real fixtures, so each
 takes a few seconds. That is the point (PIL.3): a golden is only proven
@@ -39,14 +39,17 @@ def test_calibration_add_d(capsys: pytest.CaptureFixture) -> None:
     """Calibration vs production mpfr_add_d (measured 2026-05-24).
 
     op-swap=0.0000 (clean kill); rnd-swap=1.0000 (RNDN/RNDZ often agree);
-    ternary-negate=1.0000 (most golden cases have ternary=0; negating 0
-    is still 0). Gate passes via op-swap's clean kill; the other two are
-    'applicable but ineffective' - known regex-perturbation limits, not
-    mutator bugs. Menu strengthening tracked separately.
+    ternary-negate=1.0000 (most cases have ternary=0); bigint-bump=1.0000
+    (only non-comment literal is the IEEE_DBL_MANT_DIG=53n constant; set_d
+    is exact for any prec >= 53 so bumping to 54n is benign);
+    comparison-swap=0.9697 (weak: only perturbs the prec<PREC_MIN guard).
+    Gate passes via op-swap's clean kill.
     """
     result = mutate.mutation_prove("mpfr_add_d", ADD_D_PORT, ADD_D_GOLDEN, repo_root=REPO_ROOT)
     _print_calibration(result, capsys)
-    assert {m.name for m in result.mutations} == {"op-swap", "rnd-swap", "ternary-negate"}
+    expected_subset = {"op-swap", "rnd-swap", "ternary-negate"}
+    applied = {m.name for m in result.mutations}
+    assert expected_subset.issubset(applied), f"missing expected mutations: {expected_subset - applied}"
     for m in result.mutations:
         assert m.module_init_failed is False, (
             f"mutant {m.name} failed at module-init - relative imports unresolved in /tmp"
@@ -58,21 +61,23 @@ def test_calibration_add_d(capsys: pytest.CaptureFixture) -> None:
 def test_calibration_sqr_2(capsys: pytest.CaptureFixture) -> None:
     """Calibration vs production mpfr_sqr_2 (measured 2026-05-24).
 
-    rnd-swap=0.8930 (weak kill - below 0.95 but not clean);
-    ternary-negate=1.0000 (same exact-result reason as add_d);
-    sign-flip=1.0000 (only touches special-case branches, not normal-
-    path arithmetic). Gate passes via rnd-swap clearing the 0.95 bar
-    without a clean kill. Menu strengthening tracked separately.
+    rnd-swap=0.8930 (weak kill); ternary-negate=1.0000; sign-flip=1.0000;
+    bigint-bump=0.5280 (clean kill: bumps a load-bearing 64n / 63n / 53n);
+    comparison-swap=1.0000 (first hit is a prec validation, similar tolerance
+    as add_d); shift-direction-swap=0.0000 (clean kill: all `>>` <-> `<<` swap
+    inverts every bit-shift in the 2-limb squaring path).
     """
     result = mutate.mutation_prove("mpfr_sqr_2", SQR_2_PORT, SQR_2_GOLDEN, repo_root=REPO_ROOT)
     _print_calibration(result, capsys)
-    assert {m.name for m in result.mutations} == {"rnd-swap", "ternary-negate", "sign-flip"}
+    expected_subset = {"rnd-swap", "ternary-negate", "sign-flip"}
+    applied = {m.name for m in result.mutations}
+    assert expected_subset.issubset(applied), f"missing expected mutations: {expected_subset - applied}"
     for m in result.mutations:
         assert m.module_init_failed is False, (
             f"mutant {m.name} failed at module-init - relative imports unresolved in /tmp"
         )
     assert result.gate_passed is True
-    assert result.clean_kills >= 0
+    assert result.clean_kills >= 2
     assert any(m.below_threshold for m in result.mutations), (
         "expected at least one mutation to clear the 0.95 threshold"
     )

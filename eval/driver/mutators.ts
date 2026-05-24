@@ -3,9 +3,9 @@
  * PIL.3). Each returns a broken port variant; grader confirms composite drops
  * below 0.95. Idempotent on non-matches. Regex-only, mirrors ast_check.ts.
  */
-export type MutationName = 'op-swap' | 'rnd-swap' | 'ternary-negate' | 'sign-flip';
+export type MutationName = 'op-swap' | 'rnd-swap' | 'ternary-negate' | 'sign-flip' | 'bigint-bump' | 'comparison-swap' | 'shift-direction-swap';
 export interface MutationResult { readonly mutated: string; readonly applied: boolean; readonly description: string; }
-const MUTATIONS: readonly MutationName[] = ['op-swap', 'rnd-swap', 'ternary-negate', 'sign-flip'];
+const MUTATIONS: readonly MutationName[] = ['op-swap', 'rnd-swap', 'ternary-negate', 'sign-flip', 'bigint-bump', 'comparison-swap', 'shift-direction-swap'];
 const OP_PAIRS: ReadonlyArray<readonly [string, string]> = [['mpfr_add', 'mpfr_sub'], ['mpfr_mul', 'mpfr_div']];
 const RND_PAIRS: ReadonlyArray<readonly [string, string]> = [['RNDN', 'RNDZ'], ['RNDU', 'RNDD']];
 const s = (n: number) => n === 1 ? '' : 's';
@@ -63,11 +63,83 @@ function signFlip(src: string): MutationResult {
   return { mutated: out, applied: true, description: `sign-flip: 'sign: 1' <-> 'sign: -1' (${np + nn} occurrence${s(np + nn)})` };
 }
 
+// Mask both line and block comments with spaces; preserves string positions so
+// regex offsets into the masked string map 1:1 to the original.
+function maskComments(src: string): string {
+  let out = '', i = 0;
+  while (i < src.length) {
+    if (src[i] === '/' && src[i + 1] === '/') {
+      const end = src.indexOf('\n', i);
+      const stop = end === -1 ? src.length : end;
+      out += ' '.repeat(stop - i); i = stop;
+    } else if (src[i] === '/' && src[i + 1] === '*') {
+      const end = src.indexOf('*/', i + 2);
+      const stop = end === -1 ? src.length : end + 2;
+      out += ' '.repeat(stop - i); i = stop;
+    } else { out += src[i]; i++; }
+  }
+  return out;
+}
+
+function bigintBump(src: string): MutationResult {
+  // Decimal bigint literal `\d+n`. Skip 0n and 1n (too common; bumping them
+  // would corrupt sign tracking / MSB checks). Skip occurrences inside comments
+  // (would mutate the source but not the runtime). Bump exactly the FIRST
+  // qualifying literal by 1; single-target mimics an off-by-one bug.
+  const masked = maskComments(src);
+  const re = /\b(\d+)n\b/g;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(masked)) !== null) {
+    const digits = match[1] ?? '';
+    if (digits === '0' || digits === '1') continue;
+    const v = BigInt(digits);
+    const next = (v + 1n).toString();
+    const before = src.slice(0, match.index);
+    const after = src.slice(match.index + match[0].length);
+    return { mutated: `${before}${next}n${after}`, applied: true, description: `bigint-bump: '${digits}n' -> '${next}n' at offset ${match.index}` };
+  }
+  return noop(src, 'bigint-bump: no bigint literal >= 2 found outside comments');
+}
+
+function comparisonSwap(src: string): MutationResult {
+  // First `<`, `<=`, `>`, `>=` flanked by non-whitespace operand characters on
+  // both sides AND with a whitespace separator immediately before the operator
+  // (so `Array<T>`, `Map<K,V>`, `Promise<X>` don't match - those have an ident
+  // char directly preceding `<`). Comments are masked first so comparisons in
+  // prose don't get targeted. Order longer alternatives first.
+  const masked = maskComments(src);
+  const re = /(\S) (<=|>=|<|>) (\S)/;
+  const m = re.exec(masked);
+  if (!m) return noop(src, 'comparison-swap: no applicable comparison found');
+  const SWAP: Record<string, string> = { '<': '<=', '<=': '<', '>': '>=', '>=': '>' };
+  const op = m[2] ?? '', repl = SWAP[op] ?? op;
+  const idx = m.index + 1 + 1;  // offset of operator start (skip lead char + space)
+  const before = src.slice(0, idx);
+  const after = src.slice(idx + op.length);
+  return { mutated: `${before}${repl}${after}`, applied: true, description: `comparison-swap: '${op}' -> '${repl}' at offset ${idx}` };
+}
+
+function shiftDirectionSwap(src: string): MutationResult {
+  // Whole-file bidirectional swap of `>>` <-> `<<` and `>>=` <-> `<<=`. Use
+  // length-first alternation so `>>=` matches before `>>`.
+  const re = /<<=|>>=|<<|>>/g;
+  const matches = src.match(re) ?? [];
+  if (matches.length === 0) return noop(src, 'shift-direction-swap: no shift operators found');
+  const S2 = '\x00SHL2\x00', S3 = '\x00SHL3\x00';
+  let out = src.replace(/<<=/g, S3).replace(/<</g, S2);
+  out = out.replace(/>>=/g, '<<=').replace(/>>/g, '<<');
+  out = out.replace(new RegExp(S3, 'g'), '>>=').replace(new RegExp(S2, 'g'), '>>');
+  return { mutated: out, applied: true, description: `shift-direction-swap: '>>' <-> '<<' (${matches.length} occurrence${s(matches.length)})` };
+}
+
 export function applyMutation(src: string, m: MutationName): MutationResult {
   if (m === 'op-swap') return opSwap(src);
   if (m === 'rnd-swap') return rndSwap(src);
   if (m === 'ternary-negate') return ternaryNegate(src);
-  return signFlip(src);
+  if (m === 'sign-flip') return signFlip(src);
+  if (m === 'bigint-bump') return bigintBump(src);
+  if (m === 'comparison-swap') return comparisonSwap(src);
+  return shiftDirectionSwap(src);
 }
 export function listApplicableMutations(src: string): MutationName[] {
   return MUTATIONS.filter((m) => applyMutation(src, m).applied);
