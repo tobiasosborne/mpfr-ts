@@ -1,0 +1,28 @@
+{
+  "function": "mpfr_sqrt1n",
+  "class": "transcendental",
+  "signature": {
+    "params": ["u", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "c_signature": "static int mpfr_sqrt1n (mpfr_ptr r, mpfr_srcptr u, mpfr_rnd_t rnd_mode)",
+  "prec_unit": "bits",
+  "doc": "Pure-TS port of MPFR's mpfr_sqrt1n (mpfr/src/sqrt.c L220-L346). Special-code square-root fast path for prec(r) == GMP_NUMB_BITS (i.e. 64 on a 64-bit GMP). The dispatcher in mpfr_sqrt routes here at mpfr/src/sqrt.c L569-L570 when prec(r) == GMP_NUMB_BITS. Unlike mpfr_sqrt1, the input u may have prec(u) <= GMP_NUMB_BITS  --  the C code asserts MPFR_PREC(u) <= GMP_NUMB_BITS (L229) and folds the parity-adjust shift into a low limb so no precision is lost.\n\nAlgorithm: parity-fix the exponent. If exp_u is odd, save low = u0 << 63 (the bit shifted out) and right-shift u0 by 1, increment exp_u. exp_r = exp_u / 2. Call __gmpfr_sqrt_limb_approx for an integer-sqrt approximation r0 of u0*2^64 within [r0, r0+7]. Refine via the Newton fixup loop (L256-L265) until rb*2^64 + sb <= 2*r0, using sub_ddmmss on the 128-bit value (u0, low) - (rb, sb). The exact-middle case (root + 1/2)^2 is impossible because it's never an integer (L269-L272), so the sticky bit is simplified to `rb || (sb > r0)`. Final r0 IS the full mantissa (no masking needed since p == GMP_NUMB_BITS, sh = 0). Then dispatch to one of the five rounding modes.\n\nThe TS port delegates to src/ops/sqrt.ts's unified mpfr_sqrt  --  same correctness contract, same edge cases, same ternary, same byte-identical output. The dispatcher condition is enforced by the golden driver, so the delegate is safe.\n\nClass is 'transcendental' (1000ms runtime budget) per the standard MPFR classification.",
+  "divergence_from_c": "Five divergences:\n\n  1. Return shape: C mutates `r` in place and returns int ternary. TS takes (u, prec, rnd) and returns Result {value, ternary} per src/core.ts L173-L176.\n\n  2. Dispatcher precondition: C is only called from mpfr_sqrt when prec(r) == GMP_NUMB_BITS (64) AND prec(u) <= GMP_NUMB_BITS (mpfr/src/sqrt.c L569-L570 + the assert L229). The TS port enforces the SAME precondition at entry: prec == 64n AND u.prec <= 64n. On violation it throws MPFRError. The golden driver ONLY emits cases that satisfy the precondition.\n\n  3. Singular dispatch: C is unreachable for NaN/Inf/zero/negative inputs (filtered by mpfr_sqrt L522-L554). TS port assumes u is kind='normal' with sign=+1; recommends delegating to mpfr_sqrt which handles all singulars uniformly.\n\n  4. Underflow/overflow side effects: omitted per locked-schema policy (no __gmpfr_flags in src/). Values remain correct under exp-overflow/underflow because the algebraic core handles exponents directly.\n\n  5. Algorithm: C uses __gmpfr_sqrt_limb_approx + Newton fixup. TS uses bigint isqrt via src/ops/sqrt.ts. Byte-identical output on every (u, prec=64, rnd) triple.\n\nADR 0001 application:\n  - signature.returns: gen_spec emitted 'Result' (correct C int -> Result mapping). Curator agrees.\n  - signature.params: gen_spec emitted ['u', 'prec', 'rnd']. Curator agrees.\n  - class: curator override to 'transcendental' (runtime budget tier). (ADR 0001: class curator-wins.)\n  - prec_unit: 'bits'. Curator confirms.\n\nNote on prec(u) flexibility: unlike mpfr_sqrt1 (where prec(u) == prec(r)), this helper accepts prec(u) IN [1, 64] while requiring prec(r) == 64. The fuzz cases exercise both equal and unequal-prec (u.prec < 64) cases to test the parity-adjust low-bit handling.",
+  "refs": [
+    "mpfr/src/sqrt.c L220-L346 -- C reference body.",
+    "mpfr/src/sqrt.c L569-L570 -- dispatcher routes here when prec(r) == GMP_NUMB_BITS.",
+    "mpfr/src/sqrt.c L229 -- assertion that MPFR_PREC(u) <= GMP_NUMB_BITS.",
+    "mpfr/src/sqrt.c L269-L272 -- exact-middle-impossible argument; sticky bit simplification.",
+    "mpfr/src/invsqrt_limb.h -- __gmpfr_sqrt_limb_approx.",
+    "src/ops/sqrt.ts -- the unified TS mpfr_sqrt that the port delegates to.",
+    "src/core.ts -- locked Result/MPFR/RoundingMode types.",
+    "eval/functions/mpfr_sqrt1/spec.json -- sister fast path for prec < 64; same wire-form pattern.",
+    "eval/functions/mpfr_div_2/spec.json -- structural precedent for standalone wire form on a static perf-helper.",
+    "mpfr/tests/tsqrt.c -- source for mined cases (single-limb sqrt patterns).",
+    "CLAUDE.md 'Hallucination-risk callouts: Correct rounding does not mean unique output' -- the dispatcher routing is a perf detail; correctness is uniquely determined by (u, prec, rnd).",
+    "CLAUDE.md 'GMP mpn limbs are LITTLE-ENDIAN by limb index' -- u.mant[0] is the LSB; here it's the only limb (prec <= 64).",
+    "docs/adr/0001-spec-merge-policy.md -- per-field precedence overrides.",
+    "docs/reports/010-shadow-trial.md -- shadow-trial precedent."
+  ]
+}
