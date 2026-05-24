@@ -1,150 +1,142 @@
-# Handoff — 115 ports landed; next: decide PHASE + push past 30 in a batch
+# Handoff — 116 ports + validation infra landed; next: flag-state module → step 6 → next shadow
 
-You are picking up mpfr-ts after a session that took port count from 85
-to **115** (state.db `done=115`, 4 cleanly blocked, all composite=1.0
-against libmpfr-derived goldens). The 30-function mega-batch contract
-set in worklog 006 is complete; `docs/worklog/007-30-fn-mega.md`
-documents the run and the empirical findings.
+You are picking up mpfr-ts after a session that shipped the opus-prep
+automation infrastructure end-to-end (5 tools + 3 reports + 1 ADR)
+and ran the first shadow-mode trial on a 5-function mini-batch. The
+trial validated the integration assumptions, surfaced one real
+architectural gap, and shipped 1 new port. State.db: **116 done, 8
+blocked** (4 newly blocked on the surfaced gap).
 
-The previous session **crashed during session close** after the work
-was pushed. This HANDOFF + worklog 007 close that paperwork gap; no
-code or DB state was lost.
+The validation arc is complete. The next session does **integration
+work**, not more validation.
 
 ## ⚠ Three gotchas — read first
 
-1. **`.gitignore` `mpfr/` pattern.** Original `.gitignore` line 2 was
-   `mpfr/` (no leading slash), which git matches at *any* depth —
-   including `src/internal/mpfr/`. Five substrate files were silently
-   dropped from commits for ~12 hours. **Fixed in commit `cb65ebe`**
-   by anchoring to `/mpfr/`. Audit any new directory names that
-   collide with ignored patterns.
+1. **`.gitignore` `mpfr/` pattern.** Anchored to `/mpfr/` since `cb65ebe`. If you add a directory whose name collides with an ignored pattern, audit the gitignore. Last bite: ~12 hours of silently-dropped substrate files in the 50→85 session.
 
-2. **`bd` commands don't auto-export to JSONL.** `bd create/close/
-   remember` write to local Dolt only. `.beads/issues.jsonl` (the
-   git-tracked source of truth) refreshes only via `bd export -o
-   .beads/issues.jsonl`. `ralph.py --commit-batch` and `--ship` do
-   this automatically; manual `git commit` skips it. **Always run
-   `bd export -o .beads/issues.jsonl` before manual git commits**,
-   or prefer `--commit-batch`/`--ship`. `mpfr-ts-i8e` tracks the
-   pre-commit-hook fix.
+2. **`bd` commands don't auto-export to JSONL.** `ralph.py --commit-batch` and `--ship` do this automatically. Manual `git commit` skips it. **Always run `bd export -o .beads/issues.jsonl` before manual commits**, or prefer `--ship`. `mpfr-ts-i8e` tracks the pre-commit-hook fix.
 
-3. **`PHASE.md` still says `Pilot`** despite 115 ports landed. The
-   pilot was the *first 10* per CLAUDE.md. The transition has been
-   deferred across multiple sessions because Rule 14 requires a
-   worklog phase-transition doc first. This is the most important
-   decision in front of the next session — see §"First decision".
+3. **`PHASE.md` still says `Pilot`** despite 116 ports. Per CLAUDE.md, Pilot was the *first 10*. Rule 14 requires a transition worklog before flipping the file. This has been deferred across multiple sessions because the orchestrator has been running "Pilot+" (halt-on-failure, no opus escalation) successfully. Surfaced here for awareness; not blocking near-term work.
 
 ## TL;DR — first 10 minutes
 
 ```bash
-# Pick up state
 git pull --rebase
-cat PHASE.md                                       # → Pilot (still)
-cat HANDOFF.md                                     # this file
-cat docs/worklog/007-30-fn-mega.md                 # the last run
-cat docs/worklog/006-scale-out-engine.md           # engine spec
-bun x tsc --noEmit                                 # must be clean
-bun eval/acceptance/step5/run.ts                   # 5/5 expected
-/home/tobias/.local/bin/pytest eval/driver/tests/  # 52/52 expected
-sqlite3 eval/state.db "SELECT status, COUNT(*) FROM functions GROUP BY status"
-# Expected: blocked|4, done|115
+cat PHASE.md                                          # → Pilot
+cat HANDOFF.md                                        # this file
+cat docs/worklog/009-validation-finalize-shadow-trial.md  # latest session
+cat docs/worklog/008-automation-infra.md              # validation arc context
+cat docs/reports/010-shadow-trial.md                  # shadow-trial findings
+cat docs/adr/0001-spec-merge-policy.md                # integration policy
 
-bd ready                                           # 8 P2-P4 issues
+sqlite3 eval/state.db "SELECT status, COUNT(*) FROM functions GROUP BY status"
+# Expected: blocked|8 done|116
+
+# Verify tools green:
+bun x tsc --noEmit                                    # must be clean
+cd eval/driver && /home/tobiasosborne/.local/bin/pytest tests/ -v
+# Expected: 41+ passing across gen_spec, mutate, validate_specs, calibrate
+cd eval/driver && bun test mutators.test.ts
+# Expected: 26 passing
+
+bd ready                                              # 9 P2-P4 issues
 ```
 
-## First decision: PHASE.md
+## Next-session priority sequence
 
-Two viable paths. Pick one before doing anything else.
+The shadow trial gave clean signal on what to do next. Work in this order:
 
-**Path A — formalize Production.** Write `docs/worklog/008-phase-
-transition.md` describing what 115 ports of Pilot proved (the engine
-scales, sonnet L3 is the right porter, golden mutation-proving
-catches regressions, the cost/throughput envelope) and what
-auto-escalate caveats remain. Flip `PHASE.md` to `Production`. Enable
-sonnet → opus L3 escalation in the ralph loop. ~45 min. Unlocks
-unattended runs and the parked.md flow for the remaining ~410
-functions.
+### Priority 1: Resolve `mpfr-ts-ikr` (P2) — flag-state API module
 
-**Path B — keep Pilot rules indefinitely.** The orchestrator has been
-running a "Pilot+" workflow (halt-on-failure, no opus escalation)
-successfully at 115 ports. If the user prefers continued human-in-
-the-loop oversight over throughput, document that in worklog 008
-and proceed. ~15 min.
+The shadow trial surfaced that `src/` has no analog of MPFR's `__gmpfr_flags` global register. This blocks 4 functions already parked in this session (`mpfr_underflow_p`, `mpfr_overflow_p`, `mpfr_nanflag_p`, `mpfr_divby0_p`) AND another ~6 functions in the upcoming exception family (`mpfr_inexflag_p`, `mpfr_erangeflag_p`, `mpfr_set_underflow`, `mpfr_set_overflow`, `mpfr_clear_flags`, `mpfr_flags_save`, `mpfr_flags_set`).
 
-**Recommendation**: Path A. The engine is proven; the cost of running
-Pilot rules indefinitely is throughput, and the unattended-run mode
-is what the project was designed for.
+**Deliverable**: `src/internal/mpfr/flags.ts` (~30 LOC) exporting:
+- Bit constants: `UNDERFLOW=1n, OVERFLOW=2n, NAN=4n, INEXACT=8n, ERANGE=16n, DIVBY0=32n, ALL=63n`
+- `getFlags(): bigint` — read the register
+- `setFlags(bits: bigint): void` — OR-combine into register
+- `clearFlags(bits: bigint = ALL): void` — AND-NOT out of register
 
-## Second decision: next batch size
+Plus tests verifying get/set/clear semantics + bit-mask combinations.
 
-Worklog 007 found that **opus prep cost is sublinear in batch size**
-— 30 functions cost ~380K tokens, essentially the same as 15
-functions at ~387K. The previous "linear extrapolation" was wrong;
-the fixed-cost overhead (CLAUDE.md re-read, worked-example load)
-dominates. Implication: the empirical ceiling is much higher than
-30. The next batch should test it.
+After the module lands, the 4 parked predicate ports can be unparked: their spec.json + golden_driver.c + reference ports are already committed (see commit `ad04e3a`), so dispatch sonnet ports referencing the new flags module. Each port is ~5-10 LOC.
 
-**Suggested target: 50–60 functions in a single opus prep**, dispatched
-as 6–8 sonnet waves of 8–10 each. Cost envelope: ~450K opus tokens
-+ ~6–8 wall hours of sonnet wave processing. If opus context
-exhausts mid-prep, *that* is the discovery; capture it.
+Estimated effort: ~1 hour (module + tests + 4 sonnet port dispatches + ship).
 
-Coherent batch options (most user-facing surface first):
+### Priority 2: Land step 6 — wire gen_spec into ralph.py's prep prompt
 
-| Theme | Count available | Coherence | Difficulty |
-|---|---:|---|---|
-| Conversion family (set_q, set_str, get_str, set_si_2exp, get_si_2exp, set_d_2exp, set_f, get_f, ...) | ~30 | High | Mixed — `mpfr_get_str` is hardest |
-| Modular / remainder (fmod, fmod_ui, modf, remainder, remquo, fmodquo, ...) | ~10 | High | Medium |
-| Division variants (div_si, div_ui, si_div, ui_div, plus div1sp[2,2n,3]) | ~10 | High | Medium |
-| Transcendentals (exp, log, trig, hyperbolic) | ~75 | High | **High** — first prec-extension-loop ports |
+The validation arc (gen_spec, mutate.py, validate_specs, calibrate) built and tested all the tools. The shadow trial validated ADR 0001's precedence rules. Now do the actual integration.
 
-**Recommendation**: 50 conversion + modular + division variants. Save
-transcendentals for a dedicated batch with a prec-extension-loop
-prompt template; they're the first ports that genuinely exercise
-MPFR's "compute at extended precision, round, check, retry"
-algorithm.
+**Deliverable**: modify `eval/driver/ralph.py`'s `_render_prep_prompt` to:
+1. Call `gen_spec.extract_spec` for each selected function (look up C source via `callgraph.json`'s `defined_in` field)
+2. Include the partial spec.json scaffold in the prompt
+3. Append the ADR-derived prompt addendum (see `docs/reports/010-shadow-trial.md` §Recommendations for the verbatim text):
 
-## What works (don't change)
+```
+The structural fields below are extracted from the C source by
+gen_spec. They are CORRECT for the C definition but require these
+overrides for the idiomatic TS port:
+  - signature.returns: int -> 'boolean' for _p predicates;
+    void -> 'MPFR' when first dropped C ptr is the output slot;
+    long/mpfr_prec_t/mpfr_exp_t -> 'bigint'
+  - signature.params: may add wire-codec inputs (e.g. 'mask' for
+    flag-state predicates) not present in the C signature
+  - prec_unit: override to 'n/a' if no `prec` parameter
 
-| component | path | notes |
+The c_signature field is authoritative; do not edit it.
+```
+
+**Constraints**: All 52 existing `ralph.py` pytest cases must stay green. Add ~20 new tests covering the gen_spec integration (input → expected rendered prompt fragment for a few function shapes).
+
+Estimated effort: ~80-120 LOC delta + ~30 LOC tests. ~2 hours.
+
+### Priority 3: Second shadow trial — 5-10 functions avoiding the flag-state gap
+
+Validate step 6's integration in a real run AND broaden class-coverage data for mutate.py.
+
+**Candidates**:
+- Single-limb sqrt fast paths: `mpfr_sqrt1`, `mpfr_sqrt1n`, `mpfr_sqrt2_approx` (substrate-class; test shift-direction-swap dominance from report 009)
+- Mpz interop: `mpfr_add_z`, `mpfr_set_z` (test gen_spec on non-const `mpz_ptr` types — the `mpfr-ts-eqc` fix should now handle these)
+- Modular ops: `mpfr_modf` (its deps `mpfr_frac` + `mpfr_rint_trunc` are unported but callgraph can sequence them)
+
+Same shape as the first shadow trial: opus prep + sonnet wave + parallel gen_spec/mutate.py analysis. Write findings to `docs/reports/011-shadow-trial-2.md`.
+
+Estimated cost: ~300-400K tokens. Same shadow-mode pattern, larger sample.
+
+### Priority 4: First replacement-mode trial
+
+Gated on 1-3 above. Drop opus's broken-port deliverable on a 3-5 function batch; rely on mutate.py alone for mutation-prove. See if the gate's verdict is sufficient signal.
+
+**Conservative criterion**: replacement mode is OK if mutate.py gate agrees with the eventual ship decision on ≥80% of trial functions across non-trivial classes. If less, defer until mutator menu is strengthened.
+
+## What's working now (don't change)
+
+| Component | Path | Notes |
 |---|---|---|
 | Locked schema | `src/core.ts` | Frozen; never modify without ADR |
 | Worker isolation | `eval/harness/worker.ts` | Solid |
 | Grader | `eval/harness/runner.ts` | Solid |
-| Codec | `eval/harness/value_codec.ts` | `compareField` now uses `Object.is` for object-shaped number fields (007 fix). Known gap: `mpfr-ts-2ls` (scalar strings) |
-| AST gate | `eval/harness/ast_check.ts` | Import-strip landed pre-007 |
-| Substrate | `src/internal/{mpn,mpfr}/` | 18 files (14 mpfr + 4 mpn) |
-| Callgraph | `eval/driver/callgraph.py` | 525 fns; re-run if you touch mpfr/src/ |
-| Driver | `eval/driver/ralph.py` | 5 modes. `_promote_port` now rewrites absolute imports inline (007). `--grade` substrate fallback now works (007) |
-| State DB | `eval/state.db` | 119 rows; 115 done, 4 blocked, 146 runs |
-
-## Engine still has rough edges (not blocking, worth fixing)
-
-- **Post-batch tsc cleanup**. Sonnet ports emit unused locals/imports
-  at ~1 issue per 5 ports under `noUnusedLocals/Parameters`. Last
-  session ran a manual cleanup pass (commit `394ef02`). Either tighten
-  the agent prompt to strip unused emit, or add a `tsc --noEmit` gate
-  to `--ship` that fails on warnings. Not yet filed as bd.
-- **Substrate ref_port paths**. Opus templates assume `src/ops/` for
-  ref_port stubs even when the port is substrate-class. Last batch
-  needed 5 ref_port path corrections post-promote. The opus template
-  should consult state.db `class`. Not yet filed.
-- **`mpfr-ts-i8e` git pre-commit hook**. Highest-recurrence-rate bd
-  (every manual commit risks the dolt-sync gap). ~15 min to land.
+| AST gate | `eval/harness/ast_check.ts` | Solid |
+| Substrate | `src/internal/{mpn,mpfr}/` | 18 files |
+| Callgraph | `eval/driver/callgraph.py` | 525 fns; re-run if you touch `mpfr/src/` |
+| State DB | `eval/state.db` | 124 rows; 116 done, 8 blocked |
+| **NEW**: gen_spec | `eval/driver/gen_spec.py` | 207 LOC; structural extraction from C; bugs all fixed |
+| **NEW**: mutators | `eval/driver/mutators.ts` | 185 LOC; 7 mutations; calibrated 79% gate pass |
+| **NEW**: mutate orchestrator | `eval/driver/mutate.py` | 242 LOC; import-rewrite + module-init-failed detection |
+| **NEW**: validate_specs | `eval/driver/validate_specs.py` | 167 LOC; gen_spec vs curator diff tool |
+| **NEW**: calibrate | `eval/driver/calibrate.py` | 149 LOC; mutate.py runner across stratified samples |
+| **NEW**: run_all.sh | `eval/golden_master/run_all.sh` | 85 LOC; materialize golden.jsonl across all built drivers |
+| **NEW**: ADR 0001 | `docs/adr/0001-spec-merge-policy.md` | spec-merge precedence rules |
 
 ## What the next agent must NOT do
 
-- Modify `src/core.ts` without an ADR.
-- Flip `PHASE.md` from `Pilot` to `Production` without writing
-  `docs/worklog/008-phase-transition.md` first (CLAUDE.md Rule 14).
-- Disable harness gates to make a port pass. Fix the port instead.
-- Skip mutation-prove (broken < 0.55, ideally < 0.45 per worklog 006
-  learning #6 — multi-bug perturbations land < 0.30 reliably).
-- Re-introduce the absolute-path import bug — `_promote_port` handles
-  it; don't regress that code path.
-- Dispatch all N sonnets simultaneously when N > 10. Waves of 6–10
-  remain the cost-disciplined default; deviating wastes tokens on
-  parallel failures.
+- Modify `src/core.ts` without an ADR
+- Flip `PHASE.md` from `Pilot` to `Production` without writing `docs/worklog/NNN-phase-transition.md` first (CLAUDE.md Rule 14)
+- Disable harness gates to make a port pass. Fix the port instead
+- Skip mutation-prove (broken < 0.55 ideally < 0.30 per worklog 006 #6)
+- Re-introduce the absolute-path import bug (handled by `_promote_port`)
+- Dispatch all N sonnets simultaneously when N > 10. Waves of 6-10 remain the cost-disciplined default
+- Drop opus's broken-port deliverable BEFORE replacement-mode trial validates the gate (priority 4). The current data justifies keeping it
+- Modify the shipped infrastructure tools (gen_spec, mutators, mutate, validate_specs, calibrate) without bd-driven justification — they're validated and load-bearing
 
 ## Pickup-on-different-device checklist
 
@@ -155,42 +147,43 @@ algorithm.
 5. `pip install pytest`
 6. `bd bootstrap --yes && bd hooks install && bd import`
 7. Smoke-check:
-   `bun x tsc --noEmit && bun eval/acceptance/step5/run.ts && /home/tobias/.local/bin/pytest eval/driver/tests/`
-8. Read CLAUDE.md → this file → `docs/worklog/007-30-fn-mega.md` →
-   `006-scale-out-engine.md`.
+   - `bun x tsc --noEmit`
+   - `bash eval/golden_master/build.sh`  # all drivers compile
+   - `cd eval/driver && /home/tobiasosborne/.local/bin/pytest tests/ -v`  # 41+ pass
+   - `cd eval/driver && bun test mutators.test.ts`  # 26 pass
+8. Read CLAUDE.md → this file → `docs/worklog/009-validation-finalize-shadow-trial.md` → `docs/reports/010-shadow-trial.md` → `docs/adr/0001-spec-merge-policy.md`
 
-## Open bd issues at session close (8 total, all P2–P4)
+## Open bd issues at session end (9 total)
 
-P2 — engine improvement (highest leverage):
-- `mpfr-ts-i8e`: git pre-commit hook to run `bd export -o
-  .beads/issues.jsonl` automatically.
+P2 — block near-term work:
+- `mpfr-ts-ikr` — flag-state API module (priority 1 above)
+- `mpfr-ts-i8e` — git pre-commit hook for bd auto-export
 
-P3 — harness / port-quality polish:
-- `mpfr-ts-ai4`: runner `n_throw` conflates exceptions with mismatches.
-- `mpfr-ts-e4j`: `expected_throw` codec for domain-error goldens
-  (unblocks `mpfr_abort_prec_max`).
-- `mpfr-ts-lq8`: `eval/golden_master/run_all.sh` wrapper.
-- `mpfr-ts-sr4`: enforce Rule 7 tag minimums at grade time.
-- `mpfr-ts-2ls`: `value_codec` scalar-string outputs.
-- `mpfr-ts-d6o`: `callgraph.py` misses mpn_* substrate fns (GMP-sourced).
+P3 — harness polish (not blocking):
+- `mpfr-ts-18x` — comparison-swap multi-site
+- `mpfr-ts-9di` — mutate.py gate behavior for trivial-body ports
+- `mpfr-ts-2ls` — value_codec scalar strings
+- `mpfr-ts-ai4` — runner n_throw conflation
+- `mpfr-ts-d6o` — callgraph misses mpn_* substrate fns
+- `mpfr-ts-e4j` — expected_throw codec for domain-error goldens
+- `mpfr-ts-sr4` — enforce Rule 7 tag minimums at grade time
 
-P4 — cosmetic:
-- `mpfr-ts-c6b`: state.db topo_rank vs callgraph topo_rank drift.
+P4 — cleanup:
+- `mpfr-ts-00m`, `mpfr-ts-bqq`, `mpfr-ts-c6b`, `mpfr-ts-6zg`
 
-`bd ready` and `bd list --status=open` for the live picture.
-
-## Resolved this session (don't re-file)
-
-- `mpfr-ts-NEW1` — `_promote_port` inline path rewrite. **Landed.**
-- `mpfr-ts-2r8` — `--grade` substrate-class fallback. **Landed.**
+`bd ready` for the live picture.
 
 ## One final thing
 
-The 85→115 push proved the engine scales: opus prep cost is sublinear,
-sonnet waves of 6–10 are robust, and the `_promote_port`/`--grade`
-fixes mean `--ship` is now genuinely end-to-end. The next milestone is
-deciding whether to formalize Production rules and pushing batch size
-past 30. Cost ceiling on opus prep is much higher than worklog 006
-estimated — exploit it.
+The 50→85 push proved the engine works. The 85→115 push proved it
+scales. This session proved the **automation infrastructure works
+and integrates safely** — the validation arc surfaced and fixed real
+silent-wrong bugs (gen_spec call-site garbage on 18 functions;
+mutate.py false-positive gate from import resolution); the shadow
+trial validated ADR 0001 against live data; the integration is now
+gated only on the 4 priority items above.
+
+Priority 1 (flag-state module) is the smallest, most-leverage next
+move: ~30 LOC unblocks ~10 functions. Start there.
 
 Good luck.
