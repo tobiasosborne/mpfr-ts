@@ -1,0 +1,20 @@
+{
+  "function": "mpfr_dim",
+  "class": "misc",
+  "signature": {
+    "params": ["b", "c", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_dim (mpfr/src/dim.c L24-L47). Positive difference function: dim(b, c) = max(0, b - c). If b is NaN or c is NaN, returns NaN. If b > c, returns mpfr_sub(b, c, prec, rnd). Otherwise (b <= c, including the b == c case and the b < c case): returns +0 at the target prec, ternary 0. The C body uses mpfr_cmp to dispatch; TS uses the schema's compareMPFR (or inline comparison) to the same effect. NaN dispatch comes first; cmp_p of NaN-with-anything would itself throw, so we check NaN before cmp.",
+  "c_signature": "int mpfr_dim(mpfr_ptr z, mpfr_srcptr x, mpfr_srcptr y, mpfr_rnd_t rnd_mode)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C takes (z, x, y, rnd) and mutates z. TS takes (b, c, prec, rnd): prec is explicit, returns Result {value, ternary}. C uses MPFR_SET_NAN+MPFR_RET_NAN for the NaN case (sets the side-channel ERANGE flag); TS returns NAN_VALUE with ternary 0. C uses mpfr_cmp directly — if one of x or y is NaN, mpfr_cmp internally sets erange and returns 0 (==), but the C dim doesn't reach that path because the NaN check is up front. TS mirrors the order: NaN dispatch first, then a comparison that knows both inputs are non-NaN. The b > c branch delegates to mpfr_sub (TS: mpfr_sub(b, c, prec, rnd)); the b <= c branch returns posZero(prec) with ternary 0 (exact).",
+  "refs": [
+    "mpfr/src/dim.c L24-L47 — the C reference body.",
+    "src/ops/sub.ts — the load-bearing delegate for the b > c branch.",
+    "src/ops/cmp.ts — comparison primitive (or internal compareMPFR for the non-NaN compare).",
+    "src/internal/mpfr/cmp_raw.ts — substrate compare.",
+    "src/core.ts — locked schema; posZero for the zero branch.",
+    "CLAUDE.md 'Hallucination-risk callouts': NaN ≠ NaN — handle NaN before any comparison."
+  ]
+}

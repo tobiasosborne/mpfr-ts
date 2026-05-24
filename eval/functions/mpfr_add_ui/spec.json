@@ -1,0 +1,20 @@
+{
+  "function": "mpfr_add_ui",
+  "class": "misc",
+  "signature": {
+    "params": ["b", "c", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_add_ui (mpfr/src/add_ui.c L25-L94). Add an MPFR value `b` and an unsigned long `c`, returning the rounded sum at the target precision. The C body: if c == 0, delegate to mpfr_set; if b is singular, propagate kind (NaN, Inf preserved with sign; ±0 falls through to mpfr_set_ui(c, prec, rnd) — i.e. the result is c at the target prec); otherwise build a temp mpfr_t from c at GMP_NUMB_BITS precision and call mpfr_add. The C side also calls mpfr_check_range at the tail; we omit that (the schema's exp is unbounded). TS port: build `uMPFR = mpfr_set_ui(c, max(1, bitLength(c)), 'RNDN').value` (which is exact since the prec is >= bitLength(c)) and delegate to mpfr_add(b, uMPFR, prec, rnd). Special cases handled at the top: c=0 → mpfr_set(b, prec, rnd); b NaN/Inf preserved; b zero & c != 0 → mpfr_set_ui(c, prec, rnd).",
+  "c_signature": "int mpfr_add_ui(mpfr_ptr y, mpfr_srcptr x, unsigned long int u, mpfr_rnd_t rnd_mode)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C takes (y, x, u, rnd) and mutates y; returns int ternary. TS takes (b, c, prec, rnd): c is a non-negative bigint in [0, ULONG_MAX], prec is explicit, returns Result. C uses an internal mpfr_t at GMP_NUMB_BITS (64) precision for u; TS uses mpfr_set_ui at `bitLength(c)` precision so the integer-to-MPFR conversion is exact regardless of the magnitude. C calls mpfr_check_range at the tail; TS skips that step (the schema's exp has no range). For c == 0, both sides return a copy of b at target prec with rounding (i.e. mpfr_set behavior). For singular b: NaN → NaN; Inf → Inf (sign preserved, ternary 0); +0 → mpfr_set_ui(c, prec, rnd); -0 → mpfr_set_ui(c, prec, rnd) (since c != 0 in this branch and adding 0 of any sign to a non-zero finite gives that finite value — IEEE 754).",
+  "refs": [
+    "mpfr/src/add_ui.c L25-L94 — the C reference body.",
+    "src/ops/set_ui.ts — used to materialise the integer as an exact MPFR.",
+    "src/ops/set.ts — used for the c == 0 fast path (copy b at target prec).",
+    "src/ops/add.ts — the load-bearing delegate for the general case.",
+    "src/core.ts — locked schema; ULONG_MAX_VAL = 2^64 - 1 boundary.",
+    "CLAUDE.md 'Hallucination-risk callouts': signed zero observable (we discard 0 sign here; b + (+0) == b + (-0) == b for finite b)."
+  ]
+}

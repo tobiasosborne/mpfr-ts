@@ -1,0 +1,20 @@
+{
+  "function": "mpfr_get_exp",
+  "class": "misc",
+  "signature": {
+    "params": ["x"],
+    "returns": "bigint"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_get_exp (mpfr/src/get_exp.c L24-L30). C signature `mpfr_exp_t mpfr_get_exp(mpfr_srcptr x)` returns MPFR_EXP(x), guarded by MPFR_ASSERTN(MPFR_IS_PURE_FP(x)) — i.e. ASSERTS the input is a finite non-zero normal value (any other kind hits assertion failure and aborts the program). TS port: returns x.exp (a bigint) for kind='normal'; throws MPFRError('EDOMAIN') for kind='zero', 'inf', 'nan'. The TS schema stores exp=0n for the three singular kinds (per src/core.ts §validate); rather than silently returning 0n we throw EDOMAIN to surface the same domain error C's assertion catches (more useful at the TS boundary than a no-op return).",
+  "c_signature": "mpfr_exp_t mpfr_get_exp(mpfr_srcptr x)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C asserts MPFR_IS_PURE_FP(x) (kind == normal) and aborts on violation — undefined behaviour for the caller, fatal for the process. TS throws MPFRError('EDOMAIN', ...) instead, surfacing the same domain error in a recoverable form. For kind='normal', both sides return the unbiased base-2 exponent identically (the value's magnitude lies in [2^(exp-1), 2^exp)). C returns mpfr_exp_t (platform-signed long); TS returns bigint to match the schema convention that all exponent values are bigint at the boundary.",
+  "refs": [
+    "mpfr/src/get_exp.c L24-L30 — the C reference body. Returns MPFR_EXP(x) under MPFR_ASSERTN(MPFR_IS_PURE_FP(x)).",
+    "mpfr/src/mpfr-impl.h — MPFR_IS_PURE_FP, MPFR_EXP macros.",
+    "src/core.ts L113-L135 — locked MPFR shape; exp=0n for non-normal kinds.",
+    "src/core.ts §MPFRError, EDOMAIN — domain-error class for non-recoverable input.",
+    "src/ops/cmp.ts §'Divergence from C → TS' — the same throw-not-flag pattern for NaN x.",
+    "CLAUDE.md 'Hallucination-risk callouts: NaN ≠ NaN' — the EDOMAIN throw mirrors the cmp family."
+  ]
+}

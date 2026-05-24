@@ -1,0 +1,20 @@
+{
+  "function": "mpfr_div_2ui",
+  "class": "misc",
+  "signature": {
+    "params": ["x", "n", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_div_2ui (mpfr/src/div_2ui.c L24-L68). Divides b by 2^n where n is a non-negative integer — i.e. multiplies by 2^(-n). Mantissa unchanged; exp -= n. Symmetric to mpfr_mul_2ui with the exp-shift sign flipped. The C body delegates to mpfr_set for singular x or n=0 (so n=0 produces an exact copy at the target prec); otherwise refits and subtracts n from exp. TS omits the underflow range check (schema's exp has no lower bound), mirroring the mpfr_div_2si policy (src/ops/div_2si.ts §divergence_from_c).",
+  "c_signature": "int mpfr_div_2ui(mpfr_ptr y, mpfr_srcptr x, unsigned long n, mpfr_rnd_t rnd_mode)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C takes (mpfr_ptr y, mpfr_srcptr x, unsigned long n, mpfr_rnd_t rnd); mutates y, returns int ternary. TS takes (b, n, prec, rnd): n is a non-negative bigint, prec is explicit, returns Result. C checks `n >= exp - emin + 1` and calls mpfr_underflow on out-of-range; TS skips this check (schema's exp is unbounded; matches mpfr_div_2si policy). The C n=0 fast path (`return mpfr_set(y, x, rnd)`) is mirrored by the TS port's normal n=0 case: postExp = x.exp, exp -= 0 ⇒ postExp.",
+  "refs": [
+    "mpfr/src/div_2ui.c L24-L68 — the C reference.",
+    "src/ops/div_2si.ts — sibling signed port; this is the unsigned specialisation.",
+    "src/ops/mul_2ui.ts — sibling op (positive shift); structural mirror.",
+    "src/internal/mpfr/round_raw.ts — rounding substrate.",
+    "src/core.ts — locked schema.",
+    "CLAUDE.md 'Hallucination-risk callouts' — ternary direction; signed zero observable."
+  ]
+}

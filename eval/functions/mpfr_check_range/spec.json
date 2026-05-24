@@ -1,0 +1,22 @@
+{
+  "function": "mpfr_check_range",
+  "class": "misc",
+  "signature": {
+    "params": ["x", "t", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_check_range (mpfr/src/exceptions.c L259-L327). Adjusts a value for exponent-range overflow/underflow, returning the same value if in range or the canonical underflow/overflow result if not. Inputs: x (an MPFR value, possibly with exp outside [emin, emax]), t (the carried ternary from the prior op), rnd (the rounding mode). For singular x (NaN, ±0, ±Inf): returns (x, t) unchanged (the C code adjusts the OVERFLOW flag for Inf with t!=0, but TS doesn't model flags). For normal x: if x.exp < EMIN, returns mpfr_underflow(prec, possibly-adjusted-rnd, x.sign) — with RNDN possibly switched to RNDZ when |x| <= 2^(emin-2) or x is a power-of-2 with appropriate ternary direction; if x.exp > EMAX, returns mpfr_overflow(prec, rnd, x.sign); else returns (x, t) unchanged. The TS uses default EMIN/EMAX (the same constants used by overflow.ts and underflow.ts).",
+  "c_signature": "int mpfr_check_range(mpfr_ptr x, int t, mpfr_rnd_t rnd_mode)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C mutates x in place (only when underflow/overflow path is taken — x is replaced with the underflow/overflow result); returns the (possibly negated/adjusted) ternary as int. TS takes (x, t, rnd) and returns Result {value, ternary} — the unchanged value (with the carried t) in the in-range case, or the underflow/overflow result in the out-of-range case. C uses the runtime-mutable __gmpfr_emin/__gmpfr_emax; TS uses defaults EMIN_DEFAULT=-(2^30-1), EMAX_DEFAULT=2^30-1 (same as underflow.ts and overflow.ts). C also sets __gmpfr_flags for Inf-with-t!=0 (the OVERFLOW flag); TS doesn't model flag state so this path is a no-op pass-through for Inf. Ternary input t must be -1, 0, or +1 (validated; out-of-range t throws EPREC).",
+  "refs": [
+    "mpfr/src/exceptions.c L249-L327 — the C reference body.",
+    "mpfr/src/exceptions.c L260-L284 — main dispatch (in-range vs underflow vs overflow).",
+    "mpfr/src/exceptions.c L274-L280 — the RNDN-to-RNDZ adjustment for the boundary underflow case.",
+    "src/ops/underflow.ts — load-bearing delegate for the underflow branch.",
+    "src/ops/overflow.ts — load-bearing delegate for the overflow branch.",
+    "src/internal/mpfr/powerof2_raw.ts — used by the boundary underflow check.",
+    "src/core.ts — locked schema (MPFR, RoundingMode, Result, Ternary).",
+    "CLAUDE.md 'Hallucination-risk callouts: Subnormals' — emin/emax range matters here."
+  ]
+}

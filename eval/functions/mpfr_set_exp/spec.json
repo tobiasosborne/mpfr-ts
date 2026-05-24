@@ -1,0 +1,21 @@
+{
+  "function": "mpfr_set_exp",
+  "class": "misc",
+  "signature": {
+    "params": ["x", "e"],
+    "returns": "MPFR"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_set_exp (mpfr/src/set_exp.c L24-L38). C signature `int mpfr_set_exp(mpfr_ptr x, mpfr_exp_t exponent)` mutates x's exponent to `exponent`, returning 0 on success or 1 if x is non-PURE_FP or e is out of [emin, emax]. Idiomatic TS: returns a fresh MPFR with the new exp; out-of-range or non-normal input throws MPFRError. For kind='normal' and e within the TS-recognised default emax/emin range (±(2^30 - 1)): returns { ...x, exp: e }. For kind != 'normal' OR e out of range: throws EDOMAIN. The TS surface does not return error codes — bad inputs throw.",
+  "c_signature": "int mpfr_set_exp(mpfr_ptr x, mpfr_exp_t exponent)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C mutates x in place; returns 0 on success or 1 on failure (non-PURE_FP, or e out of [__gmpfr_emin, __gmpfr_emax]). TS returns a fresh MPFR on success; throws MPFRError('EDOMAIN') on failure (non-normal input or e out of default [EMIN, EMAX]). Default range is ±(2^30 - 1) — the same MPFR_EMIN_DEFAULT/EMAX_DEFAULT the underflow/overflow ports use (mpfr/src/mpfr.h L231-L232). The TS schema's `exp` field is an arbitrary bigint, but the C-side `mpfr_set_exp` enforces emin/emax — we mirror that bound check here so a port-only build behaves like libmpfr with defaults.",
+  "refs": [
+    "mpfr/src/set_exp.c L24-L38 — the C reference body. Updates MPFR_EXP iff PURE_FP and e ∈ [emin, emax].",
+    "mpfr/src/mpfr.h L231-L232 — MPFR_EMAX_DEFAULT = 2^30 - 1, MPFR_EMIN_DEFAULT = -(EMAX_DEFAULT).",
+    "src/ops/underflow.ts §EMIN_DEFAULT — same EMIN constant ported here.",
+    "src/ops/overflow.ts §EMAX_DEFAULT — same EMAX constant ported here.",
+    "src/core.ts L113-L135 — locked MPFR shape; we return a fresh value.",
+    "src/core.ts §MPFRError, EDOMAIN — domain-error class for non-recoverable input.",
+    "CLAUDE.md 'Hallucination-risk callouts: Subnormals' — emax/emin are explicit in MPFR; we use defaults here."
+  ]
+}

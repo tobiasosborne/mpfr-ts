@@ -1,0 +1,20 @@
+{
+  "function": "mpfr_sub_ui",
+  "class": "misc",
+  "signature": {
+    "params": ["b", "c", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_sub_ui (mpfr/src/sub_ui.c L26-L94). Subtract an unsigned long `c` from an MPFR `b`. C body: c == 0 → mpfr_set(b, prec, rnd); NaN → NaN; ±Inf → ±Inf (sign preserved, ternary 0); ±0 with c != 0 → -c (i.e. mpfr_set_si(-c)) — BUT c may exceed LONG_MAX, so the C code does NOT use mpfr_set_si and falls through to the general path. Otherwise: build a temp mpfr_t at GMP_NUMB_BITS prec, set to c, mpfr_sub. The TS port mirrors: build cMPFR exactly via mpfr_set_ui(c, bitLength(c), 'RNDN'), delegate to mpfr_sub(b, cMPFR, prec, rnd). The ±0 - c branch goes through the general path (cMPFR built explicitly), producing -c at the target prec.",
+  "c_signature": "int mpfr_sub_ui(mpfr_ptr y, mpfr_srcptr x, unsigned long u, mpfr_rnd_t rnd_mode)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C takes (y, x, u, rnd) and mutates y. TS takes (b, c, prec, rnd) and returns Result. C builds an internal mpfr_t at GMP_NUMB_BITS (64) prec; TS uses mpfr_set_ui at bitLength(c) prec (exact). C calls mpfr_check_range at the tail; TS skips. For c == 0: both sides return mpfr_set(b, prec, rnd). For b NaN: NaN; b ±Inf: ±Inf preserves sign with ternary 0. For b == ±0 (and c != 0): the C side falls through to the general path (the comment notes 'we can't use mpfr_set_si as the opposite of u does not necessarily fit in a long'); TS mirrors by always calling mpfr_sub on the explicit cMPFR.",
+  "refs": [
+    "mpfr/src/sub_ui.c L26-L94 — the C reference body.",
+    "src/ops/sub.ts — the load-bearing delegate.",
+    "src/ops/set_ui.ts — integer-to-MPFR exact conversion.",
+    "src/ops/set.ts — c == 0 fast path.",
+    "src/core.ts — locked schema.",
+    "src/ops/add_ui.ts — structural parallel; this is the subtract analogue."
+  ]
+}

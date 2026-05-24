@@ -1,0 +1,19 @@
+{
+  "function": "mpfr_add_si",
+  "class": "misc",
+  "signature": {
+    "params": ["b", "c", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_add_si (mpfr/src/si_op.c L29-L46). Add an MPFR `b` and a signed long `c`. Trivial dispatcher: c >= 0 → mpfr_add_ui(b, c, prec, rnd); c < 0 → mpfr_sub_ui(b, -c, prec, rnd). The TS port mirrors this dispatch exactly with c as a bigint in [LONG_MIN, LONG_MAX].",
+  "c_signature": "int mpfr_add_si(mpfr_ptr y, mpfr_srcptr x, long u, mpfr_rnd_t rnd_mode)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C takes (y, x, u, rnd) and mutates y; returns int ternary. TS takes (b, c, prec, rnd) and returns Result. c is bigint in [LONG_MIN, LONG_MAX] = [-(2^63), 2^63 - 1]. C does `u >= 0 ? add_ui(u) : sub_ui(-u)` with `-u` cast through `(unsigned long)` — works because of two's-complement wrap on u == LONG_MIN. TS uses `-c` directly (bigint negation has no overflow), and add_ui / sub_ui's range check on `c` allows up to ULONG_MAX so LONG_MIN's magnitude (2^63) is well within bound.",
+  "refs": [
+    "mpfr/src/si_op.c L29-L46 — the C reference.",
+    "src/ops/add_ui.ts — c >= 0 branch.",
+    "src/ops/sub_ui.ts — c < 0 branch.",
+    "src/core.ts — locked schema; LONG_MIN_VAL / LONG_MAX_VAL constants.",
+    "CLAUDE.md 'Hallucination-risk callouts' — TS bigint negation is safe (no overflow); C must cast through unsigned to handle LONG_MIN."
+  ]
+}

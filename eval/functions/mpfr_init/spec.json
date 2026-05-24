@@ -1,0 +1,19 @@
+{
+  "function": "mpfr_init",
+  "class": "misc",
+  "signature": {
+    "params": [],
+    "returns": "MPFR"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_init (mpfr/src/init.c L24-L28). C signature is `void mpfr_init(mpfr_ptr x)`: initialises x at the library's current default precision (default 53 bits — IEEE float64 — but globally settable via mpfr_set_default_prec). The body is a single delegation to mpfr_init2(x, __gmpfr_default_fp_bit_precision). TS port returns posZero(53n) — i.e. mpfr_init() always uses 53 bits, matching the MPFR library's compile-time default. No mutation of global state is exposed in the immutable TS surface, so the TS port does not consult any global precision; it returns posZero(53n) verbatim.",
+  "c_signature": "void mpfr_init(mpfr_ptr x)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C mutates x in place at the global __gmpfr_default_fp_bit_precision (settable via mpfr_set_default_prec; default 53). TS returns a fresh value at the hard-coded default 53n bits — there is no global precision state in the immutable TS surface, and mpfr_set_default_prec is not ported. The post-init contract is the same as mpfr_init2 (see src/ops/init2.ts §divergence_from_c): C leaves the mantissa uninitialised with kind=NaN, TS returns posZero(53n) — a deterministic +0 at precision 53 bits.",
+  "refs": [
+    "mpfr/src/init.c L24-L28 — the C reference body (one-line delegate to mpfr_init2 at the default precision).",
+    "mpfr/src/mpfr.h — __gmpfr_default_fp_bit_precision starts at 53 (IEEE float64).",
+    "src/ops/init2.ts — the delegate. The TS port composes mpfr_init = () => mpfr_init2(53n).",
+    "src/core.ts L93-L135 — locked MPFR shape; posZero produces the canonical +0.",
+    "CLAUDE.md Law 4 — library coherence; the schema constructs return immutable values."
+  ]
+}

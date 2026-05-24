@@ -1,0 +1,19 @@
+{
+  "function": "mpfr_mul_2ui",
+  "class": "misc",
+  "signature": {
+    "params": ["x", "n", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_mul_2ui (mpfr/src/mul_2ui.c L24-L50). Multiplies b by 2^n where n is a non-negative integer. The mantissa is unchanged; only the exponent shifts by +n. For singular kinds: NaN propagates, ±Inf and ±0 are copied through (sign preserved). For normal kind: refit mantissa to prec (lossless pad or lossy round per rnd), then add n to the post-refit exp. TS divergence: the C side checks `exp + n > emax → overflow`; the TS schema places no exponent cap on a normal value, so we skip the overflow branch and let the exponent grow. This mirrors mpfr_mul_2si's TS divergence (see src/ops/mul_2si.ts §divergence_from_c).",
+  "c_signature": "int mpfr_mul_2ui(mpfr_ptr y, mpfr_srcptr x, unsigned long int n, mpfr_rnd_t rnd_mode)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C takes (mpfr_ptr y, mpfr_srcptr x, unsigned long n, mpfr_rnd_t rnd) — y is the output slot, mutated. Returns int ternary. TS takes (b, n, prec, rnd): n is a bigint (>= 0n), prec is explicit, returns Result {value, ternary}. C checks `n > __gmpfr_emax - exp` and calls mpfr_overflow on out-of-range; TS skips this check (schema's exp is unbounded — matches mpfr_mul_2si.ts policy). The C MPFR_LOG_FUNC and MPFR_LIKELY/UNLIKELY annotations are not surfaced. For singular kinds the C side delegates to mpfr_set (i.e. copy with rounding); TS inlines the equivalent: NaN → NAN_VALUE; ±Inf → posInf/negInf(prec); ±0 → posZero/negZero(prec). For normal kind, the C body does `inexact = (y != x) ? mpfr_set(y, x, rnd) : 0; ... MPFR_SET_EXP(y, exp + n)` — i.e. refit mantissa first, then bump exponent. TS does the same: refit via pad-or-roundMantissa, then add n to the post-refit exp.",
+  "refs": [
+    "mpfr/src/mul_2ui.c L24-L50 — the C reference body.",
+    "src/ops/mul_2si.ts — sibling signed port; this is the unsigned specialisation (n >= 0n).",
+    "src/internal/mpfr/round_raw.ts — the rounding substrate.",
+    "src/core.ts — locked schema (MPFR, RoundingMode, Result).",
+    "CLAUDE.md 'Hallucination-risk callouts': ternary direction; signed zero observable."
+  ]
+}

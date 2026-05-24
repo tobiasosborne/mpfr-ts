@@ -1,0 +1,18 @@
+{
+  "function": "mpfr_sub_si",
+  "class": "misc",
+  "signature": {
+    "params": ["b", "c", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_sub_si (mpfr/src/si_op.c L48-L65). Subtract a signed long `c` from an MPFR `b`. Trivial dispatcher: c >= 0 → mpfr_sub_ui(b, c, prec, rnd); c < 0 → mpfr_add_ui(b, -c, prec, rnd). Mirror of add_si with the operation swapped. The TS port handles LONG_MIN cleanly via bigint negation.",
+  "c_signature": "int mpfr_sub_si(mpfr_ptr y, mpfr_srcptr x, long u, mpfr_rnd_t rnd_mode)",
+  "prec_unit": "bits",
+  "divergence_from_c": "Same divergences as mpfr_add_si: bigint negation for c < 0 is overflow-free; the C unsigned-cast workaround is unnecessary. c is bigint in [LONG_MIN, LONG_MAX].",
+  "refs": [
+    "mpfr/src/si_op.c L48-L65 — the C reference.",
+    "src/ops/sub_ui.ts — c >= 0 branch.",
+    "src/ops/add_ui.ts — c < 0 branch.",
+    "src/ops/add_si.ts — structural mirror."
+  ]
+}

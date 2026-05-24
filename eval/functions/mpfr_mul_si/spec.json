@@ -1,0 +1,20 @@
+{
+  "function": "mpfr_mul_si",
+  "class": "misc",
+  "signature": {
+    "params": ["b", "c", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_mul_si (mpfr/src/si_op.c L90-L112). Multiply an MPFR `b` by a signed long `c`. Dispatch: c >= 0 → mpfr_mul_ui(b, c, prec, rnd). c < 0 → call mpfr_mul_ui(b, -c, prec, INVERT_RND(rnd)), then negate the result's sign AND negate ternary. The invert-rnd-then-negate-sign trick keeps the rounding semantically correct: rounding x by RNDU and then negating produces the same result as rounding (-x) by RNDD; the ternary direction also inverts. The MPFR_INVERT_RND macro maps RNDU↔RNDD, leaves RNDN/RNDZ/RNDA alone.",
+  "c_signature": "int mpfr_mul_si(mpfr_ptr y, mpfr_srcptr x, long u, mpfr_rnd_t rnd_mode)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C takes (y, x, u, rnd) and mutates y. TS takes (b, c, prec, rnd) and returns Result. c is bigint in [LONG_MIN, LONG_MAX]. For c < 0: C does `res = -mpfr_mul_ui(y, x, -(ulong)u, INVERT_RND(rnd)); MPFR_CHANGE_SIGN(y)`. TS mirrors: compute `r = mpfr_mul_ui(b, -c, prec, INVERT_RND(rnd))`, then negate ternary and flip sign in r.value. The sign flip applies to all kinds (normal, zero, inf) — flip sign field; for nan the schema forces sign=1 so no change. INVERT_RND: RNDU↔RNDD, others unchanged.",
+  "refs": [
+    "mpfr/src/si_op.c L90-L112 — the C reference.",
+    "mpfr/src/mpfr-impl.h L1249-L1250 — MPFR_INVERT_RND macro definition.",
+    "src/ops/mul_ui.ts — load-bearing delegate.",
+    "src/ops/neg.ts — the rounding-vs-sign reasoning is parallel.",
+    "src/core.ts — locked schema; Sign / Ternary.",
+    "CLAUDE.md 'Hallucination-risk callouts: Ternary flag is the sign of (rounded - exact)' — sign flip inverts ternary."
+  ]
+}

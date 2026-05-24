@@ -1,0 +1,21 @@
+{
+  "function": "mpfr_mul_ui",
+  "class": "misc",
+  "signature": {
+    "params": ["b", "c", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_mul_ui (mpfr/src/mul_ui.c L26-L143). Multiply an MPFR `b` by an unsigned long `c`. Dispatch: NaN b → NaN; ±Inf b: c=0 → NaN (0*inf); c>0 → ±Inf (sign preserved). ±0 b: → ±0 (sign preserved). c <= 1: c=0 → ±0 (sign of b preserved); c=1 → mpfr_set(b, prec, rnd). c power-of-2 → mpfr_mul_2si(b, ilog2(c), prec, rnd). Otherwise: build cMPFR exactly via mpfr_set_ui(c, bitLength(c), 'RNDN') and delegate to mpfr_mul. The TS port handles the c==0 special cases first (so we don't accidentally produce NaN for non-Inf zeros).",
+  "c_signature": "int mpfr_mul_ui(mpfr_ptr y, mpfr_srcptr x, unsigned long u, mpfr_rnd_t rnd_mode)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C takes (y, x, u, rnd) and mutates y. TS takes (b, c, prec, rnd) and returns Result. C dispatches singular x first (NaN, Inf-with-0=NaN, Inf-with-pos=Inf, zero=zero); then u <= 1 fast paths (u=0 → ±0, u=1 → mpfr_set); then power-of-2 → mpfr_mul_2si; then the general multiplication via mpn_mul_1 + MPFR_RNDRAW. TS mirrors the singular dispatch and the fast paths, then delegates to mpfr_mul(b, cMPFR, prec, rnd) for the general case (avoiding direct mpn_mul_1 plumbing since the existing mpfr_mul covers it). C calls mpfr_check_range at the tail of the !LONG_WITHIN_LIMB path (in our build, the LONG_WITHIN_LIMB path doesn't); TS skips check_range universally.",
+  "refs": [
+    "mpfr/src/mul_ui.c L26-L143 — the C reference body.",
+    "src/ops/mul.ts — the load-bearing delegate.",
+    "src/ops/set_ui.ts — integer-to-MPFR exact conversion.",
+    "src/ops/set.ts — c == 1 fast path.",
+    "src/ops/mul_2si.ts — power-of-2 fast path (optional optimisation; mpfr_mul produces the same result).",
+    "src/core.ts — locked schema.",
+    "CLAUDE.md 'Hallucination-risk callouts': signed zero observable (here: ±0 × u = ±0; ±Inf × 0 = NaN)."
+  ]
+}
