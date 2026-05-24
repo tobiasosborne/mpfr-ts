@@ -11,6 +11,29 @@ empirical limits.
 below; the live contract is `docs/worklog/006-scale-out-engine.md`
 §"Addendum (end-of-session user directive)".
 
+## ⚠ Two gotchas the previous session was bitten by — read first
+
+1. **`.gitignore` `mpfr/` pattern.** The original `.gitignore` line 2
+   was `mpfr/` (no leading slash). Git interprets that as matching
+   `mpfr/` at *any* depth — including `src/internal/mpfr/`, where the
+   substrate primitives live. Five substrate files (cmp_raw, round_raw,
+   powerof2_raw2, powerof2_raw, round_p) were silently dropped from
+   commits for ~12 hours until the next agent flagged it. **Fixed in
+   commit `cb65ebe`** by anchoring to `/mpfr/`. If you add new
+   directories whose names collide with ignored patterns, audit the
+   pattern.
+
+2. **`bd` commands don't auto-export to JSONL.** `bd create`, `bd close`,
+   `bd remember` all write to local Dolt only. `.beads/issues.jsonl`
+   (the git-tracked source of truth that teammates / next-agents read)
+   only refreshes when `bd export -o .beads/issues.jsonl` is called.
+   Two callers in the codebase do that automatically:
+   `ralph.py --commit-batch` and `ralph.py --ship`. Manual `git commit`
+   skips the export, leaving Dolt updates invisible. **Always run
+   `bd export -o .beads/issues.jsonl` before manual git commits**, or
+   prefer `--commit-batch`/`--ship` modes. A bd issue tracks the
+   pre-commit hook idea (see `mpfr-ts-<latest>` "git pre-commit hook").
+
 ## TL;DR — first 10 minutes
 
 ```bash
