@@ -1,0 +1,20 @@
+{
+  "function": "mpfr_set",
+  "class": "misc",
+  "signature": {
+    "params": ["b", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_set (mpfr/src/set.c L67-L79): copies the source MPFR value b into a new value at the target precision, rounding per the specified mode. The C reference is a one-line delegate to mpfr_set4 with signb = SIGN(b); the TS port preserves the same shape: forwards (b, prec, rnd, b.sign) to mpfr_set4. Public API; most common entry point for changing precision in MPFR-using code. NaN/Inf/Zero: kind preserved, sign preserved from b. Normal with prec == b.prec: lossless copy (ternary 0). Normal with prec > b.prec: lossless pad (ternary 0). Normal with prec < b.prec: round per rnd, return (value, ternary). All behaviour comes from mpfr_set4; mpfr_set is the canonical caller.",
+  "c_signature": "int mpfr_set(mpfr_ptr a, mpfr_srcptr b, mpfr_rnd_t rnd_mode)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C takes (mpfr_ptr a, mpfr_srcptr b, mpfr_rnd_t rnd_mode) — a is the output slot, mutated in place; precision comes from a. TS takes (b, prec, rnd): prec is an explicit positional bigint, returns Result {value, ternary} instead of mutating a and returning int. C's NaN return sets ERANGE; TS surfaces NaN via the schema-canonical NAN_VALUE (sign=1, prec=0n per src/core.ts; the C-side NaN sign bit is not represented). For Zero/Inf, the C side mutates a's exp/sign; the TS port returns a fresh posInf/negInf/posZero/negZero per b.sign. For Normal with prec != b.prec, the C code uses MPFR_RNDRAW with MPFR_SIGN(b) as the rounding-direction sign; the TS port forwards b.sign to mpfr_set4 which then calls roundMantissa(..., b.sign, rnd). No global flag state (TS is pure).",
+  "refs": [
+    "mpfr/src/set.c L67-L79 — the C reference body for mpfr_set.",
+    "mpfr/src/set.c L25-L64 — mpfr_set4, the delegate.",
+    "src/ops/set4.ts — production port of the delegate (already done).",
+    "src/ops/set.ts — production port of this function.",
+    "src/core.ts L113-L135 — locked MPFR shape; sign for non-NaN is preserved.",
+    "CLAUDE.md 'Hallucination-risk callouts: Signed zero is real' — sign of zero/inf must round-trip."
+  ]
+}

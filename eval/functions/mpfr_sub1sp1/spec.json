@@ -1,0 +1,26 @@
+{
+  "function": "mpfr_sub1sp1",
+  "class": "misc",
+  "signature": {
+    "params": ["b", "c", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_sub1sp1 (mpfr/src/sub1sp.c L138-L320): same-precision same-sign subtraction fast path for p < GMP_NUMB_BITS (= p in [1,63] on x86_64), i.e. single-limb mantissas with non-zero sub-limb padding (sh = 64 - p > 0). The dispatcher mpfr_sub1sp routes here when both operands have the same precision and that precision is < 64. Mirrors the C structure: convert mantissas to 64-bit C-limb form (mant << sh), handle Case A (equal exponents → exact subtraction with possible sign flip / cancellation / clz normalisation), Case B (different exponents, swap to bx > cx, then B1 d<64 with two's-complement negation of neglected bits / B2 d>=64 splitting on bp0 > HIGHBIT vs bp0 == HIGHBIT). Underflow check before rounding (RNDN narrowed to RNDZ when |a| <= 2^(emin-2)). Five-mode rounding with sign-aware truncate/add-one-ulp; ternary sign reflects rounded-exact direction. The single-limb arithmetic uses BigInt mod-2^64 masking; cancellation handled via clz; signed-zero distinction preserved for RNDD-zero.",
+  "c_signature": "static int mpfr_sub1sp1(mpfr_ptr a, mpfr_srcptr b, mpfr_srcptr c, mpfr_rnd_t rnd_mode, mpfr_prec_t p)",
+  "prec_unit": "bits",
+  "divergence_from_c": "Static C linkage dropped (exercised via mpfr_sub at prec < 64). C asserts p < GMP_NUMB_BITS via MPFR_ASSERTD; TS throws MPFRError('EPREC') outside [1, 63]. C's mp_limb_t bp[0]/cp[0] are 64-bit unsigned ints; TS uses BigInt with mod-2^64 masking. C count_leading_zeros macro replaced by a TS clz64 helper. Result return shape replaces in-place mutation of a. Signed-zero cancellation (RNDD → -0, else +0) explicit per src/core.ts.",
+  "refs": [
+    "mpfr/src/sub1sp.c L138-L320 — verbatim C reference body.",
+    "mpfr/src/sub1sp.c L1474-L1476 — dispatcher routing.",
+    "mpfr/src/sub1.c L66-L74 — cancellation-zero sign rule.",
+    "mpfr/src/mpfr-impl.h L1233-L1234 — MPFR_IS_LIKE_RNDZ.",
+    "mpfr/src/mpfr-impl.h L1300-L1311 — MPFR_LIMB_HIGHBIT, MPFR_LIMB_MASK.",
+    "src/ops/sub1sp1n.ts — sister op (p == 64); same structure, sh = 0.",
+    "src/ops/sub1sp2.ts — sister op (65 <= p <= 127); 2-limb extension.",
+    "src/ops/add1sp1.ts — companion op (add direction, same prec range).",
+    "src/ops/underflow.ts — delegate on bx < emin.",
+    "src/core.ts — locked schema (MPFR, RoundingMode, Result, Ternary, Sign).",
+    "CLAUDE.md 'Signed zero is real' — RNDD cancellation gives -0.",
+    "CLAUDE.md 'Ternary flag is the sign of (rounded - exact)' — direction discipline."
+  ]
+}

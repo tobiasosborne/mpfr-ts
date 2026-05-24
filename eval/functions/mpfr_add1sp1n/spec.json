@@ -1,0 +1,22 @@
+{
+  "function": "mpfr_add1sp1n",
+  "class": "misc",
+  "signature": {
+    "params": ["b", "c", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_add1sp1n (mpfr/src/add1sp.c L256-L358): same-precision same-sign addition fast path for p == GMP_NUMB_BITS == 64 — single-limb mantissas with sh == 0 (TS mant directly equals the C 64-bit limb). Dispatcher routes here when all three operands have prec = 64. Case A (bx == cx): exact sum overflows 64 bits since both operands have MSB set; extract rb = (a0 wrapped) & 1, ap0 = HIGHBIT | (a0 wrapped >> 1), bx++. Case B (bx != cx, swap to bx > cx, set d = bx - cx > 0): B1 (d < 64) compute a0 = bp0 + (cp0 >> d) with possible 64-bit overflow, sb = cp0 << (64-d); if overflow then shift down by one and bump exp; else rb = sb >> 63, sb &= ~HIGHBIT. B2 (d >= 64): sb = (d != 64 || cp0 != HIGHBIT), rb = (d == 64), ap0 = bp0. Standard 5-mode rounding with sign-aware truncate/add-one-ulp; ternary reflects (rounded - exact) direction. Overflow on exp > emax delegated to mpfr_overflow.",
+  "c_signature": "static int mpfr_add1sp1n(mpfr_ptr a, mpfr_srcptr b, mpfr_srcptr c, mpfr_rnd_t rnd_mode)",
+  "prec_unit": "bits",
+  "divergence_from_c": "Static C linkage dropped (exercised via mpfr_add at prec == 64). C asserts prec == GMP_NUMB_BITS via MPFR_ASSERTD; TS throws MPFRError('EPREC') for any other prec. C 64-bit modular arithmetic mirrored in BigInt with explicit mod-2^64 masking. Result return shape replaces in-place mutation.",
+  "refs": [
+    "mpfr/src/add1sp.c L256-L358 — verbatim C reference body.",
+    "mpfr/src/add1sp.c L1078-L1080 — dispatcher routing (when used; mpfr_add1sp1n is also routed from the small fast paths).",
+    "mpfr/src/mpfr-impl.h L1233-L1234 — MPFR_IS_LIKE_RNDZ.",
+    "mpfr/src/mpfr-impl.h L1300-L1311 — MPFR_LIMB_HIGHBIT.",
+    "src/ops/add1sp1.ts — sister op for p < 64 (sh > 0).",
+    "src/ops/sub1sp1n.ts — companion op (sub direction, same prec).",
+    "src/ops/overflow.ts — delegate on exp > emax.",
+    "src/core.ts — locked schema."
+  ]
+}

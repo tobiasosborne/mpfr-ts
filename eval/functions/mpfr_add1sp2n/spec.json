@@ -1,0 +1,21 @@
+{
+  "function": "mpfr_add1sp2n",
+  "class": "misc",
+  "signature": {
+    "params": ["b", "c", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_add1sp2n (mpfr/src/add1sp.c L482-L611): same-precision same-sign addition fast path for p == 2*GMP_NUMB_BITS (= 128 on x86_64), i.e. two-limb mantissas with sh == 0 (no sub-limb padding). The dispatcher routes here AFTER add1sp2's prec check (L1488-L1491). Same bigint extended-precision strategy as add1sp2: order operands, compute S = (large.mant << d) + small.mant exactly, round via roundMantissa.",
+  "c_signature": "static int mpfr_add1sp2n(mpfr_ptr a, mpfr_srcptr b, mpfr_srcptr c, mpfr_rnd_t rnd_mode)",
+  "prec_unit": "bits",
+  "divergence_from_c": "Same as add1sp2: 2-limb decomposition collapsed to single bigint; static linkage dropped; Result return shape.",
+  "refs": [
+    "mpfr/src/add1sp.c L482-L611 — verbatim C reference body.",
+    "mpfr/src/add1sp.c L1488-L1491 — dispatcher routing.",
+    "src/ops/add1sp2.ts — sister op (65..127); same algorithm.",
+    "src/ops/sub1sp2n.ts — companion op (sub direction).",
+    "src/internal/mpfr/round_raw.ts — substrate.",
+    "src/ops/overflow.ts — delegate.",
+    "src/core.ts — locked schema."
+  ]
+}
