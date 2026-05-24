@@ -1,0 +1,20 @@
+{
+  "function": "mpfr_print_rnd_mode",
+  "class": "misc",
+  "signature": {
+    "params": ["rnd"],
+    "returns": "{ name: string }"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_print_rnd_mode (mpfr/src/print_rnd_mode.c L27-L50): convert a rounding mode to its canonical C-side name string. The C function dispatches over the mpfr_rnd_t enum and returns one of \"MPFR_RNDN\", \"MPFR_RNDZ\", \"MPFR_RNDU\", \"MPFR_RNDD\", \"MPFR_RNDA\", or \"MPFR_RNDF\" — returning NULL for any unrecognised value. The TS port takes the locked-schema RoundingMode (a string enum: 'RNDN' | 'RNDZ' | 'RNDU' | 'RNDD' | 'RNDA') and returns a tiny record `{name: string}` carrying the full C-style name. The wrapper-object return shape (rather than a bare string) accommodates the harness's value-codec which cannot decode opaque scalar strings (it expects decimal/double/sentinel forms) — wrapping as an object routes the comparison through the harness's 'object' branch where field-level string equality works. The TS-side RoundingMode enum does NOT include 'RNDF' (faithful-rounding is unsupported in this port per src/core.ts L137-L151), so this port covers the 5 valid TS rounding modes and throws MPFRError('EROUND') on any other input. Class is 'misc' for the 1000ms budget; the implementation is O(1) dispatch.",
+  "c_signature": "const char *mpfr_print_rnd_mode(mpfr_rnd_t rnd_mode)",
+  "prec_unit": "n/a",
+  "divergence_from_c": "C returns `const char *` — a pointer to a static string, or NULL for unknown rounding modes. TS returns `{name: string}` — a small object carrying the same name. The object-wrapper is a harness-coupling decision: the runner's decodeExpectedOutput (eval/harness/value_codec.ts L274) can't parse a bare-string scalar that doesn't match decimal-integer or IEEE-double-shape patterns, so wrapping in `{name: \"MPFR_RNDN\"}` routes the comparison through the harness's 'object' branch. C does not throw on bad input (returns NULL); TS throws MPFRError('EROUND', ...) because (a) the locked-schema RoundingMode type doesn't include 'RNDF' or 'RNDNA' (so any non-RoundingMode input is malformed) and (b) the project's hallucination-risk callout is exactly 'rounding mode count is FIVE' (CLAUDE.md). C also returns 'MPFR_RNDF' for the unsupported faithful-rounding mode; TS does not have that mode at all (src/core.ts L137-L151 lists 5 modes).",
+  "refs": [
+    "mpfr/src/print_rnd_mode.c L27-L50 — the C reference body (5-way switch).",
+    "src/core.ts L137-L151 — locked RoundingMode enum (RNDN, RNDZ, RNDU, RNDD, RNDA) — RNDF deliberately omitted.",
+    "src/core.ts L178-L208 — MPFRError class; 'EROUND' code for unknown rounding modes.",
+    "CLAUDE.md 'Hallucination-risk callouts' — 'Rounding mode count is FIVE'. MPFR_RNDNA retired; RNDF unsupported here.",
+    "eval/harness/value_codec.ts L274 — decodeExpectedOutput rejects opaque scalar strings; object-wrapping is the workaround.",
+    "eval/harness/value_codec.ts L583 — compareField string === branch (object-internal string equality)."
+  ]
+}

@@ -130,6 +130,30 @@ def test_next_picks_all_when_no_deps(
     assert names == ["mpfr_a", "mpfr_b", "mpfr_c"]
 
 
+def test_next_skips_blocked_status(
+    tmp_path: Path, fresh_db: Path, fake_callgraph: Path
+) -> None:
+    """A function with status='blocked' must NOT be picked.
+
+    `blocked` is the deliberate state for a function whose harness
+    prerequisite is unmet (e.g. mpfr_abort_prec_max awaiting
+    expected_throw support). Including it in candidates would force
+    the orchestrator to re-discover the block every batch. Ref:
+    mpfr-ts-1jr Phase B regression.
+    """
+    _insert_function(fresh_db, name="mpfr_a", status="blocked")
+    candidates = ralph.compute_candidates(
+        ralph.load_callgraph(fake_callgraph),
+        ralph.load_state(fresh_db),
+        include_pending_deps=False,
+        class_filter=None,
+    )
+    names = {c.name for c in candidates}
+    assert "mpfr_a" not in names
+    # Other no-status functions still pickable.
+    assert {"mpfr_b", "mpfr_c"}.issubset(names)
+
+
 def test_next_skips_unsatisfied_deps(
     tmp_path: Path, fresh_db: Path
 ) -> None:

@@ -169,12 +169,12 @@ def compute_candidates(
 
     A function is eligible iff:
 
-    1. It is not already ``done`` / ``slow`` / ``parked`` in state.db
-       (statuses ``pending``, ``in_flight``, ``blocked``, or absent
-       count as pending for selection purposes — we still surface
-       in-flight rows so the orchestrator can re-pick a stale row).
-       In practice the orchestrator runs ``--next`` from a clean slate
-       so only ``pending`` / absent count.
+    1. Either absent from state.db OR has status ``pending``. Status
+       ``done`` / ``slow`` / ``parked`` / ``blocked`` / ``in_flight``
+       all skip — ``blocked`` is deliberately not pickable until
+       manually un-blocked (e.g. a harness dependency is resolved);
+       ``in_flight`` means another worker is already on it; ``done``
+       and the rest are self-explanatory.
     2. Every dep is either marked ``done`` in state.db OR
        ``--include-pending-deps`` is set.
     3. If ``class_filter`` is set, the function's class matches.
@@ -182,7 +182,7 @@ def compute_candidates(
     Returns candidates sorted by ``(topo_rank, name)`` ascending.
     """
 
-    eligible_status = {"pending", "in_flight", "blocked"}
+    eligible_status = {"pending"}
     candidates: list[CandidateFn] = []
     for name, entry in callgraph.items():
         status = state.get(name)

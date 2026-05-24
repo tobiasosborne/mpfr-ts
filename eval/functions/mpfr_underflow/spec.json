@@ -1,0 +1,25 @@
+{
+  "function": "mpfr_underflow",
+  "class": "misc",
+  "signature": {
+    "params": ["prec", "rnd", "sign"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_underflow (mpfr/src/exceptions.c L396-L420): construct the underflow-exception value MPFR's rounding logic returns when a computation underflows. Mirror image of mpfr_overflow: given (rnd, sign), branches on MPFR_IS_LIKE_RNDZ(rnd, sign<0) to choose between ±0 (toward-zero branch, ternary=-1) and ±min-finite (away-from-zero branch, ternary=+1). The TS port returns a fresh Result {value, ternary}. Default emin is -MPFR_EMAX_DEFAULT = -(2^30 - 1) (mpfr/src/mpfr.h L232). Class is 'misc' for the 1000ms budget; the work is enum dispatch plus a delegate call to posZero/negZero or mpfr_setmin. No global flag side effects are modelled. Signed zero is observable in the toward-zero branch — the returned ±0 carries the input sign per CLAUDE.md.",
+  "c_signature": "int mpfr_underflow(mpfr_ptr x, mpfr_rnd_t rnd_mode, int sign)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C takes (mpfr_ptr x, mpfr_rnd_t rnd_mode, int sign): x is mutated to ±0 or ±min and the ternary is returned as int. TS takes (prec, rnd, sign): a fresh Result is returned. Sign is strict 1 | -1 (C asserts via MPFR_ASSERT_SIGN; TS throws MPFRError('EPREC') on non-±1). No libmpfr flag side effects. The default emin (-(2^30 - 1)) is hard-coded — callers that have called mpfr_set_emin to change it would not match this golden. The ±0 branch produces a signed zero (sign === 1 → +0, sign === -1 → -0), which is observable in subsequent arithmetic per the locked schema.",
+  "refs": [
+    "mpfr/src/exceptions.c L396-L420 — the C reference body.",
+    "mpfr/src/mpfr.h L231-L232 — MPFR_EMAX_DEFAULT / MPFR_EMIN_DEFAULT.",
+    "mpfr/src/mpfr-impl.h L1233-L1234 — MPFR_IS_LIKE_RNDZ macro definition.",
+    "mpfr/tests/texceptions.c L204-L262 — upstream test patterns (test_set_underflow).",
+    "src/ops/setmin.ts — delegate for the min-finite branch.",
+    "src/ops/overflow.ts — sibling exception constructor (mirror image).",
+    "src/core.ts L137-L151 — RoundingMode.",
+    "src/core.ts L75-L90 — Sign discriminant; signed-zero observability rule.",
+    "src/core.ts L173-L176 — Result return shape.",
+    "src/core.ts L278-L292 — posZero / negZero constructors (the ±0 branch).",
+    "CLAUDE.md 'Signed zero is real' — the ±0 carries the input sign; do not collapse."
+  ]
+}

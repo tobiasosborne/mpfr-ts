@@ -1,0 +1,25 @@
+{
+  "function": "mpfr_add1sp1",
+  "class": "misc",
+  "signature": {
+    "params": ["b", "c", "rnd"],
+    "returns": "Result"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_add1sp1 (mpfr/src/add1sp.c L128-L252): the same-precision same-sign addition fast path for p < GMP_NUMB_BITS (= 64 on x86_64), i.e. single-limb operands. Most frequently-hit branch in MPFR's arithmetic kernel: the dispatcher mpfr_add1sp (L856-L894) routes here when MPFR_PREC(a) == MPFR_PREC(b) == MPFR_PREC(c) < 64. Pre-conditions (asserted in C, runtime-throw in TS): both operands kind='normal', same prec in [1, 63], same sign. The output preserves prec and sign; only the exponent and mantissa change. The algorithm splits on exponent equality (Case A) vs inequality (Case B: B1 d<sh, B2 sh<=d<64, B3 d>=64), computes the result limb, round bit, and sticky, then applies the rounding rule per RoundingMode. On exponent overflow (bx > EMAX_DEFAULT = 2^30 - 1), delegates to mpfr_overflow. The TS port mirrors the C algorithm at the I/O contract level by converting TS-schema mantissas (MSB-aligned to prec) to C-limb form (MSB-aligned to 64 via mant << sh, where sh = 64 - prec), running the verbatim C arithmetic, then converting back. Class is 'misc' for the 1000ms budget; the implementation is O(1) modulo bigint shift costs (which are O(1) for sub-64-bit values).",
+  "c_signature": "static int mpfr_add1sp1(mpfr_ptr a, mpfr_srcptr b, mpfr_srcptr c, mpfr_rnd_t rnd_mode, mpfr_prec_t p)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C takes (mpfr_ptr a, mpfr_srcptr b, mpfr_srcptr c, mpfr_rnd_t rnd_mode, mpfr_prec_t p) — `a` is the output slot, mutated in place; `p` is passed in (read off `a` from the dispatcher's perspective, which already asserts MPFR_PREC(a) == MPFR_PREC(b) == MPFR_PREC(c)). TS takes (b, c, rnd) — the output prec is implicit (= b.prec); the signature is exactly the inputs MPFR_PREC(b), MPFR_PREC(c), rnd and the implicit equal-prec constraint. Returns Result {value, ternary} instead of mutating `a` and returning int. The C side asserts preconditions via MPFR_ASSERTD (compiled out in release builds); the TS port elevates these to MPFRError('EPREC') / MPFRError('EROUND') at runtime — necessary because public TS callers cross a type boundary the grader doesn't statically enforce. The C side reads MPFR_SIGN(a) for the IS_LIKE_RNDZ check (the dispatcher set a's sign to b's sign before calling); TS uses b.sign directly. Exponent overflow → delegate to mpfr_overflow (same as C); no MPFR flag state changes (TS is pure). The C internal-static linkage is dropped — the TS port is `export`ed for the harness.",
+  "refs": [
+    "mpfr/src/add1sp.c L128-L252 — the C reference body (the prec < 64 specialization).",
+    "mpfr/src/add1sp.c L856-L894 — mpfr_add1sp dispatcher; routes prec < 64 to add1sp1.",
+    "mpfr/src/add1sp.c L217-L218, L244-L248 — overflow check; matches src/ops/overflow.ts.",
+    "mpfr/src/mpfr-impl.h L1233-L1234 — MPFR_IS_LIKE_RNDZ macro.",
+    "mpfr/src/mpfr-impl.h L1301 — MPFR_LIMB_HIGHBIT.",
+    "src/ops/overflow.ts — delegate on exp overflow.",
+    "src/ops/add.ts — general add (the existing port; this fast path is NOT extracted from add.ts since add.ts uses a different general-purpose algorithm via bigint arithmetic at any prec, not the C add1sp1 limb-level fast path).",
+    "src/core.ts L131-L134 — TS-side mantissa MSB-alignment (prec-bits; differs from C limb-alignment by sh = 64 - prec bits).",
+    "src/core.ts L173-L176 — Result return shape.",
+    "CLAUDE.md 'Hallucination-risk callouts: Ternary flag is the sign of (rounded - exact)' — the truncate / add_one_ulp branches must compute ternary in the right direction.",
+    "CLAUDE.md 'Hallucination-risk callouts: rounding mode count is FIVE' — the 5-way dispatch follows."
+  ]
+}
