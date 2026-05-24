@@ -1,0 +1,5989 @@
+{
+  "functions": {
+    "mpfr_abort_prec_max": {
+      "class": "misc",
+      "defined_in": "abort_prec_max.c",
+      "deps": [],
+      "topo_rank": 0
+    },
+    "mpfr_abs": {
+      "class": "misc",
+      "defined_in": "set.c",
+      "deps": [
+        "mpfr_set4"
+      ],
+      "topo_rank": 5
+    },
+    "mpfr_acos": {
+      "class": "transcendental",
+      "defined_in": "acos.c",
+      "deps": [
+        "mpfr_abs",
+        "mpfr_atan",
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_cmp_ui",
+        "mpfr_const_pi",
+        "mpfr_div",
+        "mpfr_div_2ui",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_set_ui",
+        "mpfr_sqr",
+        "mpfr_sqrt",
+        "mpfr_sub",
+        "mpfr_ui_sub"
+      ],
+      "topo_rank": 102
+    },
+    "mpfr_acosh": {
+      "class": "transcendental",
+      "defined_in": "acosh.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_cmp_ui",
+        "mpfr_const_log2",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_log",
+        "mpfr_mul_2ui",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_sqr",
+        "mpfr_sqrt",
+        "mpfr_sub_ui"
+      ],
+      "topo_rank": 114
+    },
+    "mpfr_acospi": {
+      "class": "transcendental",
+      "defined_in": "acosu.c",
+      "deps": [
+        "mpfr_acosu"
+      ],
+      "topo_rank": 119
+    },
+    "mpfr_acosu": {
+      "class": "transcendental",
+      "defined_in": "acosu.c",
+      "deps": [
+        "mpfr_acos",
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_cmp_si_2exp",
+        "mpfr_cmpabs_ui",
+        "mpfr_const_pi",
+        "mpfr_div",
+        "mpfr_div_2ui",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_min_prec",
+        "mpfr_mul_ui",
+        "mpfr_nextabove",
+        "mpfr_nextbelow",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_set_si_2exp",
+        "mpfr_set_ui",
+        "mpfr_set_ui_2exp"
+      ],
+      "topo_rank": 118
+    },
+    "mpfr_add": {
+      "class": "arithmetic",
+      "defined_in": "add.c",
+      "deps": [
+        "mpfr_add1",
+        "mpfr_add1sp",
+        "mpfr_get_prec",
+        "mpfr_set",
+        "mpfr_sub1",
+        "mpfr_sub1sp"
+      ],
+      "topo_rank": 99
+    },
+    "mpfr_add1": {
+      "class": "misc",
+      "defined_in": "add1.c",
+      "deps": [
+        "mpfr_get_prec",
+        "mpfr_overflow",
+        "mpfr_powerof2_raw",
+        "mpfr_ubf_diff_exp",
+        "mpfr_underflow",
+        "mpn_add_1",
+        "mpn_add_n",
+        "mpn_rshift"
+      ],
+      "topo_rank": 43
+    },
+    "mpfr_add1sp": {
+      "class": "misc",
+      "defined_in": "add1sp.c",
+      "deps": [
+        "mpfr_add1sp1",
+        "mpfr_add1sp1n",
+        "mpfr_add1sp2",
+        "mpfr_add1sp2n",
+        "mpfr_add1sp3",
+        "mpfr_addrsh",
+        "mpfr_overflow",
+        "mpfr_powerof2_raw",
+        "mpn_add_1",
+        "mpn_add_n",
+        "mpn_rshift"
+      ],
+      "topo_rank": 42
+    },
+    "mpfr_add1sp1": {
+      "class": "misc",
+      "defined_in": "add1sp1_extracted.c",
+      "deps": [],
+      "topo_rank": 41
+    },
+    "mpfr_add1sp1n": {
+      "class": "misc",
+      "defined_in": "add1sp.c",
+      "deps": [
+        "mpfr_overflow"
+      ],
+      "topo_rank": 40
+    },
+    "mpfr_add1sp2": {
+      "class": "misc",
+      "defined_in": "add1sp.c",
+      "deps": [
+        "mpfr_overflow"
+      ],
+      "topo_rank": 39
+    },
+    "mpfr_add1sp2n": {
+      "class": "misc",
+      "defined_in": "add1sp.c",
+      "deps": [
+        "mpfr_overflow"
+      ],
+      "topo_rank": 38
+    },
+    "mpfr_add1sp3": {
+      "class": "misc",
+      "defined_in": "add1sp.c",
+      "deps": [
+        "mpfr_overflow"
+      ],
+      "topo_rank": 37
+    },
+    "mpfr_add_d": {
+      "class": "arithmetic",
+      "defined_in": "add_d.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_check_range",
+        "mpfr_get_prec",
+        "mpfr_set_d"
+      ],
+      "topo_rank": 121
+    },
+    "mpfr_add_q": {
+      "class": "misc",
+      "defined_in": "gmp_op.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_init2",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_set_q"
+      ],
+      "topo_rank": 123
+    },
+    "mpfr_add_si": {
+      "class": "misc",
+      "defined_in": "si_op.c",
+      "deps": [
+        "mpfr_add_ui",
+        "mpfr_get_prec",
+        "mpfr_sub_ui"
+      ],
+      "topo_rank": 124
+    },
+    "mpfr_add_ui": {
+      "class": "arithmetic",
+      "defined_in": "add_ui.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_set",
+        "mpfr_set_ui"
+      ],
+      "topo_rank": 100
+    },
+    "mpfr_add_z": {
+      "class": "misc",
+      "defined_in": "gmp_op.c",
+      "deps": [
+        "mpfr_add_si"
+      ],
+      "topo_rank": 125
+    },
+    "mpfr_addrsh": {
+      "class": "misc",
+      "defined_in": "add1sp.c",
+      "deps": [
+        "mpn_add_1",
+        "mpn_add_n"
+      ],
+      "topo_rank": 36
+    },
+    "mpfr_agm": {
+      "class": "transcendental",
+      "defined_in": "agm.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_cmp",
+        "mpfr_cmp2",
+        "mpfr_div",
+        "mpfr_div_2ui",
+        "mpfr_divby0_p",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_mul",
+        "mpfr_nanflag_p",
+        "mpfr_overflow_p",
+        "mpfr_set",
+        "mpfr_sqr",
+        "mpfr_sqrt",
+        "mpfr_sub",
+        "mpfr_swap",
+        "mpfr_underflow_p"
+      ],
+      "topo_rank": 112
+    },
+    "mpfr_ai": {
+      "class": "transcendental",
+      "defined_in": "ai.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_ai1",
+        "mpfr_ai2",
+        "mpfr_clear",
+        "mpfr_cmp_si",
+        "mpfr_init2",
+        "mpfr_mul_si",
+        "mpfr_mul_ui",
+        "mpfr_set",
+        "mpfr_set_si",
+        "mpfr_set_ui"
+      ],
+      "topo_rank": 136
+    },
+    "mpfr_ai1": {
+      "class": "transcendental",
+      "defined_in": "ai.c",
+      "deps": [
+        "mpfr_abs",
+        "mpfr_add",
+        "mpfr_cbrt",
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_div",
+        "mpfr_div_ui2",
+        "mpfr_gamma_one_and_two_third",
+        "mpfr_get_prec",
+        "mpfr_get_ui",
+        "mpfr_init2",
+        "mpfr_mul",
+        "mpfr_neg",
+        "mpfr_pow_ui",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_set_str",
+        "mpfr_set_ui",
+        "mpfr_sqr",
+        "mpfr_sqrt",
+        "mpfr_ui_div"
+      ],
+      "topo_rank": 135
+    },
+    "mpfr_ai2": {
+      "class": "transcendental",
+      "defined_in": "ai.c",
+      "deps": [
+        "mpfr_abs",
+        "mpfr_add",
+        "mpfr_allocate_func",
+        "mpfr_cbrt",
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_div",
+        "mpfr_div_ui2",
+        "mpfr_free_func",
+        "mpfr_gamma_one_and_two_third",
+        "mpfr_get_prec",
+        "mpfr_get_ui",
+        "mpfr_init2",
+        "mpfr_mul",
+        "mpfr_neg",
+        "mpfr_pow_ui",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_set_str",
+        "mpfr_set_ui",
+        "mpfr_sqr",
+        "mpfr_sqrt",
+        "mpfr_ui_div"
+      ],
+      "topo_rank": 134
+    },
+    "mpfr_allocate_func": {
+      "class": "misc",
+      "defined_in": "mpfr-gmp.c",
+      "deps": [],
+      "topo_rank": 18
+    },
+    "mpfr_asin": {
+      "class": "transcendental",
+      "defined_in": "asin.c",
+      "deps": [
+        "mpfr_abs",
+        "mpfr_atan",
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_cmp_ui",
+        "mpfr_const_pi",
+        "mpfr_div",
+        "mpfr_div_2ui",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_sqr",
+        "mpfr_sqrt",
+        "mpfr_ui_sub"
+      ],
+      "topo_rank": 137
+    },
+    "mpfr_asinh": {
+      "class": "transcendental",
+      "defined_in": "asinh.c",
+      "deps": [
+        "mpfr_add_ui",
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_log",
+        "mpfr_set4",
+        "mpfr_set_prec",
+        "mpfr_sqr",
+        "mpfr_sqrt"
+      ],
+      "topo_rank": 138
+    },
+    "mpfr_asinpi": {
+      "class": "transcendental",
+      "defined_in": "asinu.c",
+      "deps": [
+        "mpfr_asinu"
+      ],
+      "topo_rank": 140
+    },
+    "mpfr_asinu": {
+      "class": "transcendental",
+      "defined_in": "asinu.c",
+      "deps": [
+        "mpfr_asin",
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_cmp_si_2exp",
+        "mpfr_cmpabs_ui",
+        "mpfr_const_pi",
+        "mpfr_div",
+        "mpfr_div_2ui",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_mul_ui",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_set_si_2exp",
+        "mpfr_set_ui_2exp",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 139
+    },
+    "mpfr_asprintf": {
+      "class": "misc",
+      "defined_in": "printf.c",
+      "deps": [],
+      "topo_rank": 141
+    },
+    "mpfr_assert_fail": {
+      "class": "misc",
+      "defined_in": "mpfr-gmp.c",
+      "deps": [],
+      "topo_rank": 142
+    },
+    "mpfr_atan": {
+      "class": "transcendental",
+      "defined_in": "atan.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_add_ui",
+        "mpfr_atan_aux",
+        "mpfr_check_range",
+        "mpfr_cmp_ui",
+        "mpfr_const_pi",
+        "mpfr_div",
+        "mpfr_div_2ui",
+        "mpfr_get_prec",
+        "mpfr_get_z_2exp",
+        "mpfr_mul",
+        "mpfr_mul_2ui",
+        "mpfr_set",
+        "mpfr_set4",
+        "mpfr_set_z",
+        "mpfr_sqr",
+        "mpfr_sqrt",
+        "mpfr_sub",
+        "mpfr_sub_ui",
+        "mpfr_trunc",
+        "mpfr_ui_div"
+      ],
+      "topo_rank": 101
+    },
+    "mpfr_atan2": {
+      "class": "transcendental",
+      "defined_in": "atan2.c",
+      "deps": [
+        "mpfr_atan",
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_const_pi",
+        "mpfr_div",
+        "mpfr_div_2si",
+        "mpfr_div_2ui",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_mul_ui",
+        "mpfr_powerof2_raw",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_sub",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 143
+    },
+    "mpfr_atan2pi": {
+      "class": "transcendental",
+      "defined_in": "atan2u.c",
+      "deps": [
+        "mpfr_atan2u"
+      ],
+      "topo_rank": 153
+    },
+    "mpfr_atan2u": {
+      "class": "transcendental",
+      "defined_in": "atan2u.c",
+      "deps": [
+        "mpfr_atan2u_aux1",
+        "mpfr_atan2u_aux2",
+        "mpfr_atan2u_overflow",
+        "mpfr_atan2u_underflow",
+        "mpfr_atanu",
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_cmpabs",
+        "mpfr_div",
+        "mpfr_div_2ui",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_mul_2ui",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_set_si",
+        "mpfr_ui_sub"
+      ],
+      "topo_rank": 152
+    },
+    "mpfr_atan2u_aux1": {
+      "class": "transcendental",
+      "defined_in": "atan2u.c",
+      "deps": [
+        "mpfr_set_ui_2exp"
+      ],
+      "topo_rank": 151
+    },
+    "mpfr_atan2u_aux2": {
+      "class": "transcendental",
+      "defined_in": "atan2u.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_init2",
+        "mpfr_mul_ui",
+        "mpfr_set",
+        "mpfr_set_ui_2exp"
+      ],
+      "topo_rank": 150
+    },
+    "mpfr_atan2u_aux3": {
+      "class": "transcendental",
+      "defined_in": "atan2u.c",
+      "deps": [
+        "mpfr_clear",
+        "mpfr_init2",
+        "mpfr_neg",
+        "mpfr_nextbelow",
+        "mpfr_set",
+        "mpfr_set_ui_2exp"
+      ],
+      "topo_rank": 146
+    },
+    "mpfr_atan2u_aux4": {
+      "class": "transcendental",
+      "defined_in": "atan2u.c",
+      "deps": [
+        "mpfr_clear",
+        "mpfr_init2",
+        "mpfr_neg",
+        "mpfr_nextabove",
+        "mpfr_nextbelow",
+        "mpfr_set",
+        "mpfr_set_ui_2exp"
+      ],
+      "topo_rank": 148
+    },
+    "mpfr_atan2u_overflow": {
+      "class": "transcendental",
+      "defined_in": "atan2u.c",
+      "deps": [
+        "mpfr_atan2u_aux4"
+      ],
+      "topo_rank": 149
+    },
+    "mpfr_atan2u_underflow": {
+      "class": "transcendental",
+      "defined_in": "atan2u.c",
+      "deps": [
+        "mpfr_atan2u_aux3",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 147
+    },
+    "mpfr_atan_aux": {
+      "class": "transcendental",
+      "defined_in": "atan.c",
+      "deps": [
+        "mpfr_set_z"
+      ],
+      "topo_rank": 98
+    },
+    "mpfr_atanh": {
+      "class": "transcendental",
+      "defined_in": "atanh.c",
+      "deps": [
+        "mpfr_add_ui",
+        "mpfr_atanh_small",
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_div",
+        "mpfr_div_2ui",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_log",
+        "mpfr_powerof2_raw",
+        "mpfr_set4",
+        "mpfr_set_prec",
+        "mpfr_ui_sub"
+      ],
+      "topo_rank": 155
+    },
+    "mpfr_atanh_small": {
+      "class": "transcendental",
+      "defined_in": "atanh.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_clear",
+        "mpfr_div_ui",
+        "mpfr_init2",
+        "mpfr_mul",
+        "mpfr_set",
+        "mpfr_sqr"
+      ],
+      "topo_rank": 154
+    },
+    "mpfr_atanpi": {
+      "class": "transcendental",
+      "defined_in": "atanu.c",
+      "deps": [
+        "mpfr_atanu"
+      ],
+      "topo_rank": 156
+    },
+    "mpfr_atanu": {
+      "class": "transcendental",
+      "defined_in": "atanu.c",
+      "deps": [
+        "mpfr_atan",
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_cmpabs_ui",
+        "mpfr_const_pi",
+        "mpfr_div",
+        "mpfr_div_2ui",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_min_prec",
+        "mpfr_mul_ui",
+        "mpfr_nextbelow",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_set_ui",
+        "mpfr_set_ui_2exp",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 145
+    },
+    "mpfr_bernoulli_cache": {
+      "class": "transcendental",
+      "defined_in": "bernoulli.c",
+      "deps": [
+        "mpfr_allocate_func",
+        "mpfr_bernoulli_internal",
+        "mpfr_reallocate_func"
+      ],
+      "topo_rank": 159
+    },
+    "mpfr_bernoulli_freecache": {
+      "class": "transcendental",
+      "defined_in": "bernoulli.c",
+      "deps": [
+        "mpfr_free_func"
+      ],
+      "topo_rank": 160
+    },
+    "mpfr_bernoulli_internal": {
+      "class": "transcendental",
+      "defined_in": "bernoulli.c",
+      "deps": [
+        "mpfr_clear",
+        "mpfr_const_pi",
+        "mpfr_div",
+        "mpfr_div_2ui",
+        "mpfr_get_ui",
+        "mpfr_get_z",
+        "mpfr_init2",
+        "mpfr_log2",
+        "mpfr_mul_2ui",
+        "mpfr_mul_ui",
+        "mpfr_pow_ui",
+        "mpfr_set_ui_2exp",
+        "mpfr_set_z",
+        "mpn_scan1"
+      ],
+      "topo_rank": 158
+    },
+    "mpfr_beta": {
+      "class": "transcendental",
+      "defined_in": "beta.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_cmp_si_2exp",
+        "mpfr_cmp_ui",
+        "mpfr_cmp_ui_2exp",
+        "mpfr_cmpabs",
+        "mpfr_div",
+        "mpfr_fmodquo",
+        "mpfr_gamma",
+        "mpfr_get_exp",
+        "mpfr_init2",
+        "mpfr_integer_p",
+        "mpfr_less_p",
+        "mpfr_mul",
+        "mpfr_odd_p",
+        "mpfr_regular_p",
+        "mpfr_set",
+        "mpfr_set_si_2exp",
+        "mpfr_set_ui",
+        "mpfr_set_ui_2exp",
+        "mpfr_ui_div",
+        "mpfr_ui_sub",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 210
+    },
+    "mpfr_buildopt_bfloat16_p": {
+      "class": "misc",
+      "defined_in": "buildopt.c",
+      "deps": [],
+      "topo_rank": 211
+    },
+    "mpfr_buildopt_decimal_p": {
+      "class": "misc",
+      "defined_in": "buildopt.c",
+      "deps": [],
+      "topo_rank": 212
+    },
+    "mpfr_buildopt_float128_p": {
+      "class": "misc",
+      "defined_in": "buildopt.c",
+      "deps": [],
+      "topo_rank": 213
+    },
+    "mpfr_buildopt_float16_p": {
+      "class": "misc",
+      "defined_in": "buildopt.c",
+      "deps": [],
+      "topo_rank": 214
+    },
+    "mpfr_buildopt_gmpinternals_p": {
+      "class": "misc",
+      "defined_in": "buildopt.c",
+      "deps": [],
+      "topo_rank": 215
+    },
+    "mpfr_buildopt_sharedcache_p": {
+      "class": "misc",
+      "defined_in": "buildopt.c",
+      "deps": [],
+      "topo_rank": 216
+    },
+    "mpfr_buildopt_tls_p": {
+      "class": "misc",
+      "defined_in": "buildopt.c",
+      "deps": [],
+      "topo_rank": 217
+    },
+    "mpfr_buildopt_tune_case": {
+      "class": "misc",
+      "defined_in": "buildopt.c",
+      "deps": [],
+      "topo_rank": 218
+    },
+    "mpfr_cache": {
+      "class": "misc",
+      "defined_in": "cache.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_init2",
+        "mpfr_nextabove",
+        "mpfr_nextbelow",
+        "mpfr_set_prec"
+      ],
+      "topo_rank": 88
+    },
+    "mpfr_can_round": {
+      "class": "misc",
+      "defined_in": "round_prec.c",
+      "deps": [
+        "mpfr_can_round_raw"
+      ],
+      "topo_rank": 220
+    },
+    "mpfr_can_round_raw": {
+      "class": "misc",
+      "defined_in": "round_prec.c",
+      "deps": [
+        "mpfr_powerof2_raw2",
+        "mpfr_round_raw2",
+        "mpn_add_1",
+        "mpn_sub_1"
+      ],
+      "topo_rank": 219
+    },
+    "mpfr_cbrt": {
+      "class": "transcendental",
+      "defined_in": "cbrt.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_get_prec",
+        "mpfr_get_z_2exp",
+        "mpfr_set_z"
+      ],
+      "topo_rank": 130
+    },
+    "mpfr_ceil": {
+      "class": "misc",
+      "defined_in": "rint.c",
+      "deps": [
+        "mpfr_rint"
+      ],
+      "topo_rank": 221
+    },
+    "mpfr_ceil_mul": {
+      "class": "conversion",
+      "defined_in": "get_str.c",
+      "deps": [
+        "mpfr_get_exp_t",
+        "mpfr_mul",
+        "mpfr_set_exp_t"
+      ],
+      "topo_rank": 222
+    },
+    "mpfr_check": {
+      "class": "misc",
+      "defined_in": "check.c",
+      "deps": [],
+      "topo_rank": 223
+    },
+    "mpfr_check_range": {
+      "class": "misc",
+      "defined_in": "exceptions.c",
+      "deps": [
+        "mpfr_overflow",
+        "mpfr_powerof2_raw",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 23
+    },
+    "mpfr_clear": {
+      "class": "misc",
+      "defined_in": "clear.c",
+      "deps": [
+        "mpfr_free_func"
+      ],
+      "topo_rank": 21
+    },
+    "mpfr_clear_cache": {
+      "class": "misc",
+      "defined_in": "cache.c",
+      "deps": [
+        "mpfr_clear"
+      ],
+      "topo_rank": 224
+    },
+    "mpfr_clear_divby0": {
+      "class": "misc",
+      "defined_in": "exceptions.c",
+      "deps": [],
+      "topo_rank": 225
+    },
+    "mpfr_clear_erangeflag": {
+      "class": "misc",
+      "defined_in": "exceptions.c",
+      "deps": [],
+      "topo_rank": 226
+    },
+    "mpfr_clear_flags": {
+      "class": "misc",
+      "defined_in": "exceptions.c",
+      "deps": [],
+      "topo_rank": 227
+    },
+    "mpfr_clear_inexflag": {
+      "class": "misc",
+      "defined_in": "exceptions.c",
+      "deps": [],
+      "topo_rank": 228
+    },
+    "mpfr_clear_nanflag": {
+      "class": "misc",
+      "defined_in": "exceptions.c",
+      "deps": [],
+      "topo_rank": 229
+    },
+    "mpfr_clear_overflow": {
+      "class": "misc",
+      "defined_in": "exceptions.c",
+      "deps": [],
+      "topo_rank": 230
+    },
+    "mpfr_clear_underflow": {
+      "class": "misc",
+      "defined_in": "exceptions.c",
+      "deps": [],
+      "topo_rank": 231
+    },
+    "mpfr_clears": {
+      "class": "misc",
+      "defined_in": "clears.c",
+      "deps": [
+        "mpfr_clear"
+      ],
+      "topo_rank": 193
+    },
+    "mpfr_cmp": {
+      "class": "arithmetic",
+      "defined_in": "cmp.c",
+      "deps": [
+        "mpfr_cmp3"
+      ],
+      "topo_rank": 91
+    },
+    "mpfr_cmp2": {
+      "class": "misc",
+      "defined_in": "cmp2.c",
+      "deps": [
+        "mpfr_ubf_diff_exp"
+      ],
+      "topo_rank": 32
+    },
+    "mpfr_cmp3": {
+      "class": "arithmetic",
+      "defined_in": "cmp.c",
+      "deps": [],
+      "topo_rank": 90
+    },
+    "mpfr_cmp_d": {
+      "class": "arithmetic",
+      "defined_in": "cmp_d.c",
+      "deps": [
+        "mpfr_cmp",
+        "mpfr_set_d"
+      ],
+      "topo_rank": 232
+    },
+    "mpfr_cmp_f": {
+      "class": "misc",
+      "defined_in": "gmp_op.c",
+      "deps": [
+        "mpfr_clear",
+        "mpfr_cmp",
+        "mpfr_cmp_si",
+        "mpfr_init2",
+        "mpfr_set_f"
+      ],
+      "topo_rank": 234
+    },
+    "mpfr_cmp_ld": {
+      "class": "arithmetic",
+      "defined_in": "cmp_ld.c",
+      "deps": [
+        "mpfr_clear",
+        "mpfr_cmp",
+        "mpfr_init2",
+        "mpfr_set_ld"
+      ],
+      "topo_rank": 238
+    },
+    "mpfr_cmp_q": {
+      "class": "misc",
+      "defined_in": "gmp_op.c",
+      "deps": [
+        "mpfr_clear",
+        "mpfr_cmp",
+        "mpfr_cmp_si",
+        "mpfr_cmp_z",
+        "mpfr_init2",
+        "mpfr_mul_z",
+        "mpfr_set_q"
+      ],
+      "topo_rank": 241
+    },
+    "mpfr_cmp_si": {
+      "class": "arithmetic",
+      "defined_in": "cmp_si.c",
+      "deps": [
+        "mpfr_cmp_si_2exp"
+      ],
+      "topo_rank": 126
+    },
+    "mpfr_cmp_si_2exp": {
+      "class": "arithmetic",
+      "defined_in": "cmp_si.c",
+      "deps": [
+        "mpfr_clear",
+        "mpfr_cmp",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_set_si_2exp"
+      ],
+      "topo_rank": 117
+    },
+    "mpfr_cmp_ui": {
+      "class": "arithmetic",
+      "defined_in": "cmp_ui.c",
+      "deps": [
+        "mpfr_cmp_ui_2exp"
+      ],
+      "topo_rank": 93
+    },
+    "mpfr_cmp_ui_2exp": {
+      "class": "arithmetic",
+      "defined_in": "cmp_ui.c",
+      "deps": [
+        "mpfr_clear",
+        "mpfr_cmp",
+        "mpfr_init2",
+        "mpfr_set_ui_2exp"
+      ],
+      "topo_rank": 92
+    },
+    "mpfr_cmp_z": {
+      "class": "misc",
+      "defined_in": "gmp_op.c",
+      "deps": [
+        "mpfr_clear",
+        "mpfr_cmp",
+        "mpfr_cmp_si",
+        "mpfr_div_2ui",
+        "mpfr_init2",
+        "mpfr_set_z"
+      ],
+      "topo_rank": 240
+    },
+    "mpfr_cmpabs": {
+      "class": "misc",
+      "defined_in": "cmpabs.c",
+      "deps": [],
+      "topo_rank": 144
+    },
+    "mpfr_cmpabs_ui": {
+      "class": "misc",
+      "defined_in": "cmpabs_ui.c",
+      "deps": [
+        "mpfr_cmp_ui"
+      ],
+      "topo_rank": 116
+    },
+    "mpfr_compound": {
+      "class": "misc",
+      "defined_in": "compound.c",
+      "deps": [
+        "mpfr_add_ui",
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_cmp_si",
+        "mpfr_cmp_ui",
+        "mpfr_compound_near_one",
+        "mpfr_exp2",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_log2p1",
+        "mpfr_min_prec",
+        "mpfr_mul",
+        "mpfr_nextabove",
+        "mpfr_nextbelow",
+        "mpfr_overflow",
+        "mpfr_pow",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_set_ui",
+        "mpfr_sub_ui",
+        "mpfr_ui_div",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 248
+    },
+    "mpfr_compound_near_one": {
+      "class": "misc",
+      "defined_in": "compound.c",
+      "deps": [
+        "mpfr_nextabove",
+        "mpfr_nextbelow",
+        "mpfr_set_ui"
+      ],
+      "topo_rank": 247
+    },
+    "mpfr_compound_si": {
+      "class": "misc",
+      "defined_in": "compound.c",
+      "deps": [
+        "mpfr_add_ui",
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_cmp_si",
+        "mpfr_compound_near_one",
+        "mpfr_exp2",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_log2p1",
+        "mpfr_min_prec",
+        "mpfr_mul_si",
+        "mpfr_nextabove",
+        "mpfr_nextbelow",
+        "mpfr_overflow",
+        "mpfr_pow_si",
+        "mpfr_pow_ui",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_set_ui",
+        "mpfr_sub_ui",
+        "mpfr_ui_div",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 249
+    },
+    "mpfr_const_catalan": {
+      "class": "misc",
+      "defined_in": "const_catalan.c",
+      "deps": [
+        "mpfr_cache"
+      ],
+      "topo_rank": 250
+    },
+    "mpfr_const_catalan_internal": {
+      "class": "misc",
+      "defined_in": "const_catalan.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_add_ui",
+        "mpfr_const_pi",
+        "mpfr_div",
+        "mpfr_div_2ui",
+        "mpfr_get_prec",
+        "mpfr_log",
+        "mpfr_mul",
+        "mpfr_set",
+        "mpfr_set_z",
+        "mpfr_sqrt_ui"
+      ],
+      "topo_rank": 252
+    },
+    "mpfr_const_euler": {
+      "class": "misc",
+      "defined_in": "const_euler.c",
+      "deps": [
+        "mpfr_cache"
+      ],
+      "topo_rank": 253
+    },
+    "mpfr_const_euler_bs_1": {
+      "class": "misc",
+      "defined_in": "const_euler.c",
+      "deps": [
+        "mpfr_const_euler_bs_clear",
+        "mpfr_const_euler_bs_init"
+      ],
+      "topo_rank": 256
+    },
+    "mpfr_const_euler_bs_2": {
+      "class": "misc",
+      "defined_in": "const_euler.c",
+      "deps": [],
+      "topo_rank": 257
+    },
+    "mpfr_const_euler_bs_clear": {
+      "class": "misc",
+      "defined_in": "const_euler.c",
+      "deps": [],
+      "topo_rank": 255
+    },
+    "mpfr_const_euler_bs_init": {
+      "class": "misc",
+      "defined_in": "const_euler.c",
+      "deps": [],
+      "topo_rank": 254
+    },
+    "mpfr_const_euler_internal": {
+      "class": "misc",
+      "defined_in": "const_euler.c",
+      "deps": [
+        "mpfr_clear",
+        "mpfr_const_euler_bs_1",
+        "mpfr_const_euler_bs_2",
+        "mpfr_const_euler_bs_clear",
+        "mpfr_const_euler_bs_init",
+        "mpfr_div_2ui",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_log",
+        "mpfr_mul_2ui",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_set_ui",
+        "mpfr_z_sub"
+      ],
+      "topo_rank": 260
+    },
+    "mpfr_const_log2": {
+      "class": "misc",
+      "defined_in": "const_log2.c",
+      "deps": [
+        "mpfr_cache"
+      ],
+      "topo_rank": 106
+    },
+    "mpfr_const_log2_internal": {
+      "class": "misc",
+      "defined_in": "const_log2.c",
+      "deps": [
+        "mpfr_div",
+        "mpfr_get_prec",
+        "mpfr_set",
+        "mpfr_set_z"
+      ],
+      "topo_rank": 261
+    },
+    "mpfr_const_pi": {
+      "class": "misc",
+      "defined_in": "const_pi.c",
+      "deps": [
+        "mpfr_cache"
+      ],
+      "topo_rank": 89
+    },
+    "mpfr_const_pi_internal": {
+      "class": "misc",
+      "defined_in": "const_pi.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_cmp_ui",
+        "mpfr_div",
+        "mpfr_div_2ui",
+        "mpfr_get_exp",
+        "mpfr_get_prec",
+        "mpfr_mul_2ui",
+        "mpfr_set",
+        "mpfr_set_ui",
+        "mpfr_set_ui_2exp",
+        "mpfr_sqr",
+        "mpfr_sqrt",
+        "mpfr_sub"
+      ],
+      "topo_rank": 262
+    },
+    "mpfr_copysign": {
+      "class": "misc",
+      "defined_in": "copysign.c",
+      "deps": [
+        "mpfr_set4"
+      ],
+      "topo_rank": 263
+    },
+    "mpfr_cos": {
+      "class": "transcendental",
+      "defined_in": "cos.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_const_pi",
+        "mpfr_cos2_aux",
+        "mpfr_cos_fast",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_mul_2ui",
+        "mpfr_nexttozero",
+        "mpfr_remainder",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_set_ui",
+        "mpfr_sqr",
+        "mpfr_sub"
+      ],
+      "topo_rank": 173
+    },
+    "mpfr_cos2_aux": {
+      "class": "transcendental",
+      "defined_in": "cos.c",
+      "deps": [
+        "mpfr_div_2ui",
+        "mpfr_get_exp",
+        "mpfr_get_prec",
+        "mpfr_get_z_2exp",
+        "mpfr_set_z"
+      ],
+      "topo_rank": 172
+    },
+    "mpfr_cos_fast": {
+      "class": "transcendental",
+      "defined_in": "cos.c",
+      "deps": [
+        "mpfr_sincos_fast"
+      ],
+      "topo_rank": 171
+    },
+    "mpfr_cosh": {
+      "class": "transcendental",
+      "defined_in": "cosh.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_check_range",
+        "mpfr_div_2ui",
+        "mpfr_exp",
+        "mpfr_get_prec",
+        "mpfr_overflow",
+        "mpfr_set",
+        "mpfr_set_ui",
+        "mpfr_ui_div"
+      ],
+      "topo_rank": 264
+    },
+    "mpfr_cospi": {
+      "class": "transcendental",
+      "defined_in": "cosu.c",
+      "deps": [
+        "mpfr_cosu"
+      ],
+      "topo_rank": 269
+    },
+    "mpfr_cosu": {
+      "class": "transcendental",
+      "defined_in": "cosu.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_cmpabs_ui",
+        "mpfr_const_pi",
+        "mpfr_cos",
+        "mpfr_div_2ui",
+        "mpfr_div_ui",
+        "mpfr_fmod_ui",
+        "mpfr_get_prec",
+        "mpfr_get_z",
+        "mpfr_init2",
+        "mpfr_integer_p",
+        "mpfr_mul",
+        "mpfr_mul_2ui",
+        "mpfr_nextbelow",
+        "mpfr_odd_p",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_set_si",
+        "mpfr_set_si_2exp",
+        "mpfr_set_ui",
+        "mpfr_set_ui_2exp",
+        "mpfr_set_zero"
+      ],
+      "topo_rank": 268
+    },
+    "mpfr_custom_get_exp": {
+      "class": "misc",
+      "defined_in": "stack_interface.c",
+      "deps": [],
+      "topo_rank": 270
+    },
+    "mpfr_custom_get_kind": {
+      "class": "misc",
+      "defined_in": "stack_interface.c",
+      "deps": [],
+      "topo_rank": 271
+    },
+    "mpfr_custom_get_significand": {
+      "class": "misc",
+      "defined_in": "stack_interface.c",
+      "deps": [],
+      "topo_rank": 272
+    },
+    "mpfr_custom_get_size": {
+      "class": "misc",
+      "defined_in": "stack_interface.c",
+      "deps": [],
+      "topo_rank": 273
+    },
+    "mpfr_custom_init": {
+      "class": "misc",
+      "defined_in": "stack_interface.c",
+      "deps": [],
+      "topo_rank": 274
+    },
+    "mpfr_custom_init_set": {
+      "class": "misc",
+      "defined_in": "stack_interface.c",
+      "deps": [],
+      "topo_rank": 275
+    },
+    "mpfr_custom_move": {
+      "class": "misc",
+      "defined_in": "stack_interface.c",
+      "deps": [],
+      "topo_rank": 276
+    },
+    "mpfr_d_div": {
+      "class": "misc",
+      "defined_in": "d_div.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_div",
+        "mpfr_get_prec",
+        "mpfr_set_d"
+      ],
+      "topo_rank": 277
+    },
+    "mpfr_d_sub": {
+      "class": "misc",
+      "defined_in": "d_sub.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_get_prec",
+        "mpfr_set_d",
+        "mpfr_sub"
+      ],
+      "topo_rank": 278
+    },
+    "mpfr_digamma": {
+      "class": "transcendental",
+      "cycle": true,
+      "defined_in": "digamma.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_digamma_positive",
+        "mpfr_digamma_reflection",
+        "mpfr_get_prec",
+        "mpfr_integer_p",
+        "mpfr_nextbelow",
+        "mpfr_si_div"
+      ],
+      "topo_rank": 282
+    },
+    "mpfr_digamma_approx": {
+      "class": "transcendental",
+      "defined_in": "digamma.c",
+      "deps": [
+        "mpfr_bernoulli_cache",
+        "mpfr_clear",
+        "mpfr_div_2ui",
+        "mpfr_div_ui",
+        "mpfr_init2",
+        "mpfr_log",
+        "mpfr_mul",
+        "mpfr_mul_z",
+        "mpfr_set_ui",
+        "mpfr_sqr",
+        "mpfr_sub",
+        "mpfr_ui_div"
+      ],
+      "topo_rank": 280
+    },
+    "mpfr_digamma_positive": {
+      "class": "transcendental",
+      "defined_in": "digamma.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_add_ui",
+        "mpfr_clear",
+        "mpfr_cmp_ui",
+        "mpfr_digamma_approx",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_log",
+        "mpfr_nextabove",
+        "mpfr_prec_round",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_set_ui",
+        "mpfr_sub",
+        "mpfr_ui_div"
+      ],
+      "topo_rank": 281
+    },
+    "mpfr_digamma_reflection": {
+      "class": "transcendental",
+      "cycle": true,
+      "defined_in": "digamma.c",
+      "deps": [
+        "mpfr_clear",
+        "mpfr_const_pi",
+        "mpfr_cot",
+        "mpfr_digamma",
+        "mpfr_digamma_positive",
+        "mpfr_div_2ui",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_integer_p",
+        "mpfr_mul",
+        "mpfr_mul_2ui",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_sub",
+        "mpfr_ui_sub"
+      ],
+      "topo_rank": 283
+    },
+    "mpfr_dim": {
+      "class": "misc",
+      "defined_in": "dim.c",
+      "deps": [
+        "mpfr_cmp",
+        "mpfr_sub"
+      ],
+      "topo_rank": 284
+    },
+    "mpfr_div": {
+      "class": "arithmetic",
+      "cycle": true,
+      "defined_in": "div.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_div_1",
+        "mpfr_div_1n",
+        "mpfr_div_2",
+        "mpfr_div_ui",
+        "mpfr_divhigh_n",
+        "mpfr_get_prec",
+        "mpfr_mpn_cmp_aux",
+        "mpfr_mpn_cmpzero",
+        "mpfr_mpn_sub_aux",
+        "mpfr_overflow",
+        "mpfr_powerof2_raw",
+        "mpfr_round_p",
+        "mpfr_underflow",
+        "mpn_add_1",
+        "mpn_add_n",
+        "mpn_cmp",
+        "mpn_divrem",
+        "mpn_mul",
+        "mpn_rshift",
+        "mpn_sub_1",
+        "mpn_sub_n"
+      ],
+      "topo_rank": 82
+    },
+    "mpfr_div2_approx": {
+      "class": "arithmetic",
+      "defined_in": "div.c",
+      "deps": [],
+      "topo_rank": 78
+    },
+    "mpfr_div_1": {
+      "class": "arithmetic",
+      "defined_in": "div.c",
+      "deps": [
+        "mpfr_overflow",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 81
+    },
+    "mpfr_div_1n": {
+      "class": "arithmetic",
+      "defined_in": "div.c",
+      "deps": [
+        "mpfr_overflow",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 80
+    },
+    "mpfr_div_2": {
+      "class": "arithmetic",
+      "defined_in": "div.c",
+      "deps": [
+        "mpfr_div2_approx",
+        "mpfr_overflow",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 79
+    },
+    "mpfr_div_2exp": {
+      "class": "arithmetic",
+      "defined_in": "div_2exp.c",
+      "deps": [
+        "mpfr_div_2ui"
+      ],
+      "topo_rank": 285
+    },
+    "mpfr_div_2si": {
+      "class": "arithmetic",
+      "defined_in": "div_2si.c",
+      "deps": [
+        "mpfr_get_prec",
+        "mpfr_overflow",
+        "mpfr_powerof2_raw",
+        "mpfr_set",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 77
+    },
+    "mpfr_div_2ui": {
+      "class": "arithmetic",
+      "defined_in": "div_2ui.c",
+      "deps": [
+        "mpfr_get_prec",
+        "mpfr_powerof2_raw",
+        "mpfr_set",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 69
+    },
+    "mpfr_div_d": {
+      "class": "arithmetic",
+      "defined_in": "div_d.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_div",
+        "mpfr_get_prec",
+        "mpfr_set_d"
+      ],
+      "topo_rank": 286
+    },
+    "mpfr_div_q": {
+      "class": "misc",
+      "defined_in": "gmp_op.c",
+      "deps": [
+        "mpfr_muldiv_z"
+      ],
+      "topo_rank": 290
+    },
+    "mpfr_div_si": {
+      "class": "misc",
+      "defined_in": "si_op.c",
+      "deps": [
+        "mpfr_div_ui",
+        "mpfr_get_prec"
+      ],
+      "topo_rank": 287
+    },
+    "mpfr_div_ui": {
+      "class": "arithmetic",
+      "cycle": true,
+      "defined_in": "div_ui.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_div",
+        "mpfr_div_2si",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_set",
+        "mpfr_set_ui",
+        "mpfr_underflow",
+        "mpn_add_1",
+        "mpn_divrem_1",
+        "mpn_lshift"
+      ],
+      "topo_rank": 83
+    },
+    "mpfr_div_ui2": {
+      "class": "misc",
+      "defined_in": "gammaonethird.c",
+      "deps": [
+        "mpfr_div_ui",
+        "mpfr_set"
+      ],
+      "topo_rank": 133
+    },
+    "mpfr_div_ui8": {
+      "class": "misc",
+      "defined_in": "gammaonethird.c",
+      "deps": [
+        "mpfr_div_ui",
+        "mpfr_set"
+      ],
+      "topo_rank": 291
+    },
+    "mpfr_div_z": {
+      "class": "misc",
+      "defined_in": "gmp_op.c",
+      "deps": [
+        "mpfr_div_si"
+      ],
+      "topo_rank": 288
+    },
+    "mpfr_divby0_p": {
+      "class": "misc",
+      "defined_in": "exceptions.c",
+      "deps": [],
+      "topo_rank": 111
+    },
+    "mpfr_divhigh_n": {
+      "class": "misc",
+      "defined_in": "mulders.c",
+      "deps": [
+        "mpfr_divhigh_n_basecase",
+        "mpfr_mulhigh_n",
+        "mpn_add_1",
+        "mpn_add_n",
+        "mpn_divrem",
+        "mpn_sub_1",
+        "mpn_sub_n"
+      ],
+      "topo_rank": 75
+    },
+    "mpfr_divhigh_n_basecase": {
+      "class": "misc",
+      "defined_in": "mulders.c",
+      "deps": [
+        "mpn_add_n",
+        "mpn_cmp",
+        "mpn_sub_n",
+        "mpn_submul_1"
+      ],
+      "topo_rank": 74
+    },
+    "mpfr_dot": {
+      "class": "misc",
+      "defined_in": "dot.c",
+      "deps": [
+        "mpfr_allocate_func",
+        "mpfr_clear",
+        "mpfr_free_func",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_mul",
+        "mpfr_sum"
+      ],
+      "topo_rank": 293
+    },
+    "mpfr_dump": {
+      "class": "misc",
+      "defined_in": "dump.c",
+      "deps": [
+        "mpfr_fdump"
+      ],
+      "topo_rank": 295
+    },
+    "mpfr_eint": {
+      "class": "misc",
+      "defined_in": "eint.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_cmp_d",
+        "mpfr_cmp_si",
+        "mpfr_cmp_ui",
+        "mpfr_const_euler",
+        "mpfr_div",
+        "mpfr_eint_asympt",
+        "mpfr_eint_aux",
+        "mpfr_get_exp",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_log",
+        "mpfr_overflow",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_set_ui_2exp",
+        "mpfr_sub",
+        "mpfr_underflow",
+        "mpfr_zero_p"
+      ],
+      "topo_rank": 301
+    },
+    "mpfr_eint_asympt": {
+      "class": "misc",
+      "defined_in": "eint.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_add_ui",
+        "mpfr_clear",
+        "mpfr_div_2si",
+        "mpfr_exp",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_mul",
+        "mpfr_mul_2si",
+        "mpfr_mul_2ui",
+        "mpfr_mul_ui",
+        "mpfr_set",
+        "mpfr_set_ui",
+        "mpfr_ui_div"
+      ],
+      "topo_rank": 300
+    },
+    "mpfr_eint_aux": {
+      "class": "misc",
+      "defined_in": "eint.c",
+      "deps": [
+        "mpfr_abs",
+        "mpfr_add",
+        "mpfr_add_ui",
+        "mpfr_add_z",
+        "mpfr_div",
+        "mpfr_div_2ui",
+        "mpfr_div_ui",
+        "mpfr_get_prec",
+        "mpfr_get_z_2exp",
+        "mpfr_mul",
+        "mpfr_mul_2si",
+        "mpfr_mul_2ui",
+        "mpfr_set",
+        "mpfr_set_ui",
+        "mpfr_set_z",
+        "mpfr_sub_z",
+        "mpfr_ui_sub"
+      ],
+      "topo_rank": 299
+    },
+    "mpfr_eq": {
+      "class": "misc",
+      "defined_in": "eq.c",
+      "deps": [],
+      "topo_rank": 302
+    },
+    "mpfr_equal_p": {
+      "class": "misc",
+      "defined_in": "comparisons.c",
+      "deps": [
+        "mpfr_cmp"
+      ],
+      "topo_rank": 205
+    },
+    "mpfr_erandom": {
+      "class": "misc",
+      "defined_in": "erandom.c",
+      "deps": [
+        "mpfr_random_deviate_clear",
+        "mpfr_random_deviate_init",
+        "mpfr_random_deviate_reset",
+        "mpfr_random_deviate_value"
+      ],
+      "topo_rank": 307
+    },
+    "mpfr_erangeflag_p": {
+      "class": "misc",
+      "defined_in": "exceptions.c",
+      "deps": [],
+      "topo_rank": 308
+    },
+    "mpfr_erf": {
+      "class": "transcendental",
+      "defined_in": "erf.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_cmp_ui",
+        "mpfr_const_pi",
+        "mpfr_div",
+        "mpfr_div_2ui",
+        "mpfr_div_ui",
+        "mpfr_equal_p",
+        "mpfr_erf_0",
+        "mpfr_get_d",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_mul",
+        "mpfr_mul_2ui",
+        "mpfr_prec_round",
+        "mpfr_set",
+        "mpfr_set_si",
+        "mpfr_setmax",
+        "mpfr_sqr",
+        "mpfr_sqrt",
+        "mpfr_ui_sub"
+      ],
+      "topo_rank": 310
+    },
+    "mpfr_erf_0": {
+      "class": "transcendental",
+      "defined_in": "erf.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_add_d",
+        "mpfr_add_ui",
+        "mpfr_clear",
+        "mpfr_const_pi",
+        "mpfr_div",
+        "mpfr_div_ui",
+        "mpfr_init2",
+        "mpfr_mul",
+        "mpfr_mul_2si",
+        "mpfr_mul_2ui",
+        "mpfr_set",
+        "mpfr_set_ui",
+        "mpfr_sqr",
+        "mpfr_sqrt",
+        "mpfr_sub"
+      ],
+      "topo_rank": 309
+    },
+    "mpfr_erfc": {
+      "class": "transcendental",
+      "defined_in": "erfc.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_cmp",
+        "mpfr_cmp_si",
+        "mpfr_cmp_ui",
+        "mpfr_erf",
+        "mpfr_erfc_asympt",
+        "mpfr_get_emin",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_log2",
+        "mpfr_mul",
+        "mpfr_neg",
+        "mpfr_nextbelow",
+        "mpfr_set",
+        "mpfr_set_exp_t",
+        "mpfr_set_prec",
+        "mpfr_set_str_binary",
+        "mpfr_set_ui",
+        "mpfr_sqr",
+        "mpfr_ui_sub",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 312
+    },
+    "mpfr_erfc_asympt": {
+      "class": "transcendental",
+      "defined_in": "erfc.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_add_ui",
+        "mpfr_clear",
+        "mpfr_const_pi",
+        "mpfr_div",
+        "mpfr_div_2si",
+        "mpfr_div_2ui",
+        "mpfr_exp",
+        "mpfr_init2",
+        "mpfr_mul",
+        "mpfr_mul_2si",
+        "mpfr_mul_2ui",
+        "mpfr_mul_ui",
+        "mpfr_neg",
+        "mpfr_set",
+        "mpfr_set_ui",
+        "mpfr_sqr",
+        "mpfr_sqrt",
+        "mpfr_sub",
+        "mpfr_ui_div"
+      ],
+      "topo_rank": 311
+    },
+    "mpfr_exp": {
+      "class": "transcendental",
+      "defined_in": "exp.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_cmp",
+        "mpfr_const_log2",
+        "mpfr_exp_2",
+        "mpfr_exp_3",
+        "mpfr_get_emax",
+        "mpfr_get_emin",
+        "mpfr_get_prec",
+        "mpfr_mul",
+        "mpfr_nextabove",
+        "mpfr_overflow",
+        "mpfr_set_exp_t",
+        "mpfr_set_ui",
+        "mpfr_setmax",
+        "mpfr_setmin",
+        "mpfr_sub_ui",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 192
+    },
+    "mpfr_exp10": {
+      "class": "transcendental",
+      "defined_in": "exp10.c",
+      "deps": [
+        "mpfr_ui_pow"
+      ],
+      "topo_rank": 314
+    },
+    "mpfr_exp10m1": {
+      "class": "misc",
+      "defined_in": "exp10m1.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_cmpabs_ui",
+        "mpfr_exp10",
+        "mpfr_exp10m1_small",
+        "mpfr_expm1",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_nextabove",
+        "mpfr_overflow",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_set_si",
+        "mpfr_sub_ui",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 318
+    },
+    "mpfr_exp10m1_small": {
+      "class": "misc",
+      "defined_in": "exp10m1.c",
+      "deps": [
+        "mpfr_log_ui",
+        "mpfr_mul"
+      ],
+      "topo_rank": 317
+    },
+    "mpfr_exp2": {
+      "class": "transcendental",
+      "defined_in": "exp2.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_const_log2",
+        "mpfr_exp",
+        "mpfr_frac",
+        "mpfr_get_exp_t",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_mul",
+        "mpfr_overflow",
+        "mpfr_powerof2_raw",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_set_ui",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 199
+    },
+    "mpfr_exp2_aux": {
+      "class": "transcendental",
+      "defined_in": "exp_2.c",
+      "deps": [
+        "mpfr_get_z_2exp"
+      ],
+      "topo_rank": 190
+    },
+    "mpfr_exp2_aux2": {
+      "class": "transcendental",
+      "defined_in": "exp_2.c",
+      "deps": [
+        "mpfr_get_prec",
+        "mpfr_get_z_2exp"
+      ],
+      "topo_rank": 189
+    },
+    "mpfr_exp2m1": {
+      "class": "misc",
+      "defined_in": "exp2m1.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_cmpabs_ui",
+        "mpfr_exp2",
+        "mpfr_exp2m1_small",
+        "mpfr_expm1",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_nextabove",
+        "mpfr_overflow",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_set_si",
+        "mpfr_sub_ui",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 320
+    },
+    "mpfr_exp2m1_small": {
+      "class": "misc",
+      "defined_in": "exp2m1.c",
+      "deps": [
+        "mpfr_const_log2",
+        "mpfr_mul"
+      ],
+      "topo_rank": 319
+    },
+    "mpfr_exp_2": {
+      "class": "transcendental",
+      "defined_in": "exp_2.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_const_log2",
+        "mpfr_div",
+        "mpfr_div_2ui",
+        "mpfr_exp2_aux",
+        "mpfr_exp2_aux2",
+        "mpfr_get_d1",
+        "mpfr_get_prec",
+        "mpfr_get_si",
+        "mpfr_mul_2si",
+        "mpfr_mul_ui",
+        "mpfr_nbits_ulong",
+        "mpfr_prec_round",
+        "mpfr_set_z_2exp",
+        "mpfr_sub"
+      ],
+      "topo_rank": 191
+    },
+    "mpfr_exp_3": {
+      "class": "misc",
+      "defined_in": "exp3.c",
+      "deps": [
+        "mpfr_allocate_func",
+        "mpfr_clear",
+        "mpfr_div_2ui",
+        "mpfr_exp_rational",
+        "mpfr_extract",
+        "mpfr_free_func",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_mul",
+        "mpfr_mul_2si",
+        "mpfr_mul_2ui",
+        "mpfr_overflow",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_sqr",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 183
+    },
+    "mpfr_exp_rational": {
+      "class": "misc",
+      "defined_in": "exp3.c",
+      "deps": [
+        "mpfr_set_z"
+      ],
+      "topo_rank": 182
+    },
+    "mpfr_explgamma": {
+      "class": "transcendental",
+      "defined_in": "lngamma.c",
+      "deps": [
+        "mpfr_equal_p",
+        "mpfr_exp",
+        "mpfr_lgamma",
+        "mpfr_nextabove",
+        "mpfr_overflow",
+        "mpfr_set",
+        "mpfr_set4",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 207
+    },
+    "mpfr_expm1": {
+      "class": "transcendental",
+      "defined_in": "expm1.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_div",
+        "mpfr_exp",
+        "mpfr_get_exp_t",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_overflow",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_set_si",
+        "mpfr_sub_ui"
+      ],
+      "topo_rank": 315
+    },
+    "mpfr_extract": {
+      "class": "misc",
+      "defined_in": "exp3.c",
+      "deps": [],
+      "topo_rank": 181
+    },
+    "mpfr_fac_ui": {
+      "class": "misc",
+      "defined_in": "factorial.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_init2",
+        "mpfr_mul_ui",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_set_ui"
+      ],
+      "topo_rank": 204
+    },
+    "mpfr_fdump": {
+      "class": "misc",
+      "defined_in": "dump.c",
+      "deps": [],
+      "topo_rank": 294
+    },
+    "mpfr_fits_intmax_p": {
+      "class": "misc",
+      "defined_in": "fits_intmax.c",
+      "deps": [
+        "mpfr_clear",
+        "mpfr_cmp",
+        "mpfr_init2",
+        "mpfr_set",
+        "mpfr_set_sj"
+      ],
+      "topo_rank": 324
+    },
+    "mpfr_flags_clear": {
+      "class": "misc",
+      "defined_in": "exceptions.c",
+      "deps": [],
+      "topo_rank": 325
+    },
+    "mpfr_flags_restore": {
+      "class": "misc",
+      "defined_in": "exceptions.c",
+      "deps": [],
+      "topo_rank": 326
+    },
+    "mpfr_flags_save": {
+      "class": "misc",
+      "defined_in": "exceptions.c",
+      "deps": [],
+      "topo_rank": 327
+    },
+    "mpfr_flags_set": {
+      "class": "misc",
+      "defined_in": "exceptions.c",
+      "deps": [],
+      "topo_rank": 328
+    },
+    "mpfr_flags_test": {
+      "class": "misc",
+      "defined_in": "exceptions.c",
+      "deps": [],
+      "topo_rank": 329
+    },
+    "mpfr_floor": {
+      "class": "misc",
+      "defined_in": "rint.c",
+      "deps": [
+        "mpfr_rint"
+      ],
+      "topo_rank": 330
+    },
+    "mpfr_fma": {
+      "class": "transcendental",
+      "defined_in": "fma.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_check_range",
+        "mpfr_clear_flags",
+        "mpfr_fma_singular",
+        "mpfr_get_prec",
+        "mpfr_mul",
+        "mpfr_overflow",
+        "mpfr_set_1_2",
+        "mpfr_setmin",
+        "mpfr_ubf_mul_exact",
+        "mpn_lshift",
+        "mpn_mul_n",
+        "mpn_sqr"
+      ],
+      "topo_rank": 334
+    },
+    "mpfr_fma_singular": {
+      "class": "transcendental",
+      "defined_in": "fma.c",
+      "deps": [
+        "mpfr_mul",
+        "mpfr_set",
+        "mpfr_sqr"
+      ],
+      "topo_rank": 333
+    },
+    "mpfr_fmma": {
+      "class": "transcendental",
+      "defined_in": "fmma.c",
+      "deps": [
+        "mpfr_fmma_aux"
+      ],
+      "topo_rank": 336
+    },
+    "mpfr_fmma_aux": {
+      "class": "transcendental",
+      "defined_in": "fmma.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_get_prec",
+        "mpfr_set_1_2",
+        "mpfr_sub",
+        "mpfr_ubf_mul_exact"
+      ],
+      "topo_rank": 335
+    },
+    "mpfr_fmms": {
+      "class": "transcendental",
+      "defined_in": "fmma.c",
+      "deps": [
+        "mpfr_fmma_aux"
+      ],
+      "topo_rank": 337
+    },
+    "mpfr_fmod": {
+      "class": "misc",
+      "defined_in": "rem1.c",
+      "deps": [
+        "mpfr_rem1"
+      ],
+      "topo_rank": 266
+    },
+    "mpfr_fmod_ui": {
+      "class": "misc",
+      "defined_in": "fmod_ui.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_fmod",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_set_ui"
+      ],
+      "topo_rank": 267
+    },
+    "mpfr_fmodquo": {
+      "class": "misc",
+      "defined_in": "rem1.c",
+      "deps": [
+        "mpfr_rem1"
+      ],
+      "topo_rank": 209
+    },
+    "mpfr_fms": {
+      "class": "transcendental",
+      "defined_in": "fms.c",
+      "deps": [
+        "mpfr_fma"
+      ],
+      "topo_rank": 338
+    },
+    "mpfr_fpif_export": {
+      "class": "misc",
+      "defined_in": "fpif.c",
+      "deps": [
+        "mpfr_fpif_export_aux"
+      ],
+      "topo_rank": 343
+    },
+    "mpfr_fpif_export_aux": {
+      "class": "misc",
+      "defined_in": "fpif.c",
+      "deps": [
+        "mpfr_allocate_func",
+        "mpfr_fpif_store_exponent",
+        "mpfr_fpif_store_limbs",
+        "mpfr_fpif_store_precision",
+        "mpfr_free_func",
+        "mpfr_get_prec",
+        "mpfr_regular_p"
+      ],
+      "topo_rank": 342
+    },
+    "mpfr_fpif_export_mem": {
+      "class": "misc",
+      "defined_in": "fpif.c",
+      "deps": [
+        "mpfr_fpif_export_aux"
+      ],
+      "topo_rank": 344
+    },
+    "mpfr_fpif_import": {
+      "class": "misc",
+      "defined_in": "fpif.c",
+      "deps": [
+        "mpfr_fpif_import_aux"
+      ],
+      "topo_rank": 350
+    },
+    "mpfr_fpif_import_aux": {
+      "class": "misc",
+      "defined_in": "fpif.c",
+      "deps": [
+        "mpfr_allocate_func",
+        "mpfr_fpif_read_exponent_from_file",
+        "mpfr_fpif_read_limbs",
+        "mpfr_fpif_read_precision_from_file",
+        "mpfr_free_func",
+        "mpfr_set_nan",
+        "mpfr_set_prec"
+      ],
+      "topo_rank": 349
+    },
+    "mpfr_fpif_import_mem": {
+      "class": "misc",
+      "defined_in": "fpif.c",
+      "deps": [
+        "mpfr_fpif_import_aux"
+      ],
+      "topo_rank": 351
+    },
+    "mpfr_fpif_read_exponent_from_file": {
+      "class": "misc",
+      "defined_in": "fpif.c",
+      "deps": [],
+      "topo_rank": 348
+    },
+    "mpfr_fpif_read_limbs": {
+      "class": "misc",
+      "defined_in": "fpif.c",
+      "deps": [],
+      "topo_rank": 347
+    },
+    "mpfr_fpif_read_precision_from_file": {
+      "class": "misc",
+      "defined_in": "fpif.c",
+      "deps": [],
+      "topo_rank": 346
+    },
+    "mpfr_fpif_store_exponent": {
+      "class": "misc",
+      "defined_in": "fpif.c",
+      "deps": [],
+      "topo_rank": 341
+    },
+    "mpfr_fpif_store_limbs": {
+      "class": "misc",
+      "defined_in": "fpif.c",
+      "deps": [
+        "mpfr_get_prec"
+      ],
+      "topo_rank": 340
+    },
+    "mpfr_fpif_store_precision": {
+      "class": "misc",
+      "defined_in": "fpif.c",
+      "deps": [],
+      "topo_rank": 339
+    },
+    "mpfr_fprintf": {
+      "class": "misc",
+      "defined_in": "printf.c",
+      "deps": [],
+      "topo_rank": 352
+    },
+    "mpfr_frac": {
+      "class": "misc",
+      "defined_in": "frac.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_init2",
+        "mpfr_integer_p",
+        "mpfr_round_raw",
+        "mpfr_set",
+        "mpn_copyd",
+        "mpn_lshift"
+      ],
+      "topo_rank": 198
+    },
+    "mpfr_free_cache": {
+      "class": "misc",
+      "defined_in": "free_cache.c",
+      "deps": [
+        "mpfr_free_const_caches",
+        "mpfr_free_local_cache"
+      ],
+      "topo_rank": 356
+    },
+    "mpfr_free_cache2": {
+      "class": "misc",
+      "defined_in": "free_cache.c",
+      "deps": [
+        "mpfr_free_const_caches",
+        "mpfr_free_local_cache"
+      ],
+      "topo_rank": 357
+    },
+    "mpfr_free_const_caches": {
+      "class": "misc",
+      "defined_in": "free_cache.c",
+      "deps": [
+        "mpfr_clear_cache"
+      ],
+      "topo_rank": 355
+    },
+    "mpfr_free_func": {
+      "class": "misc",
+      "defined_in": "mpfr-gmp.c",
+      "deps": [],
+      "topo_rank": 20
+    },
+    "mpfr_free_local_cache": {
+      "class": "misc",
+      "defined_in": "free_cache.c",
+      "deps": [
+        "mpfr_bernoulli_freecache",
+        "mpfr_free_pool"
+      ],
+      "topo_rank": 354
+    },
+    "mpfr_free_pool": {
+      "class": "misc",
+      "defined_in": "pool.c",
+      "deps": [],
+      "topo_rank": 353
+    },
+    "mpfr_free_str": {
+      "class": "conversion",
+      "defined_in": "get_str.c",
+      "deps": [
+        "mpfr_free_func"
+      ],
+      "topo_rank": 358
+    },
+    "mpfr_frexp": {
+      "class": "misc",
+      "defined_in": "frexp.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_get_prec",
+        "mpfr_set",
+        "mpfr_set_si_2exp"
+      ],
+      "topo_rank": 359
+    },
+    "mpfr_gamma": {
+      "class": "transcendental",
+      "defined_in": "gamma.c",
+      "deps": [
+        "mpfr_abs",
+        "mpfr_add",
+        "mpfr_add_ui",
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_cmp",
+        "mpfr_cmp_si",
+        "mpfr_cmp_ui",
+        "mpfr_const_pi",
+        "mpfr_div",
+        "mpfr_div_2ui",
+        "mpfr_explgamma",
+        "mpfr_fac_ui",
+        "mpfr_fits_ulong_p",
+        "mpfr_gamma_1_minus_x_exact",
+        "mpfr_gamma_2_minus_x_exact",
+        "mpfr_gamma_aux",
+        "mpfr_get_emax",
+        "mpfr_get_prec",
+        "mpfr_get_ui",
+        "mpfr_inf_p",
+        "mpfr_init2",
+        "mpfr_integer_p",
+        "mpfr_log",
+        "mpfr_log2",
+        "mpfr_mul",
+        "mpfr_mul_2ui",
+        "mpfr_mul_ui",
+        "mpfr_nextbelow",
+        "mpfr_overflow",
+        "mpfr_pow",
+        "mpfr_powerof2_raw",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_set_str_binary",
+        "mpfr_set_ui",
+        "mpfr_sgn",
+        "mpfr_sin",
+        "mpfr_sub",
+        "mpfr_sub_ui",
+        "mpfr_ui_div",
+        "mpfr_ui_sub",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 208
+    },
+    "mpfr_gamma_1_minus_x_exact": {
+      "class": "transcendental",
+      "defined_in": "gamma.c",
+      "deps": [],
+      "topo_rank": 203
+    },
+    "mpfr_gamma_2_minus_x_exact": {
+      "class": "transcendental",
+      "defined_in": "gamma.c",
+      "deps": [],
+      "topo_rank": 202
+    },
+    "mpfr_gamma_alpha": {
+      "class": "transcendental",
+      "defined_in": "lngamma.c",
+      "deps": [
+        "mpfr_get_prec",
+        "mpfr_set_ui_2exp"
+      ],
+      "topo_rank": 360
+    },
+    "mpfr_gamma_inc": {
+      "class": "transcendental",
+      "defined_in": "gamma_inc.c",
+      "deps": [
+        "mpfr_abs",
+        "mpfr_add",
+        "mpfr_add_ui",
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_cmp_ui",
+        "mpfr_div",
+        "mpfr_eint",
+        "mpfr_exp",
+        "mpfr_gamma",
+        "mpfr_gamma_inc_negint",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_integer_p",
+        "mpfr_mul",
+        "mpfr_pow",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_sub",
+        "mpfr_ui_div"
+      ],
+      "topo_rank": 362
+    },
+    "mpfr_gamma_inc_negint": {
+      "class": "transcendental",
+      "defined_in": "gamma_inc.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_check_range",
+        "mpfr_cmp_ui",
+        "mpfr_div",
+        "mpfr_eint",
+        "mpfr_exp",
+        "mpfr_gamma",
+        "mpfr_integer_p",
+        "mpfr_mul",
+        "mpfr_mul_ui",
+        "mpfr_neg",
+        "mpfr_pow",
+        "mpfr_set",
+        "mpfr_set_si",
+        "mpfr_sub",
+        "mpfr_ui_div"
+      ],
+      "topo_rank": 361
+    },
+    "mpfr_gamma_one_and_two_third": {
+      "class": "misc",
+      "defined_in": "gammaonethird.c",
+      "deps": [
+        "mpfr_clear",
+        "mpfr_const_pi",
+        "mpfr_div",
+        "mpfr_gamma_one_third",
+        "mpfr_init2",
+        "mpfr_mul",
+        "mpfr_mul_2ui",
+        "mpfr_set_prec",
+        "mpfr_set_ui",
+        "mpfr_sqrt"
+      ],
+      "topo_rank": 132
+    },
+    "mpfr_gamma_one_third": {
+      "class": "misc",
+      "defined_in": "gammaonethird.c",
+      "deps": [
+        "mpfr_cbrt",
+        "mpfr_clear",
+        "mpfr_const_pi",
+        "mpfr_div",
+        "mpfr_init2",
+        "mpfr_mul",
+        "mpfr_mul_ui",
+        "mpfr_set_prec",
+        "mpfr_set_ui",
+        "mpfr_sqr",
+        "mpfr_sqrt"
+      ],
+      "topo_rank": 131
+    },
+    "mpfr_get_bfloat16": {
+      "class": "misc",
+      "defined_in": "get_bfloat16.c",
+      "deps": [
+        "mpfr_clear",
+        "mpfr_get_d",
+        "mpfr_get_exp",
+        "mpfr_get_si",
+        "mpfr_init2",
+        "mpfr_mul_2si",
+        "mpfr_signbit"
+      ],
+      "topo_rank": 364
+    },
+    "mpfr_get_cputime": {
+      "class": "misc",
+      "defined_in": "logging.c",
+      "deps": [],
+      "topo_rank": 365
+    },
+    "mpfr_get_d": {
+      "class": "conversion",
+      "defined_in": "get_d.c",
+      "deps": [
+        "mpfr_cmp_si_2exp",
+        "mpfr_round_raw_4",
+        "mpfr_scale2"
+      ],
+      "topo_rank": 187
+    },
+    "mpfr_get_d1": {
+      "class": "conversion",
+      "defined_in": "get_d.c",
+      "deps": [
+        "mpfr_get_d"
+      ],
+      "topo_rank": 188
+    },
+    "mpfr_get_d_2exp": {
+      "class": "conversion",
+      "defined_in": "get_d.c",
+      "deps": [
+        "mpfr_get_d"
+      ],
+      "topo_rank": 366
+    },
+    "mpfr_get_decimal128": {
+      "class": "misc",
+      "defined_in": "get_d128.c",
+      "deps": [
+        "mpfr_get_str"
+      ],
+      "topo_rank": 372
+    },
+    "mpfr_get_decimal64": {
+      "class": "misc",
+      "defined_in": "get_d64.c",
+      "deps": [
+        "mpfr_get_str"
+      ],
+      "topo_rank": 373
+    },
+    "mpfr_get_default_prec": {
+      "class": "misc",
+      "defined_in": "set_dfl_prec.c",
+      "deps": [],
+      "topo_rank": 374
+    },
+    "mpfr_get_default_rounding_mode": {
+      "class": "misc",
+      "defined_in": "set_rnd.c",
+      "deps": [],
+      "topo_rank": 375
+    },
+    "mpfr_get_emax": {
+      "class": "misc",
+      "defined_in": "exceptions.c",
+      "deps": [],
+      "topo_rank": 180
+    },
+    "mpfr_get_emax_max": {
+      "class": "misc",
+      "defined_in": "exceptions.c",
+      "deps": [],
+      "topo_rank": 376
+    },
+    "mpfr_get_emax_min": {
+      "class": "misc",
+      "defined_in": "exceptions.c",
+      "deps": [],
+      "topo_rank": 377
+    },
+    "mpfr_get_emin": {
+      "class": "misc",
+      "defined_in": "exceptions.c",
+      "deps": [],
+      "topo_rank": 179
+    },
+    "mpfr_get_emin_max": {
+      "class": "misc",
+      "defined_in": "exceptions.c",
+      "deps": [],
+      "topo_rank": 378
+    },
+    "mpfr_get_emin_min": {
+      "class": "misc",
+      "defined_in": "exceptions.c",
+      "deps": [],
+      "topo_rank": 379
+    },
+    "mpfr_get_exp": {
+      "class": "misc",
+      "defined_in": "get_exp.c",
+      "deps": [],
+      "topo_rank": 165
+    },
+    "mpfr_get_f": {
+      "class": "conversion",
+      "defined_in": "get_f.c",
+      "deps": [
+        "mpfr_clear",
+        "mpfr_init2",
+        "mpfr_set",
+        "mpn_rshift"
+      ],
+      "topo_rank": 380
+    },
+    "mpfr_get_float128": {
+      "class": "conversion",
+      "defined_in": "get_float128.c",
+      "deps": [
+        "mpfr_clear",
+        "mpfr_get_d",
+        "mpfr_init2",
+        "mpfr_powerof2_raw",
+        "mpfr_set"
+      ],
+      "topo_rank": 381
+    },
+    "mpfr_get_float16": {
+      "class": "misc",
+      "defined_in": "get_float16.c",
+      "deps": [
+        "mpfr_clear",
+        "mpfr_get_d",
+        "mpfr_get_exp",
+        "mpfr_get_si",
+        "mpfr_init2",
+        "mpfr_mul_2si",
+        "mpfr_signbit"
+      ],
+      "topo_rank": 382
+    },
+    "mpfr_get_flt": {
+      "class": "conversion",
+      "defined_in": "get_flt.c",
+      "deps": [
+        "mpfr_cmp_si_2exp",
+        "mpfr_get_d",
+        "mpfr_round_raw_4",
+        "mpfr_scale2"
+      ],
+      "topo_rank": 383
+    },
+    "mpfr_get_ld": {
+      "class": "conversion",
+      "defined_in": "get_ld.c",
+      "deps": [
+        "mpfr_clear",
+        "mpfr_get_d",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_powerof2_raw",
+        "mpfr_set",
+        "mpfr_set_d",
+        "mpfr_sub"
+      ],
+      "topo_rank": 384
+    },
+    "mpfr_get_ld_2exp": {
+      "class": "conversion",
+      "defined_in": "get_ld.c",
+      "deps": [
+        "mpfr_get_d_2exp",
+        "mpfr_get_ld"
+      ],
+      "topo_rank": 385
+    },
+    "mpfr_get_prec": {
+      "class": "misc",
+      "defined_in": "set_prec.c",
+      "deps": [],
+      "topo_rank": 2
+    },
+    "mpfr_get_q": {
+      "class": "conversion",
+      "defined_in": "get_q.c",
+      "deps": [
+        "mpfr_get_z_2exp"
+      ],
+      "topo_rank": 386
+    },
+    "mpfr_get_si": {
+      "class": "conversion",
+      "defined_in": "get_si.c",
+      "deps": [
+        "mpfr_clear",
+        "mpfr_fits_slong_p",
+        "mpfr_init2",
+        "mpfr_rint"
+      ],
+      "topo_rank": 178
+    },
+    "mpfr_get_sj": {
+      "class": "conversion",
+      "defined_in": "get_sj.c",
+      "deps": [
+        "mpfr_clear",
+        "mpfr_fits_intmax_p",
+        "mpfr_init2",
+        "mpfr_powerof2_raw",
+        "mpfr_rint"
+      ],
+      "topo_rank": 387
+    },
+    "mpfr_get_str": {
+      "class": "conversion",
+      "defined_in": "get_str.c",
+      "deps": [
+        "mpfr_allocate_func",
+        "mpfr_ceil_mul",
+        "mpfr_get_prec",
+        "mpfr_get_str_aux",
+        "mpfr_get_str_ndigits",
+        "mpfr_mpn_exp",
+        "mpfr_round_raw",
+        "mpn_get_str",
+        "mpn_lshift",
+        "mpn_mul",
+        "mpn_popcount",
+        "mpn_rshift",
+        "mpn_scan1",
+        "mpn_tdiv_qr"
+      ],
+      "topo_rank": 371
+    },
+    "mpfr_get_str_aux": {
+      "class": "conversion",
+      "defined_in": "get_str.c",
+      "deps": [
+        "mpfr_round_p",
+        "mpfr_round_raw",
+        "mpn_get_str",
+        "mpn_rshift"
+      ],
+      "topo_rank": 370
+    },
+    "mpfr_get_str_ndigits": {
+      "class": "conversion",
+      "defined_in": "get_str.c",
+      "deps": [
+        "mpfr_ceil",
+        "mpfr_ceil_mul",
+        "mpfr_clear",
+        "mpfr_equal_p",
+        "mpfr_get_ui",
+        "mpfr_init2",
+        "mpfr_log2",
+        "mpfr_set_ui",
+        "mpfr_ui_div"
+      ],
+      "topo_rank": 369
+    },
+    "mpfr_get_str_wrapper": {
+      "class": "misc",
+      "defined_in": "vasprintf.c",
+      "deps": [
+        "mpfr_free_str",
+        "mpfr_get_str"
+      ],
+      "topo_rank": 388
+    },
+    "mpfr_get_ui": {
+      "class": "conversion",
+      "defined_in": "get_ui.c",
+      "deps": [
+        "mpfr_clear",
+        "mpfr_fits_ulong_p",
+        "mpfr_init2",
+        "mpfr_rint"
+      ],
+      "topo_rank": 129
+    },
+    "mpfr_get_uj": {
+      "class": "conversion",
+      "defined_in": "get_uj.c",
+      "deps": [
+        "mpfr_clear",
+        "mpfr_fits_uintmax_p",
+        "mpfr_init2",
+        "mpfr_rint"
+      ],
+      "topo_rank": 389
+    },
+    "mpfr_get_version": {
+      "class": "misc",
+      "defined_in": "version.c",
+      "deps": [],
+      "topo_rank": 390
+    },
+    "mpfr_get_z": {
+      "class": "conversion",
+      "defined_in": "get_z.c",
+      "deps": [
+        "mpfr_clear",
+        "mpfr_get_z_2exp",
+        "mpfr_init2",
+        "mpfr_rint"
+      ],
+      "topo_rank": 28
+    },
+    "mpfr_get_z_2exp": {
+      "class": "misc",
+      "defined_in": "get_z_2exp.c",
+      "deps": [
+        "mpn_rshift"
+      ],
+      "topo_rank": 27
+    },
+    "mpfr_grandom": {
+      "class": "misc",
+      "defined_in": "grandom.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_div",
+        "mpfr_div_2ui",
+        "mpfr_init2",
+        "mpfr_log",
+        "mpfr_mul_2si",
+        "mpfr_mul_z",
+        "mpfr_neg",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_set_z",
+        "mpfr_sqrt"
+      ],
+      "topo_rank": 391
+    },
+    "mpfr_greater_p": {
+      "class": "misc",
+      "defined_in": "comparisons.c",
+      "deps": [
+        "mpfr_cmp"
+      ],
+      "topo_rank": 392
+    },
+    "mpfr_greaterequal_p": {
+      "class": "misc",
+      "defined_in": "comparisons.c",
+      "deps": [
+        "mpfr_cmp"
+      ],
+      "topo_rank": 393
+    },
+    "mpfr_hypot": {
+      "class": "transcendental",
+      "defined_in": "hypot.c",
+      "deps": [
+        "mpfr_abs",
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_cmpabs",
+        "mpfr_div_2si",
+        "mpfr_fma",
+        "mpfr_get_emax",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_mul_2si",
+        "mpfr_nexttoinf",
+        "mpfr_overflow",
+        "mpfr_set_prec",
+        "mpfr_sqr",
+        "mpfr_sqrt"
+      ],
+      "topo_rank": 394
+    },
+    "mpfr_inexflag_p": {
+      "class": "misc",
+      "defined_in": "exceptions.c",
+      "deps": [],
+      "topo_rank": 395
+    },
+    "mpfr_inf_p": {
+      "class": "misc",
+      "defined_in": "isinf.c",
+      "deps": [],
+      "topo_rank": 201
+    },
+    "mpfr_init": {
+      "class": "misc",
+      "defined_in": "init.c",
+      "deps": [
+        "mpfr_init2"
+      ],
+      "topo_rank": 396
+    },
+    "mpfr_init2": {
+      "class": "misc",
+      "defined_in": "init2.c",
+      "deps": [
+        "mpfr_allocate_func"
+      ],
+      "topo_rank": 19
+    },
+    "mpfr_init_cache": {
+      "class": "misc",
+      "defined_in": "cache.c",
+      "deps": [],
+      "topo_rank": 397
+    },
+    "mpfr_init_get_zexp": {
+      "class": "misc",
+      "defined_in": "ubf.c",
+      "deps": [
+        "mpfr_get_z",
+        "mpfr_set_exp_t"
+      ],
+      "topo_rank": 29
+    },
+    "mpfr_init_set_str": {
+      "class": "conversion",
+      "defined_in": "set_str.c",
+      "deps": [
+        "mpfr_init",
+        "mpfr_set_str"
+      ],
+      "topo_rank": 398
+    },
+    "mpfr_inits": {
+      "class": "misc",
+      "defined_in": "inits.c",
+      "deps": [
+        "mpfr_init"
+      ],
+      "topo_rank": 399
+    },
+    "mpfr_inits2": {
+      "class": "misc",
+      "defined_in": "inits2.c",
+      "deps": [
+        "mpfr_init2"
+      ],
+      "topo_rank": 400
+    },
+    "mpfr_inp_str": {
+      "class": "misc",
+      "defined_in": "inp_str.c",
+      "deps": [
+        "mpfr_allocate_func",
+        "mpfr_free_func",
+        "mpfr_reallocate_func",
+        "mpfr_set_str"
+      ],
+      "topo_rank": 401
+    },
+    "mpfr_integer_p": {
+      "class": "misc",
+      "defined_in": "isinteger.c",
+      "deps": [],
+      "topo_rank": 164
+    },
+    "mpfr_j0": {
+      "class": "transcendental",
+      "defined_in": "jn.c",
+      "deps": [
+        "mpfr_jn"
+      ],
+      "topo_rank": 404
+    },
+    "mpfr_j1": {
+      "class": "transcendental",
+      "defined_in": "jn.c",
+      "deps": [
+        "mpfr_jn"
+      ],
+      "topo_rank": 405
+    },
+    "mpfr_jn": {
+      "class": "transcendental",
+      "defined_in": "jn.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_check_range",
+        "mpfr_cmp_ui",
+        "mpfr_div",
+        "mpfr_div_2ui",
+        "mpfr_div_ui",
+        "mpfr_erangeflag_p",
+        "mpfr_fac_ui",
+        "mpfr_get_prec",
+        "mpfr_get_ui",
+        "mpfr_jn_asympt",
+        "mpfr_jn_k0",
+        "mpfr_mul",
+        "mpfr_neg",
+        "mpfr_nexttoinf",
+        "mpfr_pow_ui",
+        "mpfr_set",
+        "mpfr_set_str_binary",
+        "mpfr_set_ui",
+        "mpfr_sqr",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 403
+    },
+    "mpfr_jn_k0": {
+      "class": "transcendental",
+      "defined_in": "jn.c",
+      "deps": [
+        "mpfr_abs",
+        "mpfr_add_ui",
+        "mpfr_clear",
+        "mpfr_div_ui",
+        "mpfr_fits_ulong_p",
+        "mpfr_get_ui",
+        "mpfr_init2",
+        "mpfr_mul",
+        "mpfr_mul_ui",
+        "mpfr_set_str_binary",
+        "mpfr_sqr",
+        "mpfr_sqrt",
+        "mpfr_sub_ui"
+      ],
+      "topo_rank": 402
+    },
+    "mpfr_less_p": {
+      "class": "misc",
+      "defined_in": "comparisons.c",
+      "deps": [
+        "mpfr_cmp"
+      ],
+      "topo_rank": 163
+    },
+    "mpfr_lessequal_p": {
+      "class": "misc",
+      "defined_in": "comparisons.c",
+      "deps": [
+        "mpfr_cmp"
+      ],
+      "topo_rank": 406
+    },
+    "mpfr_lessgreater_p": {
+      "class": "misc",
+      "defined_in": "comparisons.c",
+      "deps": [
+        "mpfr_cmp"
+      ],
+      "topo_rank": 407
+    },
+    "mpfr_lgamma": {
+      "class": "transcendental",
+      "defined_in": "lngamma.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_equal_p",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_integer_p",
+        "mpfr_lngamma_aux",
+        "mpfr_log",
+        "mpfr_neg",
+        "mpfr_prec_round",
+        "mpfr_set",
+        "mpfr_sub"
+      ],
+      "topo_rank": 206
+    },
+    "mpfr_li2": {
+      "class": "transcendental",
+      "defined_in": "li2.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_clears",
+        "mpfr_cmp_si",
+        "mpfr_cmp_ui",
+        "mpfr_cmp_ui_2exp",
+        "mpfr_const_pi",
+        "mpfr_div_2ui",
+        "mpfr_div_ui",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_li2_asympt_neg",
+        "mpfr_li2_asympt_pos",
+        "mpfr_log",
+        "mpfr_log1p",
+        "mpfr_mul",
+        "mpfr_neg",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_sqr",
+        "mpfr_sub",
+        "mpfr_sub_ui",
+        "mpfr_ui_div",
+        "mpfr_ui_sub"
+      ],
+      "topo_rank": 410
+    },
+    "mpfr_li2_asympt_neg": {
+      "class": "transcendental",
+      "defined_in": "li2.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_clear",
+        "mpfr_cmp_si",
+        "mpfr_const_pi",
+        "mpfr_div_2ui",
+        "mpfr_div_ui",
+        "mpfr_init2",
+        "mpfr_log",
+        "mpfr_neg",
+        "mpfr_sqr"
+      ],
+      "topo_rank": 409
+    },
+    "mpfr_li2_asympt_pos": {
+      "class": "transcendental",
+      "defined_in": "li2.c",
+      "deps": [
+        "mpfr_clear",
+        "mpfr_cmp_ui",
+        "mpfr_const_pi",
+        "mpfr_div_2ui",
+        "mpfr_div_ui",
+        "mpfr_init2",
+        "mpfr_log",
+        "mpfr_set",
+        "mpfr_sqr",
+        "mpfr_sub"
+      ],
+      "topo_rank": 408
+    },
+    "mpfr_lngamma": {
+      "class": "transcendental",
+      "defined_in": "lngamma.c",
+      "deps": [
+        "mpfr_get_prec",
+        "mpfr_integer_p",
+        "mpfr_lngamma_aux"
+      ],
+      "topo_rank": 411
+    },
+    "mpfr_log": {
+      "class": "transcendental",
+      "defined_in": "log.c",
+      "deps": [
+        "mpfr_agm",
+        "mpfr_check_range",
+        "mpfr_cmp_ui",
+        "mpfr_const_log2",
+        "mpfr_const_pi",
+        "mpfr_div",
+        "mpfr_get_prec",
+        "mpfr_mul_2ui",
+        "mpfr_mul_si",
+        "mpfr_set",
+        "mpfr_sub"
+      ],
+      "topo_rank": 113
+    },
+    "mpfr_log10": {
+      "class": "transcendental",
+      "defined_in": "log10.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_cmp_ui",
+        "mpfr_div",
+        "mpfr_equal_p",
+        "mpfr_fits_ulong_p",
+        "mpfr_get_prec",
+        "mpfr_get_ui",
+        "mpfr_init2",
+        "mpfr_integer_p",
+        "mpfr_log",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_set_ui",
+        "mpfr_ui_pow_ui"
+      ],
+      "topo_rank": 413
+    },
+    "mpfr_log10p1": {
+      "class": "misc",
+      "defined_in": "log10p1.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_cmp_si",
+        "mpfr_div",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_log10p1_exact_p",
+        "mpfr_log10p1_small",
+        "mpfr_log1p",
+        "mpfr_log_ui",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_set_si",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 416
+    },
+    "mpfr_log10p1_exact_p": {
+      "class": "misc",
+      "defined_in": "log10p1.c",
+      "deps": [
+        "mpfr_add_ui",
+        "mpfr_clear",
+        "mpfr_equal_p",
+        "mpfr_init2",
+        "mpfr_min_prec",
+        "mpfr_set_z_2exp"
+      ],
+      "topo_rank": 415
+    },
+    "mpfr_log10p1_small": {
+      "class": "misc",
+      "defined_in": "log10p1.c",
+      "deps": [
+        "mpfr_clear",
+        "mpfr_div",
+        "mpfr_init2",
+        "mpfr_log_ui",
+        "mpfr_set"
+      ],
+      "topo_rank": 414
+    },
+    "mpfr_log1p": {
+      "class": "transcendental",
+      "defined_in": "log1p.c",
+      "deps": [
+        "mpfr_add_ui",
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_cmp_si",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_log",
+        "mpfr_log1p_small",
+        "mpfr_set",
+        "mpfr_set_prec"
+      ],
+      "topo_rank": 245
+    },
+    "mpfr_log1p_small": {
+      "class": "transcendental",
+      "defined_in": "log1p.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_clear",
+        "mpfr_div_ui",
+        "mpfr_init2",
+        "mpfr_mul",
+        "mpfr_set",
+        "mpfr_sub"
+      ],
+      "topo_rank": 244
+    },
+    "mpfr_log2": {
+      "class": "transcendental",
+      "defined_in": "log2.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_cmp_ui",
+        "mpfr_cmp_ui_2exp",
+        "mpfr_const_log2",
+        "mpfr_div",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_log",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_set_si"
+      ],
+      "topo_rank": 157
+    },
+    "mpfr_log2p1": {
+      "class": "misc",
+      "defined_in": "log2p1.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_cmp_si",
+        "mpfr_const_log2",
+        "mpfr_div",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_log1p",
+        "mpfr_log2p1_isexact",
+        "mpfr_log2p1_special",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_set_si"
+      ],
+      "topo_rank": 246
+    },
+    "mpfr_log2p1_isexact": {
+      "class": "misc",
+      "defined_in": "log2p1.c",
+      "deps": [
+        "mpfr_add_ui",
+        "mpfr_clear",
+        "mpfr_init2"
+      ],
+      "topo_rank": 243
+    },
+    "mpfr_log2p1_special": {
+      "class": "misc",
+      "defined_in": "log2p1.c",
+      "deps": [
+        "mpfr_clear",
+        "mpfr_cmp_si_2exp",
+        "mpfr_init2",
+        "mpfr_nextabove",
+        "mpfr_set",
+        "mpfr_set_ui"
+      ],
+      "topo_rank": 242
+    },
+    "mpfr_log_begin": {
+      "class": "misc",
+      "defined_in": "logging.c",
+      "deps": [],
+      "topo_rank": 417
+    },
+    "mpfr_log_ui": {
+      "class": "transcendental",
+      "defined_in": "log_ui.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_const_log2",
+        "mpfr_div",
+        "mpfr_get_prec",
+        "mpfr_get_ui",
+        "mpfr_init2",
+        "mpfr_log2",
+        "mpfr_mul_2ui",
+        "mpfr_mul_ui",
+        "mpfr_set",
+        "mpfr_set_ui",
+        "mpfr_set_z",
+        "mpfr_ui_div",
+        "mpfr_ui_sub"
+      ],
+      "topo_rank": 316
+    },
+    "mpfr_max": {
+      "class": "misc",
+      "defined_in": "minmax.c",
+      "deps": [
+        "mpfr_cmp",
+        "mpfr_set"
+      ],
+      "topo_rank": 418
+    },
+    "mpfr_min": {
+      "class": "misc",
+      "defined_in": "minmax.c",
+      "deps": [
+        "mpfr_cmp",
+        "mpfr_set"
+      ],
+      "topo_rank": 419
+    },
+    "mpfr_min_prec": {
+      "class": "misc",
+      "defined_in": "min_prec.c",
+      "deps": [
+        "mpn_scan1"
+      ],
+      "topo_rank": 115
+    },
+    "mpfr_modf": {
+      "class": "misc",
+      "defined_in": "modf.c",
+      "deps": [
+        "mpfr_frac",
+        "mpfr_get_prec",
+        "mpfr_rint_trunc",
+        "mpfr_set"
+      ],
+      "topo_rank": 421
+    },
+    "mpfr_mp_memory_cleanup": {
+      "class": "misc",
+      "defined_in": "free_cache.c",
+      "deps": [
+        "mpfr_free_cache"
+      ],
+      "topo_rank": 422
+    },
+    "mpfr_mpn_cmp_aux": {
+      "class": "arithmetic",
+      "defined_in": "div.c",
+      "deps": [],
+      "topo_rank": 73
+    },
+    "mpfr_mpn_cmpzero": {
+      "class": "arithmetic",
+      "defined_in": "div.c",
+      "deps": [],
+      "topo_rank": 72
+    },
+    "mpfr_mpn_exp": {
+      "class": "misc",
+      "defined_in": "mpn_exp.c",
+      "deps": [
+        "mpn_lshift",
+        "mpn_mul_1",
+        "mpn_scan1",
+        "mpn_sqr"
+      ],
+      "topo_rank": 368
+    },
+    "mpfr_mpn_rec_sqrt": {
+      "class": "misc",
+      "defined_in": "rec_sqrt.c",
+      "deps": [
+        "mpn_add",
+        "mpn_add_1",
+        "mpn_lshift",
+        "mpn_mul",
+        "mpn_sqr",
+        "mpn_sub",
+        "mpn_sub_1"
+      ],
+      "topo_rank": 423
+    },
+    "mpfr_mpn_sub_aux": {
+      "class": "arithmetic",
+      "defined_in": "div.c",
+      "deps": [],
+      "topo_rank": 71
+    },
+    "mpfr_mpz_clear": {
+      "class": "misc",
+      "defined_in": "pool.c",
+      "deps": [],
+      "topo_rank": 424
+    },
+    "mpfr_mpz_init": {
+      "class": "misc",
+      "defined_in": "pool.c",
+      "deps": [],
+      "topo_rank": 425
+    },
+    "mpfr_mpz_init2": {
+      "class": "misc",
+      "defined_in": "pool.c",
+      "deps": [],
+      "topo_rank": 426
+    },
+    "mpfr_mpz_set_uj": {
+      "class": "misc",
+      "defined_in": "pow_uj.c",
+      "deps": [],
+      "topo_rank": 427
+    },
+    "mpfr_mul": {
+      "class": "arithmetic",
+      "defined_in": "mul.c",
+      "deps": [
+        "mpfr_get_prec",
+        "mpfr_mul_1",
+        "mpfr_mul_1n",
+        "mpfr_mul_2",
+        "mpfr_mul_3",
+        "mpfr_mulhigh_n",
+        "mpfr_overflow",
+        "mpfr_powerof2_raw",
+        "mpfr_round_p",
+        "mpfr_sqrhigh_n",
+        "mpfr_underflow",
+        "mpn_lshift",
+        "mpn_mul"
+      ],
+      "topo_rank": 65
+    },
+    "mpfr_mul3": {
+      "class": "arithmetic",
+      "defined_in": "mul.c",
+      "deps": [
+        "mpfr_get_prec",
+        "mpfr_overflow",
+        "mpfr_powerof2_raw",
+        "mpfr_round_raw",
+        "mpfr_underflow",
+        "mpn_lshift",
+        "mpn_mul"
+      ],
+      "topo_rank": 428
+    },
+    "mpfr_mul_1": {
+      "class": "misc",
+      "defined_in": "mul_1_extracted.c",
+      "deps": [],
+      "topo_rank": 64
+    },
+    "mpfr_mul_1n": {
+      "class": "arithmetic",
+      "defined_in": "mul.c",
+      "deps": [
+        "mpfr_overflow",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 63
+    },
+    "mpfr_mul_2": {
+      "class": "arithmetic",
+      "defined_in": "mul.c",
+      "deps": [
+        "mpfr_overflow",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 62
+    },
+    "mpfr_mul_2exp": {
+      "class": "arithmetic",
+      "defined_in": "mul_2exp.c",
+      "deps": [
+        "mpfr_mul_2ui"
+      ],
+      "topo_rank": 429
+    },
+    "mpfr_mul_2si": {
+      "class": "arithmetic",
+      "defined_in": "mul_2si.c",
+      "deps": [
+        "mpfr_get_prec",
+        "mpfr_overflow",
+        "mpfr_powerof2_raw",
+        "mpfr_set",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 103
+    },
+    "mpfr_mul_2ui": {
+      "class": "arithmetic",
+      "defined_in": "mul_2ui.c",
+      "deps": [
+        "mpfr_get_prec",
+        "mpfr_overflow",
+        "mpfr_set"
+      ],
+      "topo_rank": 97
+    },
+    "mpfr_mul_3": {
+      "class": "arithmetic",
+      "defined_in": "mul.c",
+      "deps": [
+        "mpfr_overflow",
+        "mpfr_underflow",
+        "mpn_mul_n"
+      ],
+      "topo_rank": 61
+    },
+    "mpfr_mul_d": {
+      "class": "arithmetic",
+      "defined_in": "mul_d.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_get_prec",
+        "mpfr_mul",
+        "mpfr_set_d"
+      ],
+      "topo_rank": 430
+    },
+    "mpfr_mul_q": {
+      "class": "misc",
+      "defined_in": "gmp_op.c",
+      "deps": [
+        "mpfr_muldiv_z"
+      ],
+      "topo_rank": 431
+    },
+    "mpfr_mul_si": {
+      "class": "misc",
+      "defined_in": "si_op.c",
+      "deps": [
+        "mpfr_get_prec",
+        "mpfr_mul_ui"
+      ],
+      "topo_rank": 105
+    },
+    "mpfr_mul_ui": {
+      "class": "arithmetic",
+      "defined_in": "mul_ui.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_mul",
+        "mpfr_mul_2si",
+        "mpfr_overflow",
+        "mpfr_set",
+        "mpfr_set_ui",
+        "mpn_lshift",
+        "mpn_mul_1"
+      ],
+      "topo_rank": 104
+    },
+    "mpfr_mul_ui5": {
+      "class": "misc",
+      "defined_in": "gammaonethird.c",
+      "deps": [
+        "mpfr_mul_ui",
+        "mpfr_set"
+      ],
+      "topo_rank": 432
+    },
+    "mpfr_mul_z": {
+      "class": "misc",
+      "defined_in": "gmp_op.c",
+      "deps": [
+        "mpfr_mul_si"
+      ],
+      "topo_rank": 239
+    },
+    "mpfr_muldiv_z": {
+      "class": "misc",
+      "defined_in": "gmp_op.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_div_ui",
+        "mpfr_div_z",
+        "mpfr_inf_p",
+        "mpfr_init2",
+        "mpfr_mul_ui",
+        "mpfr_mul_z"
+      ],
+      "topo_rank": 289
+    },
+    "mpfr_mulhigh_n": {
+      "class": "misc",
+      "defined_in": "mulders.c",
+      "deps": [
+        "mpfr_mulhigh_n_basecase",
+        "mpn_add_1",
+        "mpn_add_n",
+        "mpn_mul_basecase",
+        "mpn_mul_n"
+      ],
+      "topo_rank": 58
+    },
+    "mpfr_mulhigh_n_basecase": {
+      "class": "misc",
+      "defined_in": "mulders.c",
+      "deps": [
+        "mpn_addmul_1"
+      ],
+      "topo_rank": 57
+    },
+    "mpfr_nan_p": {
+      "class": "misc",
+      "defined_in": "isnan.c",
+      "deps": [],
+      "topo_rank": 433
+    },
+    "mpfr_nanflag_p": {
+      "class": "misc",
+      "defined_in": "exceptions.c",
+      "deps": [],
+      "topo_rank": 110
+    },
+    "mpfr_nbits_uj": {
+      "class": "misc",
+      "defined_in": "nbits_ulong.c",
+      "deps": [],
+      "topo_rank": 434
+    },
+    "mpfr_nbits_ulong": {
+      "class": "misc",
+      "defined_in": "nbits_ulong.c",
+      "deps": [],
+      "topo_rank": 185
+    },
+    "mpfr_neg": {
+      "class": "arithmetic",
+      "defined_in": "neg.c",
+      "deps": [
+        "mpfr_set4"
+      ],
+      "topo_rank": 35
+    },
+    "mpfr_nextabove": {
+      "class": "misc",
+      "defined_in": "next.c",
+      "deps": [
+        "mpfr_nexttoinf",
+        "mpfr_nexttozero"
+      ],
+      "topo_rank": 87
+    },
+    "mpfr_nextbelow": {
+      "class": "misc",
+      "defined_in": "next.c",
+      "deps": [
+        "mpfr_nexttoinf",
+        "mpfr_nexttozero"
+      ],
+      "topo_rank": 86
+    },
+    "mpfr_nexttoinf": {
+      "class": "misc",
+      "defined_in": "next.c",
+      "deps": [
+        "mpfr_setmin",
+        "mpn_add_1"
+      ],
+      "topo_rank": 85
+    },
+    "mpfr_nexttoward": {
+      "class": "misc",
+      "defined_in": "next.c",
+      "deps": [
+        "mpfr_cmp",
+        "mpfr_nextabove",
+        "mpfr_nextbelow"
+      ],
+      "topo_rank": 435
+    },
+    "mpfr_nexttozero": {
+      "class": "misc",
+      "defined_in": "next.c",
+      "deps": [
+        "mpfr_setmax",
+        "mpfr_setmin",
+        "mpn_sub_1"
+      ],
+      "topo_rank": 84
+    },
+    "mpfr_nrandom": {
+      "class": "misc",
+      "defined_in": "nrandom.c",
+      "deps": [
+        "mpfr_nrandom_v1"
+      ],
+      "topo_rank": 437
+    },
+    "mpfr_nrandom_v1": {
+      "class": "misc",
+      "defined_in": "nrandom.c",
+      "deps": [
+        "mpfr_random_deviate_clear",
+        "mpfr_random_deviate_init",
+        "mpfr_random_deviate_reset",
+        "mpfr_random_deviate_value"
+      ],
+      "topo_rank": 436
+    },
+    "mpfr_nrandom_v2": {
+      "class": "misc",
+      "defined_in": "nrandom.c",
+      "deps": [
+        "mpfr_random_deviate_clear",
+        "mpfr_random_deviate_init",
+        "mpfr_random_deviate_reset",
+        "mpfr_random_deviate_value"
+      ],
+      "topo_rank": 438
+    },
+    "mpfr_number_p": {
+      "class": "misc",
+      "defined_in": "isnum.c",
+      "deps": [],
+      "topo_rank": 236
+    },
+    "mpfr_odd_p": {
+      "class": "misc",
+      "defined_in": "odd_p.c",
+      "deps": [],
+      "topo_rank": 162
+    },
+    "mpfr_out_str": {
+      "class": "misc",
+      "defined_in": "out_str.c",
+      "deps": [
+        "mpfr_free_func",
+        "mpfr_get_str"
+      ],
+      "topo_rank": 439
+    },
+    "mpfr_overflow": {
+      "class": "misc",
+      "defined_in": "exceptions.c",
+      "deps": [
+        "mpfr_get_prec",
+        "mpfr_setmax"
+      ],
+      "topo_rank": 3
+    },
+    "mpfr_overflow_p": {
+      "class": "misc",
+      "defined_in": "exceptions.c",
+      "deps": [],
+      "topo_rank": 109
+    },
+    "mpfr_pow": {
+      "class": "transcendental",
+      "defined_in": "pow.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_cmp_si",
+        "mpfr_cmp_ui",
+        "mpfr_cmpabs",
+        "mpfr_exp2",
+        "mpfr_get_exp_t",
+        "mpfr_get_prec",
+        "mpfr_get_z",
+        "mpfr_init2",
+        "mpfr_integer_p",
+        "mpfr_log2",
+        "mpfr_mul",
+        "mpfr_mul_si",
+        "mpfr_nextabove",
+        "mpfr_odd_p",
+        "mpfr_overflow",
+        "mpfr_pow_general",
+        "mpfr_pow_z",
+        "mpfr_powerof2_raw",
+        "mpfr_set_exp_t",
+        "mpfr_set_si",
+        "mpfr_set_ui",
+        "mpfr_sub_ui",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 200
+    },
+    "mpfr_pow_general": {
+      "class": "transcendental",
+      "cycle": true,
+      "defined_in": "pow.c",
+      "deps": [
+        "mpfr_clear",
+        "mpfr_clears",
+        "mpfr_const_log2",
+        "mpfr_exp",
+        "mpfr_get_prec",
+        "mpfr_get_si",
+        "mpfr_init2",
+        "mpfr_log",
+        "mpfr_log2",
+        "mpfr_mul",
+        "mpfr_mul_2si",
+        "mpfr_odd_p",
+        "mpfr_overflow",
+        "mpfr_pow_is_exact",
+        "mpfr_powerof2_raw",
+        "mpfr_round",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_sub",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 194
+    },
+    "mpfr_pow_is_exact": {
+      "class": "transcendental",
+      "cycle": true,
+      "defined_in": "pow.c",
+      "deps": [
+        "mpfr_clear",
+        "mpfr_cmp_si_2exp",
+        "mpfr_get_z_2exp",
+        "mpfr_init2",
+        "mpfr_integer_p",
+        "mpfr_mul_2si",
+        "mpfr_pow_z",
+        "mpfr_set_z"
+      ],
+      "topo_rank": 195
+    },
+    "mpfr_pow_pos_z": {
+      "class": "transcendental",
+      "cycle": true,
+      "defined_in": "pow_z.c",
+      "deps": [
+        "mpfr_clear",
+        "mpfr_cmp_si_2exp",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_mul",
+        "mpfr_overflow",
+        "mpfr_pow_general",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_set_z",
+        "mpfr_sqr",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 196
+    },
+    "mpfr_pow_z": {
+      "class": "transcendental",
+      "cycle": true,
+      "defined_in": "pow_z.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_cmp_si_2exp",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_overflow",
+        "mpfr_pow_general",
+        "mpfr_pow_pos_z",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_set_si",
+        "mpfr_set_ui",
+        "mpfr_set_z",
+        "mpfr_ui_div",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 197
+    },
+    "mpfr_powerof2_raw": {
+      "class": "misc",
+      "defined_in": "powerof2.c",
+      "deps": [
+        "mpfr_powerof2_raw2"
+      ],
+      "topo_rank": 14
+    },
+    "mpfr_powerof2_raw2": {
+      "class": "misc",
+      "defined_in": "powerof2.c",
+      "deps": [],
+      "topo_rank": 13
+    },
+    "mpfr_powr": {
+      "class": "misc",
+      "defined_in": "powr.c",
+      "deps": [
+        "mpfr_cmp_ui",
+        "mpfr_pow"
+      ],
+      "topo_rank": 440
+    },
+    "mpfr_prec_round": {
+      "class": "misc",
+      "defined_in": "round_prec.c",
+      "deps": [
+        "mpfr_overflow",
+        "mpfr_reallocate_func",
+        "mpfr_round_raw"
+      ],
+      "topo_rank": 184
+    },
+    "mpfr_print_mant_binary": {
+      "class": "misc",
+      "defined_in": "print_raw.c",
+      "deps": [],
+      "topo_rank": 441
+    },
+    "mpfr_print_rnd_mode": {
+      "class": "misc",
+      "defined_in": "print_rnd_mode.c",
+      "deps": [],
+      "topo_rank": 31
+    },
+    "mpfr_printf": {
+      "class": "misc",
+      "defined_in": "printf.c",
+      "deps": [],
+      "topo_rank": 442
+    },
+    "mpfr_rand_raw": {
+      "class": "misc",
+      "defined_in": "urandomb.c",
+      "deps": [],
+      "topo_rank": 443
+    },
+    "mpfr_random_deviate_clear": {
+      "class": "misc",
+      "defined_in": "random_deviate.c",
+      "deps": [],
+      "topo_rank": 306
+    },
+    "mpfr_random_deviate_init": {
+      "class": "misc",
+      "defined_in": "random_deviate.c",
+      "deps": [],
+      "topo_rank": 305
+    },
+    "mpfr_random_deviate_less": {
+      "class": "misc",
+      "defined_in": "random_deviate.c",
+      "deps": [
+        "mpfr_random_deviate_tstbit"
+      ],
+      "topo_rank": 445
+    },
+    "mpfr_random_deviate_reset": {
+      "class": "misc",
+      "defined_in": "random_deviate.c",
+      "deps": [],
+      "topo_rank": 304
+    },
+    "mpfr_random_deviate_swap": {
+      "class": "misc",
+      "defined_in": "random_deviate.c",
+      "deps": [],
+      "topo_rank": 446
+    },
+    "mpfr_random_deviate_tstbit": {
+      "class": "misc",
+      "defined_in": "random_deviate.c",
+      "deps": [],
+      "topo_rank": 444
+    },
+    "mpfr_random_deviate_value": {
+      "class": "misc",
+      "defined_in": "random_deviate.c",
+      "deps": [
+        "mpfr_get_prec",
+        "mpfr_set_z_2exp"
+      ],
+      "topo_rank": 303
+    },
+    "mpfr_reallocate_func": {
+      "class": "misc",
+      "defined_in": "mpfr-gmp.c",
+      "deps": [],
+      "topo_rank": 67
+    },
+    "mpfr_rec_sqrt": {
+      "class": "misc",
+      "defined_in": "rec_sqrt.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_cmp_ui_2exp",
+        "mpfr_get_prec",
+        "mpfr_mpn_rec_sqrt",
+        "mpfr_round_p",
+        "mpfr_round_raw",
+        "mpn_add_1"
+      ],
+      "topo_rank": 447
+    },
+    "mpfr_reflection_overflow": {
+      "class": "transcendental",
+      "defined_in": "zeta.c",
+      "deps": [
+        "mpfr_abs",
+        "mpfr_add",
+        "mpfr_div_2ui",
+        "mpfr_exp",
+        "mpfr_get_z",
+        "mpfr_lngamma",
+        "mpfr_log",
+        "mpfr_mul",
+        "mpfr_mul_2ui",
+        "mpfr_nextabove",
+        "mpfr_nextbelow",
+        "mpfr_sin",
+        "mpfr_sub",
+        "mpfr_zeta_pos"
+      ],
+      "topo_rank": 452
+    },
+    "mpfr_regular_p": {
+      "class": "misc",
+      "defined_in": "isregular.c",
+      "deps": [],
+      "topo_rank": 161
+    },
+    "mpfr_reldiff": {
+      "class": "misc",
+      "defined_in": "reldiff.c",
+      "deps": [
+        "mpfr_clear",
+        "mpfr_div",
+        "mpfr_init2",
+        "mpfr_set",
+        "mpfr_sub"
+      ],
+      "topo_rank": 453
+    },
+    "mpfr_rem1": {
+      "class": "misc",
+      "defined_in": "rem1.c",
+      "deps": [
+        "mpfr_get_z_2exp",
+        "mpfr_neg",
+        "mpfr_set",
+        "mpfr_set_ui",
+        "mpfr_set_z_2exp"
+      ],
+      "topo_rank": 166
+    },
+    "mpfr_remainder": {
+      "class": "misc",
+      "defined_in": "rem1.c",
+      "deps": [
+        "mpfr_rem1"
+      ],
+      "topo_rank": 170
+    },
+    "mpfr_remquo": {
+      "class": "misc",
+      "defined_in": "rem1.c",
+      "deps": [
+        "mpfr_rem1"
+      ],
+      "topo_rank": 167
+    },
+    "mpfr_rint": {
+      "class": "misc",
+      "defined_in": "rint.c",
+      "deps": [
+        "mpfr_overflow",
+        "mpfr_powerof2_raw",
+        "mpfr_set_si",
+        "mpn_add_1"
+      ],
+      "topo_rank": 26
+    },
+    "mpfr_rint_ceil": {
+      "class": "misc",
+      "defined_in": "rint.c",
+      "deps": [
+        "mpfr_ceil",
+        "mpfr_clear",
+        "mpfr_init2",
+        "mpfr_integer_p",
+        "mpfr_overflow",
+        "mpfr_set"
+      ],
+      "topo_rank": 454
+    },
+    "mpfr_rint_floor": {
+      "class": "misc",
+      "defined_in": "rint.c",
+      "deps": [
+        "mpfr_clear",
+        "mpfr_floor",
+        "mpfr_init2",
+        "mpfr_integer_p",
+        "mpfr_overflow",
+        "mpfr_set"
+      ],
+      "topo_rank": 455
+    },
+    "mpfr_rint_round": {
+      "class": "misc",
+      "defined_in": "rint.c",
+      "deps": [
+        "mpfr_clear",
+        "mpfr_init2",
+        "mpfr_integer_p",
+        "mpfr_overflow",
+        "mpfr_round",
+        "mpfr_set"
+      ],
+      "topo_rank": 456
+    },
+    "mpfr_rint_roundeven": {
+      "class": "misc",
+      "defined_in": "rint.c",
+      "deps": [
+        "mpfr_clear",
+        "mpfr_init2",
+        "mpfr_integer_p",
+        "mpfr_overflow",
+        "mpfr_roundeven",
+        "mpfr_set"
+      ],
+      "topo_rank": 458
+    },
+    "mpfr_rint_trunc": {
+      "class": "misc",
+      "defined_in": "rint.c",
+      "deps": [
+        "mpfr_clear",
+        "mpfr_init2",
+        "mpfr_integer_p",
+        "mpfr_set",
+        "mpfr_trunc"
+      ],
+      "topo_rank": 420
+    },
+    "mpfr_root": {
+      "class": "transcendental",
+      "defined_in": "root.c",
+      "deps": [
+        "mpfr_get_prec",
+        "mpfr_rootn_ui",
+        "mpfr_set"
+      ],
+      "topo_rank": 461
+    },
+    "mpfr_root_aux": {
+      "class": "transcendental",
+      "defined_in": "root.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_div_ui",
+        "mpfr_equal_p",
+        "mpfr_exp",
+        "mpfr_init2",
+        "mpfr_log",
+        "mpfr_pow_ui",
+        "mpfr_set",
+        "mpfr_set4"
+      ],
+      "topo_rank": 459
+    },
+    "mpfr_rootn_si": {
+      "class": "transcendental",
+      "defined_in": "root.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_cmpabs",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_powerof2_raw",
+        "mpfr_rec_sqrt",
+        "mpfr_rootn_ui",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_ui_div"
+      ],
+      "topo_rank": 462
+    },
+    "mpfr_rootn_ui": {
+      "class": "transcendental",
+      "defined_in": "root.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_cmpabs",
+        "mpfr_get_prec",
+        "mpfr_get_z_2exp",
+        "mpfr_root_aux",
+        "mpfr_set",
+        "mpfr_set_z"
+      ],
+      "topo_rank": 460
+    },
+    "mpfr_round": {
+      "class": "misc",
+      "defined_in": "rint.c",
+      "deps": [
+        "mpfr_rint"
+      ],
+      "topo_rank": 177
+    },
+    "mpfr_round_near_x": {
+      "class": "misc",
+      "defined_in": "round_near_x.c",
+      "deps": [
+        "mpfr_nexttoinf",
+        "mpfr_nexttozero",
+        "mpfr_overflow",
+        "mpfr_round_p"
+      ],
+      "topo_rank": 463
+    },
+    "mpfr_round_nearest_away_begin": {
+      "class": "misc",
+      "defined_in": "rndna.c",
+      "deps": [
+        "mpfr_allocate_func",
+        "mpfr_set"
+      ],
+      "topo_rank": 464
+    },
+    "mpfr_round_nearest_away_end": {
+      "class": "misc",
+      "defined_in": "rndna.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_cmp_si_2exp",
+        "mpfr_free_func",
+        "mpfr_set",
+        "mpfr_sgn"
+      ],
+      "topo_rank": 465
+    },
+    "mpfr_round_p": {
+      "class": "misc",
+      "defined_in": "round_p.c",
+      "deps": [],
+      "topo_rank": 60
+    },
+    "mpfr_round_raw_generic": {
+      "class": "misc",
+      "defined_in": "round_raw_generic.c",
+      "deps": [
+        "mpn_add_1",
+        "mpn_copyd",
+        "mpn_copyi"
+      ],
+      "topo_rank": 466
+    },
+    "mpfr_roundeven": {
+      "class": "misc",
+      "defined_in": "rint.c",
+      "deps": [
+        "mpfr_rint"
+      ],
+      "topo_rank": 457
+    },
+    "mpfr_scale2": {
+      "class": "misc",
+      "defined_in": "scale2.c",
+      "deps": [],
+      "topo_rank": 186
+    },
+    "mpfr_set": {
+      "class": "misc",
+      "defined_in": "set.c",
+      "deps": [
+        "mpfr_set4"
+      ],
+      "topo_rank": 34
+    },
+    "mpfr_set4": {
+      "class": "misc",
+      "defined_in": "set.c",
+      "deps": [
+        "mpfr_overflow"
+      ],
+      "topo_rank": 4
+    },
+    "mpfr_set_1_2": {
+      "class": "misc",
+      "defined_in": "set.c",
+      "deps": [
+        "mpfr_min_prec",
+        "mpfr_nextabove",
+        "mpfr_nextbelow",
+        "mpfr_overflow",
+        "mpfr_set"
+      ],
+      "topo_rank": 332
+    },
+    "mpfr_set_bfloat16": {
+      "class": "misc",
+      "defined_in": "set_bfloat16.c",
+      "deps": [
+        "mpfr_set_d",
+        "mpfr_set_si_2exp"
+      ],
+      "topo_rank": 467
+    },
+    "mpfr_set_d": {
+      "class": "conversion",
+      "defined_in": "set_d.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_set4"
+      ],
+      "topo_rank": 120
+    },
+    "mpfr_set_decimal128": {
+      "class": "misc",
+      "defined_in": "set_d128.c",
+      "deps": [
+        "mpfr_strtofr"
+      ],
+      "topo_rank": 468
+    },
+    "mpfr_set_decimal64": {
+      "class": "misc",
+      "defined_in": "set_d64.c",
+      "deps": [
+        "mpfr_strtofr"
+      ],
+      "topo_rank": 469
+    },
+    "mpfr_set_default_prec": {
+      "class": "misc",
+      "defined_in": "set_dfl_prec.c",
+      "deps": [],
+      "topo_rank": 470
+    },
+    "mpfr_set_default_rounding_mode": {
+      "class": "misc",
+      "defined_in": "set_rnd.c",
+      "deps": [],
+      "topo_rank": 471
+    },
+    "mpfr_set_divby0": {
+      "class": "misc",
+      "defined_in": "exceptions.c",
+      "deps": [],
+      "topo_rank": 472
+    },
+    "mpfr_set_emax": {
+      "class": "misc",
+      "defined_in": "exceptions.c",
+      "deps": [],
+      "topo_rank": 473
+    },
+    "mpfr_set_emin": {
+      "class": "misc",
+      "defined_in": "exceptions.c",
+      "deps": [],
+      "topo_rank": 474
+    },
+    "mpfr_set_erangeflag": {
+      "class": "misc",
+      "defined_in": "exceptions.c",
+      "deps": [],
+      "topo_rank": 475
+    },
+    "mpfr_set_exp": {
+      "class": "misc",
+      "defined_in": "set_exp.c",
+      "deps": [],
+      "topo_rank": 476
+    },
+    "mpfr_set_f": {
+      "class": "conversion",
+      "defined_in": "set_f.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_get_prec",
+        "mpfr_overflow",
+        "mpfr_round_raw",
+        "mpn_lshift"
+      ],
+      "topo_rank": 233
+    },
+    "mpfr_set_float128": {
+      "class": "conversion",
+      "defined_in": "set_float128.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_init2",
+        "mpfr_set",
+        "mpfr_set_d"
+      ],
+      "topo_rank": 477
+    },
+    "mpfr_set_float16": {
+      "class": "misc",
+      "defined_in": "set_float16.c",
+      "deps": [
+        "mpfr_set_d",
+        "mpfr_set_si_2exp"
+      ],
+      "topo_rank": 478
+    },
+    "mpfr_set_flt": {
+      "class": "conversion",
+      "defined_in": "set_flt.c",
+      "deps": [
+        "mpfr_set_d"
+      ],
+      "topo_rank": 479
+    },
+    "mpfr_set_inexflag": {
+      "class": "misc",
+      "defined_in": "exceptions.c",
+      "deps": [],
+      "topo_rank": 480
+    },
+    "mpfr_set_inf": {
+      "class": "misc",
+      "defined_in": "set_inf.c",
+      "deps": [],
+      "topo_rank": 235
+    },
+    "mpfr_set_ld": {
+      "class": "conversion",
+      "defined_in": "set_ld.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_div_2si",
+        "mpfr_get_d1",
+        "mpfr_init2",
+        "mpfr_mul_2si",
+        "mpfr_number_p",
+        "mpfr_set_d",
+        "mpfr_set_inf",
+        "mpfr_set_prec"
+      ],
+      "topo_rank": 237
+    },
+    "mpfr_set_nan": {
+      "class": "misc",
+      "defined_in": "set_nan.c",
+      "deps": [],
+      "topo_rank": 345
+    },
+    "mpfr_set_nanflag": {
+      "class": "misc",
+      "defined_in": "exceptions.c",
+      "deps": [],
+      "topo_rank": 481
+    },
+    "mpfr_set_overflow": {
+      "class": "misc",
+      "defined_in": "exceptions.c",
+      "deps": [],
+      "topo_rank": 482
+    },
+    "mpfr_set_prec": {
+      "class": "misc",
+      "defined_in": "set_prec.c",
+      "deps": [
+        "mpfr_reallocate_func"
+      ],
+      "topo_rank": 68
+    },
+    "mpfr_set_prec_raw": {
+      "class": "misc",
+      "defined_in": "set_prc_raw.c",
+      "deps": [],
+      "topo_rank": 483
+    },
+    "mpfr_set_q": {
+      "class": "conversion",
+      "defined_in": "set_q.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_div",
+        "mpfr_mul_2si",
+        "mpfr_overflow",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 122
+    },
+    "mpfr_set_si": {
+      "class": "conversion",
+      "defined_in": "set_si.c",
+      "deps": [
+        "mpfr_set_si_2exp"
+      ],
+      "topo_rank": 25
+    },
+    "mpfr_set_si_2exp": {
+      "class": "misc",
+      "defined_in": "set_si_2exp.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_overflow",
+        "mpfr_round_raw",
+        "mpfr_set_z_2exp",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 24
+    },
+    "mpfr_set_sj": {
+      "class": "conversion",
+      "defined_in": "set_sj.c",
+      "deps": [
+        "mpfr_set_sj_2exp"
+      ],
+      "topo_rank": 323
+    },
+    "mpfr_set_sj_2exp": {
+      "class": "conversion",
+      "defined_in": "set_sj.c",
+      "deps": [
+        "mpfr_set_uj_2exp"
+      ],
+      "topo_rank": 322
+    },
+    "mpfr_set_str": {
+      "class": "conversion",
+      "defined_in": "set_str.c",
+      "deps": [
+        "mpfr_strtofr"
+      ],
+      "topo_rank": 128
+    },
+    "mpfr_set_str_binary": {
+      "class": "misc",
+      "defined_in": "set_str_raw.c",
+      "deps": [
+        "mpfr_strtofr"
+      ],
+      "topo_rank": 176
+    },
+    "mpfr_set_ui": {
+      "class": "conversion",
+      "defined_in": "set_ui.c",
+      "deps": [
+        "mpfr_set_ui_2exp"
+      ],
+      "topo_rank": 46
+    },
+    "mpfr_set_ui_2exp": {
+      "class": "misc",
+      "defined_in": "set_ui_2exp.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_overflow",
+        "mpfr_round_raw",
+        "mpfr_set_z_2exp",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 45
+    },
+    "mpfr_set_uj": {
+      "class": "conversion",
+      "defined_in": "set_uj.c",
+      "deps": [
+        "mpfr_set_uj_2exp"
+      ],
+      "topo_rank": 484
+    },
+    "mpfr_set_uj_2exp": {
+      "class": "conversion",
+      "defined_in": "set_uj.c",
+      "deps": [
+        "mpfr_overflow",
+        "mpfr_powerof2_raw",
+        "mpfr_underflow",
+        "mpn_copyd",
+        "mpn_lshift"
+      ],
+      "topo_rank": 321
+    },
+    "mpfr_set_underflow": {
+      "class": "misc",
+      "defined_in": "exceptions.c",
+      "deps": [],
+      "topo_rank": 485
+    },
+    "mpfr_set_z": {
+      "class": "conversion",
+      "defined_in": "set_z.c",
+      "deps": [
+        "mpfr_set_z_2exp"
+      ],
+      "topo_rank": 17
+    },
+    "mpfr_set_z_2exp": {
+      "class": "misc",
+      "defined_in": "set_z_2exp.c",
+      "deps": [
+        "mpfr_overflow",
+        "mpfr_powerof2_raw",
+        "mpfr_underflow",
+        "mpn_add_1",
+        "mpn_lshift"
+      ],
+      "topo_rank": 16
+    },
+    "mpfr_set_zero": {
+      "class": "misc",
+      "defined_in": "set_zero.c",
+      "deps": [
+        "mpfr_set_ui"
+      ],
+      "topo_rank": 265
+    },
+    "mpfr_setmax": {
+      "class": "misc",
+      "defined_in": "setmax.c",
+      "deps": [],
+      "topo_rank": 1
+    },
+    "mpfr_setmin": {
+      "class": "misc",
+      "defined_in": "setmin.c",
+      "deps": [],
+      "topo_rank": 6
+    },
+    "mpfr_setsign": {
+      "class": "misc",
+      "defined_in": "setsign.c",
+      "deps": [
+        "mpfr_set4"
+      ],
+      "topo_rank": 486
+    },
+    "mpfr_sgn": {
+      "class": "arithmetic",
+      "defined_in": "sgn.c",
+      "deps": [],
+      "topo_rank": 175
+    },
+    "mpfr_si_div": {
+      "class": "misc",
+      "defined_in": "si_op.c",
+      "deps": [
+        "mpfr_get_prec",
+        "mpfr_ui_div"
+      ],
+      "topo_rank": 279
+    },
+    "mpfr_si_sub": {
+      "class": "misc",
+      "defined_in": "si_op.c",
+      "deps": [
+        "mpfr_add_ui",
+        "mpfr_get_prec",
+        "mpfr_ui_sub"
+      ],
+      "topo_rank": 258
+    },
+    "mpfr_signbit": {
+      "class": "misc",
+      "defined_in": "signbit.c",
+      "deps": [],
+      "topo_rank": 363
+    },
+    "mpfr_sin": {
+      "class": "transcendental",
+      "defined_in": "sin.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_const_pi",
+        "mpfr_cos",
+        "mpfr_div_2ui",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_mul_2ui",
+        "mpfr_remainder",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_sin_fast",
+        "mpfr_sqr",
+        "mpfr_sqrt",
+        "mpfr_sub",
+        "mpfr_ui_sub"
+      ],
+      "topo_rank": 174
+    },
+    "mpfr_sin_cos": {
+      "class": "transcendental",
+      "defined_in": "sin_cos.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_const_pi",
+        "mpfr_cos",
+        "mpfr_div_2ui",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_mul_2ui",
+        "mpfr_remainder",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_set_ui",
+        "mpfr_sincos_fast",
+        "mpfr_sqr",
+        "mpfr_sqrt",
+        "mpfr_sub",
+        "mpfr_swap",
+        "mpfr_ui_sub"
+      ],
+      "topo_rank": 487
+    },
+    "mpfr_sin_fast": {
+      "class": "transcendental",
+      "defined_in": "sin.c",
+      "deps": [
+        "mpfr_sincos_fast"
+      ],
+      "topo_rank": 169
+    },
+    "mpfr_sincos_fast": {
+      "class": "transcendental",
+      "defined_in": "sin_cos.c",
+      "deps": [
+        "mpfr_clear",
+        "mpfr_cmp_si_2exp",
+        "mpfr_cmp_ui_2exp",
+        "mpfr_const_pi",
+        "mpfr_div_2ui",
+        "mpfr_init2",
+        "mpfr_neg",
+        "mpfr_remquo",
+        "mpfr_set",
+        "mpfr_swap"
+      ],
+      "topo_rank": 168
+    },
+    "mpfr_sinh": {
+      "class": "transcendental",
+      "defined_in": "sinh.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_cosh",
+        "mpfr_div_2ui",
+        "mpfr_exp",
+        "mpfr_get_prec",
+        "mpfr_mul",
+        "mpfr_mul_2ui",
+        "mpfr_overflow",
+        "mpfr_set4",
+        "mpfr_sub",
+        "mpfr_ui_div"
+      ],
+      "topo_rank": 488
+    },
+    "mpfr_sinh_cosh": {
+      "class": "transcendental",
+      "defined_in": "sinh_cosh.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_check_range",
+        "mpfr_div_2ui",
+        "mpfr_exp",
+        "mpfr_get_prec",
+        "mpfr_overflow",
+        "mpfr_set",
+        "mpfr_set4",
+        "mpfr_set_ui",
+        "mpfr_sinh",
+        "mpfr_sub",
+        "mpfr_ui_div"
+      ],
+      "topo_rank": 489
+    },
+    "mpfr_sinpi": {
+      "class": "transcendental",
+      "defined_in": "sinu.c",
+      "deps": [
+        "mpfr_sinu"
+      ],
+      "topo_rank": 491
+    },
+    "mpfr_sinu": {
+      "class": "transcendental",
+      "defined_in": "sinu.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_cmpabs_ui",
+        "mpfr_const_pi",
+        "mpfr_div_2ui",
+        "mpfr_div_ui",
+        "mpfr_fmod_ui",
+        "mpfr_get_prec",
+        "mpfr_get_z",
+        "mpfr_init2",
+        "mpfr_integer_p",
+        "mpfr_mul",
+        "mpfr_mul_2ui",
+        "mpfr_odd_p",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_set_si",
+        "mpfr_set_si_2exp",
+        "mpfr_set_ui",
+        "mpfr_set_ui_2exp",
+        "mpfr_set_zero",
+        "mpfr_sin",
+        "mpfr_sub_ui",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 490
+    },
+    "mpfr_snprintf": {
+      "class": "misc",
+      "defined_in": "printf.c",
+      "deps": [
+        "mpfr_vasnprintf_aux"
+      ],
+      "topo_rank": 493
+    },
+    "mpfr_sprintf": {
+      "class": "misc",
+      "defined_in": "printf.c",
+      "deps": [],
+      "topo_rank": 494
+    },
+    "mpfr_sqr": {
+      "class": "misc",
+      "defined_in": "sqr.c",
+      "deps": [
+        "mpfr_get_prec",
+        "mpfr_mul",
+        "mpfr_overflow",
+        "mpfr_powerof2_raw",
+        "mpfr_round_raw",
+        "mpfr_sqr_1",
+        "mpfr_sqr_1n",
+        "mpfr_sqr_2",
+        "mpfr_sqr_3",
+        "mpfr_underflow",
+        "mpn_lshift",
+        "mpn_sqr"
+      ],
+      "topo_rank": 66
+    },
+    "mpfr_sqr_1": {
+      "class": "misc",
+      "defined_in": "sqr.c",
+      "deps": [
+        "mpfr_overflow",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 56
+    },
+    "mpfr_sqr_1n": {
+      "class": "misc",
+      "defined_in": "sqr.c",
+      "deps": [
+        "mpfr_overflow",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 55
+    },
+    "mpfr_sqr_2": {
+      "class": "misc",
+      "defined_in": "sqr.c",
+      "deps": [
+        "mpfr_overflow",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 54
+    },
+    "mpfr_sqr_3": {
+      "class": "misc",
+      "defined_in": "sqr.c",
+      "deps": [
+        "mpfr_overflow",
+        "mpfr_underflow",
+        "mpn_sqr"
+      ],
+      "topo_rank": 53
+    },
+    "mpfr_sqrhigh_n": {
+      "class": "misc",
+      "defined_in": "mulders.c",
+      "deps": [
+        "mpfr_mulhigh_n",
+        "mpfr_mulhigh_n_basecase",
+        "mpn_add_1",
+        "mpn_add_n",
+        "mpn_lshift",
+        "mpn_sqr"
+      ],
+      "topo_rank": 59
+    },
+    "mpfr_sqrt": {
+      "class": "transcendental",
+      "defined_in": "sqrt.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_get_prec",
+        "mpfr_sqrt1",
+        "mpfr_sqrt1n",
+        "mpfr_sqrt2",
+        "mpn_add_1",
+        "mpn_rshift",
+        "mpn_sqrtrem"
+      ],
+      "topo_rank": 52
+    },
+    "mpfr_sqrt1": {
+      "class": "transcendental",
+      "defined_in": "sqrt.c",
+      "deps": [
+        "mpfr_overflow",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 51
+    },
+    "mpfr_sqrt1n": {
+      "class": "transcendental",
+      "defined_in": "sqrt.c",
+      "deps": [
+        "mpfr_overflow",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 50
+    },
+    "mpfr_sqrt2": {
+      "class": "transcendental",
+      "defined_in": "sqrt.c",
+      "deps": [
+        "mpfr_overflow",
+        "mpfr_sqrt2_approx",
+        "mpfr_underflow",
+        "mpn_sqr",
+        "mpn_sub_n"
+      ],
+      "topo_rank": 49
+    },
+    "mpfr_sqrt2_approx": {
+      "class": "transcendental",
+      "defined_in": "sqrt.c",
+      "deps": [],
+      "topo_rank": 48
+    },
+    "mpfr_sqrt_ui": {
+      "class": "transcendental",
+      "defined_in": "sqrt_ui.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_set_ui",
+        "mpfr_sqrt"
+      ],
+      "topo_rank": 251
+    },
+    "mpfr_strtofr": {
+      "class": "misc",
+      "defined_in": "strtofr.c",
+      "deps": [
+        "mpfr_overflow",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 127
+    },
+    "mpfr_sub": {
+      "class": "arithmetic",
+      "defined_in": "sub.c",
+      "deps": [
+        "mpfr_add1",
+        "mpfr_add1sp",
+        "mpfr_get_prec",
+        "mpfr_neg",
+        "mpfr_set",
+        "mpfr_sub1",
+        "mpfr_sub1sp"
+      ],
+      "topo_rank": 44
+    },
+    "mpfr_sub1": {
+      "class": "misc",
+      "defined_in": "sub1.c",
+      "deps": [
+        "mpfr_cmp2",
+        "mpfr_get_prec",
+        "mpfr_overflow",
+        "mpfr_powerof2_raw",
+        "mpfr_print_rnd_mode",
+        "mpfr_set4",
+        "mpfr_ubf_diff_exp",
+        "mpfr_underflow",
+        "mpn_add_1",
+        "mpn_rshift",
+        "mpn_sub_1",
+        "mpn_sub_n"
+      ],
+      "topo_rank": 33
+    },
+    "mpfr_sub1sp": {
+      "class": "misc",
+      "defined_in": "sub1sp.c",
+      "deps": [
+        "mpfr_get_prec",
+        "mpfr_powerof2_raw",
+        "mpfr_sub1sp1",
+        "mpfr_sub1sp1n",
+        "mpfr_sub1sp2",
+        "mpfr_sub1sp2n",
+        "mpfr_sub1sp3",
+        "mpfr_underflow",
+        "mpn_copyd",
+        "mpn_lshift",
+        "mpn_rshift",
+        "mpn_sub_1",
+        "mpn_sub_n"
+      ],
+      "topo_rank": 15
+    },
+    "mpfr_sub1sp1": {
+      "class": "misc",
+      "defined_in": "sub1sp.c",
+      "deps": [
+        "mpfr_underflow"
+      ],
+      "topo_rank": 12
+    },
+    "mpfr_sub1sp1n": {
+      "class": "misc",
+      "defined_in": "sub1sp.c",
+      "deps": [
+        "mpfr_underflow"
+      ],
+      "topo_rank": 11
+    },
+    "mpfr_sub1sp2": {
+      "class": "misc",
+      "defined_in": "sub1sp.c",
+      "deps": [
+        "mpfr_underflow"
+      ],
+      "topo_rank": 10
+    },
+    "mpfr_sub1sp2n": {
+      "class": "misc",
+      "defined_in": "sub1sp.c",
+      "deps": [
+        "mpfr_underflow"
+      ],
+      "topo_rank": 9
+    },
+    "mpfr_sub1sp3": {
+      "class": "misc",
+      "defined_in": "sub1sp.c",
+      "deps": [
+        "mpfr_underflow"
+      ],
+      "topo_rank": 8
+    },
+    "mpfr_sub_d": {
+      "class": "arithmetic",
+      "defined_in": "sub_d.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_get_prec",
+        "mpfr_set_d",
+        "mpfr_sub"
+      ],
+      "topo_rank": 495
+    },
+    "mpfr_sub_q": {
+      "class": "misc",
+      "defined_in": "gmp_op.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_init2",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_set_q",
+        "mpfr_sub"
+      ],
+      "topo_rank": 496
+    },
+    "mpfr_sub_si": {
+      "class": "misc",
+      "defined_in": "si_op.c",
+      "deps": [
+        "mpfr_add_ui",
+        "mpfr_get_prec",
+        "mpfr_sub_ui"
+      ],
+      "topo_rank": 297
+    },
+    "mpfr_sub_ui": {
+      "class": "arithmetic",
+      "defined_in": "sub_ui.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_set",
+        "mpfr_set_ui",
+        "mpfr_sub"
+      ],
+      "topo_rank": 96
+    },
+    "mpfr_sub_z": {
+      "class": "misc",
+      "defined_in": "gmp_op.c",
+      "deps": [
+        "mpfr_sub_si"
+      ],
+      "topo_rank": 298
+    },
+    "mpfr_subnormalize": {
+      "class": "misc",
+      "defined_in": "subnormal.c",
+      "deps": [
+        "mpfr_clear",
+        "mpfr_init2",
+        "mpfr_nexttoinf",
+        "mpfr_nexttozero",
+        "mpfr_powerof2_raw",
+        "mpfr_set",
+        "mpfr_setmin"
+      ],
+      "topo_rank": 497
+    },
+    "mpfr_sum": {
+      "class": "misc",
+      "defined_in": "sum.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_get_prec",
+        "mpfr_set"
+      ],
+      "topo_rank": 292
+    },
+    "mpfr_swap": {
+      "class": "misc",
+      "defined_in": "swap.c",
+      "deps": [],
+      "topo_rank": 108
+    },
+    "mpfr_tan": {
+      "class": "transcendental",
+      "defined_in": "tan.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_div",
+        "mpfr_get_prec",
+        "mpfr_set",
+        "mpfr_sin_cos"
+      ],
+      "topo_rank": 498
+    },
+    "mpfr_tanh": {
+      "class": "transcendental",
+      "defined_in": "tanh.c",
+      "deps": [
+        "mpfr_add_ui",
+        "mpfr_check_range",
+        "mpfr_cmp_si",
+        "mpfr_div",
+        "mpfr_exp",
+        "mpfr_get_prec",
+        "mpfr_mul_2ui",
+        "mpfr_nexttozero",
+        "mpfr_set4",
+        "mpfr_set_si",
+        "mpfr_sub_ui"
+      ],
+      "topo_rank": 499
+    },
+    "mpfr_tanpi": {
+      "class": "transcendental",
+      "defined_in": "tanu.c",
+      "deps": [
+        "mpfr_tanu"
+      ],
+      "topo_rank": 501
+    },
+    "mpfr_tanu": {
+      "class": "transcendental",
+      "defined_in": "tanu.c",
+      "deps": [
+        "mpfr_add_ui",
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_cmpabs_ui",
+        "mpfr_const_pi",
+        "mpfr_div_ui",
+        "mpfr_fmod_ui",
+        "mpfr_get_prec",
+        "mpfr_get_z",
+        "mpfr_init2",
+        "mpfr_integer_p",
+        "mpfr_mul",
+        "mpfr_mul_2ui",
+        "mpfr_nextabove",
+        "mpfr_nextbelow",
+        "mpfr_set",
+        "mpfr_set_inf",
+        "mpfr_set_prec",
+        "mpfr_set_si",
+        "mpfr_set_ui",
+        "mpfr_set_zero",
+        "mpfr_sqr",
+        "mpfr_tan",
+        "mpfr_underflow"
+      ],
+      "topo_rank": 500
+    },
+    "mpfr_tmp_allocate": {
+      "class": "misc",
+      "defined_in": "mpfr-gmp.c",
+      "deps": [
+        "mpfr_allocate_func"
+      ],
+      "topo_rank": 502
+    },
+    "mpfr_tmp_free": {
+      "class": "misc",
+      "defined_in": "mpfr-gmp.c",
+      "deps": [
+        "mpfr_free_func"
+      ],
+      "topo_rank": 503
+    },
+    "mpfr_total_order_p": {
+      "class": "misc",
+      "defined_in": "total_order.c",
+      "deps": [
+        "mpfr_lessequal_p"
+      ],
+      "topo_rank": 504
+    },
+    "mpfr_trigamma": {
+      "class": "misc",
+      "defined_in": "trigamma.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_integer_p",
+        "mpfr_nextabove",
+        "mpfr_overflow",
+        "mpfr_print_rnd_mode",
+        "mpfr_si_div",
+        "mpfr_sqr",
+        "mpfr_trigamma_positive",
+        "mpfr_trigamma_reflection"
+      ],
+      "topo_rank": 508
+    },
+    "mpfr_trigamma_approx": {
+      "class": "misc",
+      "defined_in": "trigamma.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_bernoulli_cache",
+        "mpfr_clear",
+        "mpfr_div",
+        "mpfr_div_2ui",
+        "mpfr_div_ui",
+        "mpfr_init2",
+        "mpfr_mul",
+        "mpfr_mul_z",
+        "mpfr_set_ui",
+        "mpfr_sqr",
+        "mpfr_ui_div"
+      ],
+      "topo_rank": 505
+    },
+    "mpfr_trigamma_positive": {
+      "class": "misc",
+      "defined_in": "trigamma.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_add_ui",
+        "mpfr_clear",
+        "mpfr_cmp_ui",
+        "mpfr_cmp_ui_2exp",
+        "mpfr_init2",
+        "mpfr_nextabove",
+        "mpfr_prec_round",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_set_ui",
+        "mpfr_sqr",
+        "mpfr_trigamma_approx",
+        "mpfr_ui_div"
+      ],
+      "topo_rank": 506
+    },
+    "mpfr_trigamma_reflection": {
+      "class": "misc",
+      "defined_in": "trigamma.c",
+      "deps": [
+        "mpfr_add_ui",
+        "mpfr_clear",
+        "mpfr_const_pi",
+        "mpfr_cot",
+        "mpfr_init2",
+        "mpfr_integer_p",
+        "mpfr_mul",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_sqr",
+        "mpfr_sub",
+        "mpfr_trigamma_positive",
+        "mpfr_ui_sub"
+      ],
+      "topo_rank": 507
+    },
+    "mpfr_trunc": {
+      "class": "misc",
+      "defined_in": "rint.c",
+      "deps": [
+        "mpfr_rint"
+      ],
+      "topo_rank": 95
+    },
+    "mpfr_ubf_diff_exp": {
+      "class": "misc",
+      "defined_in": "ubf.c",
+      "deps": [
+        "mpfr_init_get_zexp",
+        "mpfr_ubf_zexp2exp"
+      ],
+      "topo_rank": 30
+    },
+    "mpfr_ubf_exp_less_p": {
+      "class": "misc",
+      "defined_in": "ubf.c",
+      "deps": [
+        "mpfr_init_get_zexp"
+      ],
+      "topo_rank": 509
+    },
+    "mpfr_ubf_mul_exact": {
+      "class": "misc",
+      "defined_in": "ubf.c",
+      "deps": [
+        "mpfr_get_prec",
+        "mpfr_init_get_zexp",
+        "mpn_lshift",
+        "mpn_mul",
+        "mpn_sqr"
+      ],
+      "topo_rank": 331
+    },
+    "mpfr_ubf_zexp2exp": {
+      "class": "misc",
+      "defined_in": "ubf.c",
+      "deps": [
+        "mpfr_clear",
+        "mpfr_get_exp_t",
+        "mpfr_init2",
+        "mpfr_set_z"
+      ],
+      "topo_rank": 22
+    },
+    "mpfr_ui_div": {
+      "class": "misc",
+      "defined_in": "ui_div.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_div",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_set_ui"
+      ],
+      "topo_rank": 94
+    },
+    "mpfr_ui_pow": {
+      "class": "misc",
+      "defined_in": "ui_pow.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_pow",
+        "mpfr_set_ui"
+      ],
+      "topo_rank": 313
+    },
+    "mpfr_ui_pow_ui": {
+      "class": "misc",
+      "defined_in": "ui_pow_ui.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_mul_ui",
+        "mpfr_pow_z",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_set_ui",
+        "mpfr_sqr"
+      ],
+      "topo_rank": 412
+    },
+    "mpfr_ui_sub": {
+      "class": "misc",
+      "defined_in": "ui_sub.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_neg",
+        "mpfr_set_ui",
+        "mpfr_sub"
+      ],
+      "topo_rank": 47
+    },
+    "mpfr_underflow": {
+      "class": "misc",
+      "defined_in": "exceptions.c",
+      "deps": [
+        "mpfr_get_prec",
+        "mpfr_setmin"
+      ],
+      "topo_rank": 7
+    },
+    "mpfr_underflow_p": {
+      "class": "misc",
+      "defined_in": "exceptions.c",
+      "deps": [],
+      "topo_rank": 107
+    },
+    "mpfr_unordered_p": {
+      "class": "misc",
+      "defined_in": "comparisons.c",
+      "deps": [],
+      "topo_rank": 510
+    },
+    "mpfr_urandom": {
+      "class": "misc",
+      "defined_in": "urandom.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_nextabove",
+        "mpfr_rand_raw",
+        "mpn_lshift"
+      ],
+      "topo_rank": 511
+    },
+    "mpfr_urandomb": {
+      "class": "misc",
+      "defined_in": "urandomb.c",
+      "deps": [
+        "mpfr_rand_raw",
+        "mpn_copyd",
+        "mpn_lshift"
+      ],
+      "topo_rank": 512
+    },
+    "mpfr_vasnprintf_aux": {
+      "class": "misc",
+      "defined_in": "vasprintf.c",
+      "deps": [
+        "mpfr_free_func",
+        "mpfr_free_str",
+        "mpfr_reallocate_func",
+        "mpfr_set_ui"
+      ],
+      "topo_rank": 492
+    },
+    "mpfr_vasprintf": {
+      "class": "misc",
+      "defined_in": "printf.c",
+      "deps": [
+        "mpfr_vasnprintf_aux"
+      ],
+      "topo_rank": 513
+    },
+    "mpfr_vfprintf": {
+      "class": "misc",
+      "defined_in": "printf.c",
+      "deps": [],
+      "topo_rank": 514
+    },
+    "mpfr_vprintf": {
+      "class": "misc",
+      "defined_in": "printf.c",
+      "deps": [],
+      "topo_rank": 515
+    },
+    "mpfr_vsnprintf": {
+      "class": "misc",
+      "defined_in": "printf.c",
+      "deps": [
+        "mpfr_vasnprintf_aux"
+      ],
+      "topo_rank": 516
+    },
+    "mpfr_vsprintf": {
+      "class": "misc",
+      "defined_in": "printf.c",
+      "deps": [],
+      "topo_rank": 517
+    },
+    "mpfr_y0": {
+      "class": "transcendental",
+      "defined_in": "yn.c",
+      "deps": [
+        "mpfr_yn"
+      ],
+      "topo_rank": 521
+    },
+    "mpfr_y1": {
+      "class": "transcendental",
+      "defined_in": "yn.c",
+      "deps": [
+        "mpfr_yn"
+      ],
+      "topo_rank": 522
+    },
+    "mpfr_yn": {
+      "class": "transcendental",
+      "defined_in": "yn.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_cmp_ui",
+        "mpfr_const_euler",
+        "mpfr_const_log2",
+        "mpfr_const_pi",
+        "mpfr_div",
+        "mpfr_div_2si",
+        "mpfr_div_2ui",
+        "mpfr_equal_p",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_jn",
+        "mpfr_log",
+        "mpfr_mul",
+        "mpfr_mul_2ui",
+        "mpfr_neg",
+        "mpfr_nextabove",
+        "mpfr_nextbelow",
+        "mpfr_overflow",
+        "mpfr_pow_ui",
+        "mpfr_prec_round",
+        "mpfr_set",
+        "mpfr_set4",
+        "mpfr_set_prec",
+        "mpfr_set_ui",
+        "mpfr_sqr",
+        "mpfr_sub",
+        "mpfr_ui_div",
+        "mpfr_yn_asympt",
+        "mpfr_yn_s1",
+        "mpfr_yn_s3"
+      ],
+      "topo_rank": 520
+    },
+    "mpfr_yn_s1": {
+      "class": "transcendental",
+      "defined_in": "yn.c",
+      "deps": [
+        "mpfr_add_z",
+        "mpfr_div_z",
+        "mpfr_mul",
+        "mpfr_set_ui"
+      ],
+      "topo_rank": 519
+    },
+    "mpfr_yn_s3": {
+      "class": "transcendental",
+      "defined_in": "yn.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_clear",
+        "mpfr_div",
+        "mpfr_div_ui",
+        "mpfr_div_z",
+        "mpfr_fac_ui",
+        "mpfr_get_ui",
+        "mpfr_init2",
+        "mpfr_mul",
+        "mpfr_mul_z"
+      ],
+      "topo_rank": 518
+    },
+    "mpfr_z_sub": {
+      "class": "misc",
+      "defined_in": "gmp_op.c",
+      "deps": [
+        "mpfr_si_sub"
+      ],
+      "topo_rank": 259
+    },
+    "mpfr_zero_p": {
+      "class": "misc",
+      "defined_in": "iszero.c",
+      "deps": [],
+      "topo_rank": 296
+    },
+    "mpfr_zeta": {
+      "class": "transcendental",
+      "defined_in": "zeta.c",
+      "deps": [
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_cmp_si_2exp",
+        "mpfr_const_pi",
+        "mpfr_div_2ui",
+        "mpfr_equal_p",
+        "mpfr_frac",
+        "mpfr_gamma",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_integer_p",
+        "mpfr_mul",
+        "mpfr_mul_2ui",
+        "mpfr_neg",
+        "mpfr_nextabove",
+        "mpfr_nextbelow",
+        "mpfr_overflow",
+        "mpfr_pow",
+        "mpfr_prec_round",
+        "mpfr_reflection_overflow",
+        "mpfr_set",
+        "mpfr_set_si_2exp",
+        "mpfr_set_ui",
+        "mpfr_sinpi",
+        "mpfr_sub",
+        "mpfr_zeta_pos"
+      ],
+      "topo_rank": 523
+    },
+    "mpfr_zeta_c": {
+      "class": "transcendental",
+      "defined_in": "zeta.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_clear",
+        "mpfr_div_ui",
+        "mpfr_init2",
+        "mpfr_set_ui"
+      ],
+      "topo_rank": 450
+    },
+    "mpfr_zeta_part_a": {
+      "class": "transcendental",
+      "defined_in": "zeta.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_div_2ui",
+        "mpfr_neg",
+        "mpfr_set",
+        "mpfr_ui_pow"
+      ],
+      "topo_rank": 449
+    },
+    "mpfr_zeta_part_b": {
+      "class": "transcendental",
+      "defined_in": "zeta.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_add_ui",
+        "mpfr_cmpabs",
+        "mpfr_div_ui",
+        "mpfr_mul",
+        "mpfr_neg",
+        "mpfr_set",
+        "mpfr_ui_pow"
+      ],
+      "topo_rank": 448
+    },
+    "mpfr_zeta_pos": {
+      "class": "transcendental",
+      "defined_in": "zeta.c",
+      "deps": [
+        "mpfr_add",
+        "mpfr_allocate_func",
+        "mpfr_clear",
+        "mpfr_const_euler",
+        "mpfr_div",
+        "mpfr_free_func",
+        "mpfr_get_d",
+        "mpfr_init2",
+        "mpfr_set",
+        "mpfr_sub",
+        "mpfr_ui_pow",
+        "mpfr_zeta_c",
+        "mpfr_zeta_part_a",
+        "mpfr_zeta_part_b"
+      ],
+      "topo_rank": 451
+    },
+    "mpfr_zeta_ui": {
+      "class": "transcendental",
+      "defined_in": "zeta_ui.c",
+      "deps": [
+        "mpfr_add_ui",
+        "mpfr_check_range",
+        "mpfr_clear",
+        "mpfr_cmp_ui",
+        "mpfr_div_2ui",
+        "mpfr_get_prec",
+        "mpfr_init2",
+        "mpfr_mul_ui",
+        "mpfr_nextabove",
+        "mpfr_set",
+        "mpfr_set_prec",
+        "mpfr_set_si_2exp",
+        "mpfr_set_str_binary",
+        "mpfr_set_ui",
+        "mpfr_set_ui_2exp",
+        "mpfr_set_z"
+      ],
+      "topo_rank": 524
+    },
+    "mpn_divrem": {
+      "class": "substrate",
+      "defined_in": "mpfr-mini-gmp.c",
+      "deps": [
+        "mpn_copyi",
+        "mpn_zero"
+      ],
+      "topo_rank": 70
+    },
+    "mpn_divrem_1": {
+      "class": "substrate",
+      "defined_in": "mpfr-mini-gmp.c",
+      "deps": [
+        "mpn_copyi",
+        "mpn_zero"
+      ],
+      "topo_rank": 76
+    },
+    "mpn_tdiv_qr": {
+      "class": "substrate",
+      "defined_in": "mpfr-mini-gmp.c",
+      "deps": [
+        "mpn_copyi",
+        "mpn_zero"
+      ],
+      "topo_rank": 367
+    }
+  },
+  "generated_at": "2026-05-24T06:50:15Z",
+  "mpfr_source_root": "mpfr/src"
+}
