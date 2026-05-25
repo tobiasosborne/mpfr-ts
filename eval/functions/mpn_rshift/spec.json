@@ -1,0 +1,17 @@
+{
+  "function": "mpn_rshift",
+  "class": "substrate",
+  "signature": {
+    "params": ["s", "n", "count"],
+    "returns": "{ result: readonly bigint[], out: bigint }"
+  },
+  "doc": "Pure-TS port of GMP mpn_rshift: shift the n-limb non-negative integer s right by count bits (little-endian limb order). Returns the n-limb shifted result plus the count bits that fell off the bottom, packed into the HIGH count bits of an mp_limb_t (the rest of the return is zero). Symmetric to mpn_lshift. Substrate-class -- raw bigint arrays, no core.ts import. Precondition: n >= 1, 1 <= count <= 63. count=0 is undefined behavior in GMP and a domain error here.",
+  "c_signature": "mp_limb_t mpn_rshift(mp_limb_t *rp, const mp_limb_t *sp, mp_size_t n, unsigned int count)",
+  "limb_width_bits": 64,
+  "limb_order": "little-endian",
+  "refs": [
+    "GMP manual §8.3 (Low-level Functions): right shift across n limbs.",
+    "mpfr/src/div.c, mpfr/src/get_str.c -- canonical MPFR callers (mantissa right-shift for normalisation and base conversion).",
+    "src/internal/mpn/lshift.ts -- symmetric primitive."
+  ]
+}
