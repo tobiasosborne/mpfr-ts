@@ -187,6 +187,40 @@ def test_gate_status_survived_when_only_init_failures() -> None:
     assert mutate._gate_status(outcomes) == 'survived'
 
 
+def test_gate_status_low_confidence_pass_one_applied() -> None:
+    """One applied non-init-failed mutation that survived -> low-confidence-pass.
+    Thin structural surface: too few mutations to call it 'survived'."""
+    outcomes = [_mo("a", 1.0, False, False)]
+    assert mutate._aggregate_gate(outcomes) is True
+    assert mutate._gate_status(outcomes) == 'low-confidence-pass'
+
+
+def test_gate_status_low_confidence_pass_two_applied() -> None:
+    """Two applied non-init-failed mutations, both survived -> low-confidence-pass."""
+    outcomes = [_mo("a", 1.0, False, False), _mo("b", 0.999, False, False)]
+    assert mutate._aggregate_gate(outcomes) is True
+    assert mutate._gate_status(outcomes) == 'low-confidence-pass'
+
+
+def test_gate_status_survived_at_threshold_boundary() -> None:
+    """Three applied non-init-failed mutations, all survived -> 'survived' (threshold=2 boundary)."""
+    outcomes = [_mo("a", 1.0, False, False),
+                _mo("b", 1.0, False, False),
+                _mo("c", 1.0, False, False)]
+    assert mutate._aggregate_gate(outcomes) is False
+    assert mutate._gate_status(outcomes) == 'survived'
+
+
+def test_gate_status_low_confidence_pass_ignores_init_failed() -> None:
+    """Init-failed mutations don't count toward the applied-non-init-failed threshold.
+    1 applied non-init-failed + 2 applied-but-init-failed -> low-confidence-pass."""
+    outcomes = [_mo("a", 1.0, False, False),
+                _mo("b", None, False, False, init_failed=True),
+                _mo("c", None, False, False, init_failed=True)]
+    assert mutate._aggregate_gate(outcomes) is True
+    assert mutate._gate_status(outcomes) == 'low-confidence-pass'
+
+
 # --- _rewrite_relative_imports unit tests (synthetic port_dir on /home/test) ---
 _PD = Path("/home/test/Projects/mpfr-ts/src/ops")
 _BASE = "/home/test/Projects/mpfr-ts/src"

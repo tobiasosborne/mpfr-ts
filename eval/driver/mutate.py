@@ -25,6 +25,13 @@ from pathlib import Path
 BELOW_THRESHOLD = 0.95  # PIL.3
 CLEAN_KILL = 0.55       # heuristic: composite this low = mutator killed it cleanly
 DEFAULT_TIMEOUT_S = 30.0
+# 'low-confidence-pass' thresholds: a port with very thin mutator surface
+# (<= _LOW_CONFIDENCE_APPLIED_MAX applied non-init-failed mutations) where
+# every such mutation barely dented the composite (> _LOW_CONFIDENCE_COMPOSITE_FLOOR)
+# is flagged as a low-confidence pass rather than 'survived' -- the mutators
+# essentially had nothing to grip, so absence of a kill isn't proof of golden weakness.
+_LOW_CONFIDENCE_COMPOSITE_FLOOR = 0.99
+_LOW_CONFIDENCE_APPLIED_MAX = 2
 
 # Matches a quoted relative-import target after `from `: './x.ts' or '../y.ts'.
 # Anchoring on `from ` covers `import ... from`, `import type ... from`, and
@@ -55,35 +62,43 @@ class MutationOutcome:
 class ProveResult:
     function_name: str
     mutations: list[MutationOutcome]
-    gate_passed: bool              # >= 1 applied non-init-failed mutation has below_threshold, OR no applicable mutations (vacuous pass per bd mpfr-ts-9di)
+    gate_passed: bool              # >= 1 applied non-init-failed mutation has below_threshold, OR no applicable mutations (vacuous pass per bd mpfr-ts-9di), OR low-confidence-pass (thin mutator surface)
     clean_kills: int
-    gate_status: str = 'killed'    # 'killed' | 'vacuous' | 'survived' — finer-grained than gate_passed
+    gate_status: str = 'killed'    # 'killed' | 'vacuous' | 'low-confidence-pass' | 'survived' -- finer-grained than gate_passed
 
 
 def _aggregate_gate(outcomes: list[MutationOutcome]) -> bool:
-    """Whether the mutation-prove gate passes. Returns True when either
-    (a) at least one mutation was applied, graded, and drove composite below
-    0.95 — the load-bearing case (PIL.3); or (b) no mutation was applicable
-    to this port at all — the "trivial body" vacuous pass per bd
-    mpfr-ts-9di. Returns False otherwise (mutations applied but survived,
-    or only init-failed mutants were present)."""
-    graded = [m for m in outcomes if m.composite is not None and not m.module_init_failed]
-    if any(m.below_threshold for m in graded):
-        return True
-    return not any(m.applied for m in outcomes)
+    """Whether the mutation-prove gate passes. Delegates to _gate_status so
+    the two functions cannot drift; returns True for 'killed' (PIL.3
+    load-bearing case), 'vacuous' (no applicable mutations; bd mpfr-ts-9di
+    carve-out), and 'low-confidence-pass' (thin mutator surface -- see
+    _gate_status). Returns False for 'survived'."""
+    return _gate_status(outcomes) in ('killed', 'vacuous', 'low-confidence-pass')
 
 
 def _gate_status(outcomes: list[MutationOutcome]) -> str:
     """Finer-grained gate classification. 'killed' means at least one mutation
-    drove composite ≤ 0.95 (gate pass, golden caught the mutant). 'vacuous'
-    means zero mutations were applicable (gate pass-by-carve-out — port has
-    no algorithmic surface to mutate; bd mpfr-ts-9di). 'survived' means
-    mutations applied but none broke the golden (gate fail — golden is
-    insufficient OR mutators too weak OR a harness fault like module-init
-    failure on every mutant)."""
+    drove composite <= 0.95 (gate pass, golden caught the mutant).
+    'low-confidence-pass' means at most _LOW_CONFIDENCE_APPLIED_MAX applied
+    non-init-failed mutations ran and every one of them barely dented the
+    composite (strictly greater than _LOW_CONFIDENCE_COMPOSITE_FLOOR) -- the
+    mutators had too thin a surface to grip, so absence of a kill is not
+    proof of golden weakness (gate pass-by-thin-surface). 'vacuous' means
+    zero mutations were applicable (gate pass-by-carve-out -- port has no
+    algorithmic surface to mutate; bd mpfr-ts-9di). 'survived' means
+    mutations applied but none broke the golden and the surface was thick
+    enough to trust the negative signal (gate fail -- golden is insufficient
+    OR mutators too weak OR a harness fault like module-init failure on
+    every mutant)."""
     graded = [m for m in outcomes if m.composite is not None and not m.module_init_failed]
     if any(m.below_threshold for m in graded):
         return 'killed'
+    applied_real = [m for m in outcomes if m.applied and not m.module_init_failed]
+    if (applied_real
+            and len(applied_real) <= _LOW_CONFIDENCE_APPLIED_MAX
+            and all(m.composite is not None and m.composite > _LOW_CONFIDENCE_COMPOSITE_FLOOR
+                    for m in applied_real)):
+        return 'low-confidence-pass'
     if not any(m.applied for m in outcomes):
         return 'vacuous'
     return 'survived'
