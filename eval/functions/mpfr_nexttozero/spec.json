@@ -1,0 +1,23 @@
+{
+  "function": "mpfr_nexttozero",
+  "class": "misc",
+  "signature": {
+    "params": ["x"],
+    "returns": "MPFR"
+  },
+  "c_signature": "void mpfr_nexttozero(mpfr_ptr x)",
+  "prec_unit": "bits",
+  "doc": "Pure-TS port of MPFR's mpfr_nexttozero (mpfr/src/next.c L45-L85). Compute the immediate-neighbor representable value of x in the direction of zero, at x's own precision. No rounding occurs (the 'next' is unique in the precision-defined lattice), so the TS port returns a bare MPFR rather than a Result {value, ternary}.\n\nC behaviour (mpfr/src/next.c L45-L85):\n  - Singular branch:\n      * Inf -> mpfr_setmax(x, __gmpfr_emax): largest finite at emax, sign preserved.\n          mantissa becomes 2^prec - 1 (all prec bits set), exp = emax.\n      * Zero -> MPFR_CHANGE_SIGN then mpfr_setmin(x, __gmpfr_emin): the sign\n          FLIPS, then the smallest representable at emin. This matches\n          IEEE-754 nextDown(+0) = -minSubnormal and nextUp(-0) = +minSubnormal\n          (mpfr_nexttozero is called from mpfr_nextbelow on positive x, where\n          x>0 stepping toward zero hits +0 then sign-flips to -smallest).\n      * NaN -> the C asserts (the function is undefined on NaN at the C\n          level because callers nextabove/nextbelow/nexttoward strip NaN\n          first). The TS port is public-facing and defensively propagates\n          NaN -> NaN.\n  - Normal branch (mpfr/src/next.c L62-L84):\n      * Subtract one ULP from the mantissa (at the precision boundary):\n          mant -= 1.\n      * If mant becomes 2^(prec-1) - 1 (i.e. the MSB at position prec-1 is\n          no longer set; this only happens when mant was exactly\n          2^(prec-1), an exact power of two): the value needs\n          renormalization.\n          - If exp == emin (= -(2^30 - 1)): set to signed zero (same sign).\n          - Else: exp -= 1, mant = 2^prec - 1 (all prec bits set).\n      * Otherwise (MSB still set): mant -= 1 is the result.\n\nTernary semantics: not applicable -- mpfr_nexttozero is exact in the\nprecision-defined lattice (the 'next' value IS the next representable\nat x's prec). The TS port returns MPFR, not Result.\n\nemin/emax: we use EMIN_DEFAULT = -(2^30 - 1) and EMAX_DEFAULT = 2^30 - 1\n(mpfr/src/mpfr.h L231-L232), the same defaults set_exp.ts uses. This\nmatches what libmpfr does in the golden driver (which never calls\nmpfr_set_emin/emax).",
+  "divergence_from_c": "1. Return shape: C mutates x in place; TS returns a fresh MPFR.\n2. NaN handling: C asserts on NaN inputs (the function is private to its callers, which all NaN-check upstream); TS defensively propagates NaN -> NaN since it is exposed as part of the public surface.\n3. Global flag side effects (the C function does not set __gmpfr_flags, so this divergence is empty -- noted for completeness).\n4. emin/emax: C uses thread-local __gmpfr_emin / __gmpfr_emax (default +/-(2^30-1)); the TS port uses the same defaults as compile-time constants. Calls to mpfr_set_emin/set_emax are not supported by the TS port.",
+  "refs": [
+    "mpfr/src/next.c L45-L85 -- C reference body.",
+    "mpfr/src/setmin.c L26-L37 -- mantissa = 2^(prec-1), exp = emin.",
+    "mpfr/src/setmax.c L26-L40 -- mantissa = 2^prec - 1, exp = emax.",
+    "mpfr/src/mpfr.h L231-L232 -- MPFR_EMAX_DEFAULT, MPFR_EMIN_DEFAULT.",
+    "src/core.ts -- locked MPFR shape, MPFRError.",
+    "src/ops/set_exp.ts -- sister port using the same EMIN/EMAX_DEFAULT.",
+    "src/ops/nexttoinf.ts -- mirror op (step toward +/-infinity).",
+    "mpfr/tests/tnext.c -- mined test cases (indirectly via nextabove/nextbelow which delegate here).",
+    "CLAUDE.md 'Hallucination-risk callouts' -- NaN propagation, signed zero observable."
+  ]
+}

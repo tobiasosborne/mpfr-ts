@@ -1,0 +1,14 @@
+{
+  "function": "mpfr_get_z_2exp",
+  "class": "blocked",
+  "signature": {"params": ["f"], "returns": "{ z: bigint, e: bigint }"},
+  "c_signature": "mpfr_exp_t mpfr_get_z_2exp (mpz_ptr z, mpfr_srcptr f)",
+  "prec_unit": "bits",
+  "doc": "BLOCKED -- needs mpz/bigint integration ADR (bd mpfr-ts-3a9). Returns f as z * 2^e via the mpz output and exp return value. C mutates an out-param mpz; natural TS is to return { z: bigint, e: bigint } as a value tuple. Same blocker family as mpfr_set_z_2exp and mpfr_add_z. Unblock condition: ADR on mpz/bigint surface design.\n\nNote: per [[mpfr-storage-traps]] in agent memory, `mpfr_get_z_2exp` is already understood to be de-padding (NaN drops prec on the TS side; exp_ts = exp_2 + prec). When the ADR lands and this port ships, those traps will inform the implementation.",
+  "divergence_from_c": "BLOCKED on mpz API ADR.",
+  "refs": [
+    "mpfr/src/get_z_2exp.c -- C reference body.",
+    "src/core.ts -- bigint is the natural TS analog of mpz_t.",
+    "bd mpfr-ts-3a9 -- the API-decision tracker."
+  ]
+}
