@@ -1,0 +1,18 @@
+{
+  "function": "mpn_sub_1",
+  "class": "substrate",
+  "signature": {
+    "params": ["s", "n", "x"],
+    "returns": "{ result: readonly bigint[], borrow: bigint }"
+  },
+  "doc": "Pure-TS port of GMP mpn_sub_1: subtract a single-limb scalar x from the n-limb non-negative integer in s (little-endian), returning the n-limb difference and the borrow-out (0 or 1). Symmetric to mpn_add_1. Substrate-class -- raw bigint arrays, no core.ts import (runner exempts substrate via requireCoreImport=false). When s < x (treated as unsigned), the result is the two's-complement representation of (s - x) mod 2^(64*n) and borrow=1; otherwise borrow=0.",
+  "c_signature": "mp_limb_t mpn_sub_1(mp_limb_t *rp, const mp_limb_t *sp, mp_size_t n, mp_limb_t x)",
+  "limb_width_bits": 64,
+  "limb_order": "little-endian",
+  "refs": [
+    "GMP manual §8.3 (Low-level Functions): single-limb subtract with borrow-out.",
+    "mpfr/src/sub1.c -- canonical MPFR caller (significand -= 1 ulp).",
+    "mpfr/src/div.c -- division remainder correction.",
+    "src/internal/mpn/add_1.ts -- the symmetric primitive."
+  ]
+}
