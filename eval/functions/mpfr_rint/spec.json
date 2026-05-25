@@ -1,0 +1,30 @@
+{
+  "function": "mpfr_rint",
+  "class": "misc",
+  "signature": {
+    "params": ["u", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "c_signature": "int mpfr_rint (mpfr_ptr r, mpfr_srcptr u, mpfr_rnd_t rnd_mode)",
+  "prec_unit": "bits",
+  "doc": "Round u to the nearest prec-representable integer in mode rnd. The parent round-to-integer dispatcher; mpfr_trunc, mpfr_floor, mpfr_ceil, and mpfr_round are all wrappers over mpfr_rint with a fixed rnd_mode (mpfr/src/rint.c L317-L344).\n\nBy rounding mode (mpfr/src/rint.c L67-L72 rnd_away encoding):\n  - RNDZ -- round toward zero (rnd_away=0). Same as mpfr_trunc.\n  - RNDU -- round toward +inf (rnd_away = sign>0). Same as mpfr_ceil.\n  - RNDD -- round toward -inf (rnd_away = sign<0). Same as mpfr_floor.\n  - RNDA -- round away from zero (rnd_away=1). Ceil for positives, floor for negatives.\n  - RNDN -- round to nearest, ties to even (rnd_away=-1, decided later). Differs from mpfr_round (which is RNDNA, ties away from zero).\n\nSpecial cases (mpfr/src/rint.c L42-L61):\n  - NaN -> NaN, ternary 0.\n  - +-Inf -> +-Inf, sign preserved, ternary 0 (infinity is exact).\n  - +-0 -> +-0, signed-zero preserved, ternary 0 (zero is exact).\n  - integer u representable in prec(r): r=u, ternary 0.\n  - integer u NOT representable in prec(r): rounded per rnd to a prec-representable value; ternary +/-1 from uflags.\n  - |u|<1 non-integer (mpfr/src/rint.c L80-L98): result in {-1, 0, +1} per rnd. Signed zero preserved on the zero branch.\n  - |u|>=1 general (mpfr/src/rint.c L99-L303): the unified mantissa-mask + optional ulp-increment algorithm, rounding at the target prec from the dropped bits below.\n\nCritical RNDN-vs-RNDNA distinction: the C halfway test at L158-L184 (regime A) and L243-L271 (regime B) for RNDN inspects `(rp[0] & (MPFR_LIMB_ONE << sh)) == 0` -- the truncated mantissa's LSB at the target prec. LSB=0 (even) keeps the truncation on an exact halfway; LSB=1 (odd) increments to make the result mantissa even. This is the IEEE-754 default, distinct from RNDNA's 'always away' rule.\n\nTernary semantics: ternary = sign(rounded - exact). For exact representable integer u: ternary 0. Otherwise +/-1 per the rnd direction and u's sign. The C source returns +/-2 from uflags (mpfr/src/rint.c L289-L302) which the wire encoder normalises to +/-1.",
+  "divergence_from_c": "1. Return shape: C mutates r and returns int ternary; TS returns Result {value, ternary} per src/core.ts.\n2. Global flag side effects (overflow/inexact via __gmpfr_flags) are not surfaced; the returned value is still correctly rounded.\n3. The C source allocates no scratch; the TS port allocates no scratch either (delegation to mpfr_trunc/ceil/floor is an immutable transformation).\n4. RNDA isn't a named C wrapper (mpfr/src/rint.c L67-L71 sets `rnd_away=1` inline) but the TS port dispatches RNDA to ceil/floor by sign for clarity. Equivalent semantics.\n5. The +-2 uflags encoding (mpfr/src/rint.c L91, L96, L289-L302) signalling 'u is an integer not representable in r' is collapsed to a +-1 ternary on the wire; downstream consumers don't distinguish 'rounded-non-integer' from 'rounded-non-rep-integer'.",
+  "refs": [
+    "mpfr/src/rint.c L35-L304 -- C reference body (mpfr_rint).",
+    "mpfr/src/rint.c L317-L344 -- the four wrappers (round/trunc/ceil/floor) deferring to rint.",
+    "mpfr/src/rint.c L67-L72 -- rnd_away encoding for each rnd.",
+    "mpfr/src/rint.c L80-L98 -- |u|<1 branch.",
+    "mpfr/src/rint.c L99-L303 -- |u|>=1 general path.",
+    "mpfr/src/rint.c L158-L184 -- RNDN tie decision regime A.",
+    "mpfr/src/rint.c L243-L271 -- RNDN tie decision regime B.",
+    "src/core.ts -- locked MPFR shape, Result, RoundingMode, MPFRError.",
+    "src/ops/trunc.ts -- RNDZ delegate.",
+    "src/ops/ceil.ts -- RNDU and RNDA-positive delegate.",
+    "src/ops/floor.ts -- RNDD and RNDA-negative delegate.",
+    "src/ops/round.ts -- algorithmic sibling (RNDNA, distinct from RNDN here).",
+    "src/ops/rint_trunc.ts -- structural sibling sharing the validateArgs idiom.",
+    "mpfr/tests/trint.c -- mined test cases (rint-specific assertions at L38-L110).",
+    "docs/adr/0001-spec-merge-policy.md -- spec-field precedence.",
+    "CLAUDE.md hallucination callouts -- NaN!=NaN; signed zero; ternary sign convention; 5 rounding modes (no RNDNA)."
+  ]
+}
