@@ -125,9 +125,11 @@ def test_cleanup_on_grader_timeout(tmp_path: Path) -> None:
     assert leftovers == []
 
 
-def _mo(name: str, comp: float | None, below: bool, clean: bool, init_failed: bool = False):
+def _mo(name: str, comp: float | None, below: bool, clean: bool,
+        init_failed: bool = False, applied: bool = True):
     return mutate.MutationOutcome(name=name, composite=comp, below_threshold=below,
-                                  clean_kill=clean, module_init_failed=init_failed)
+                                  clean_kill=clean, module_init_failed=init_failed,
+                                  applied=applied)
 
 
 def test_gate_passes_with_one_below_threshold() -> None:
@@ -141,8 +143,48 @@ def test_gate_passes_with_one_below_threshold() -> None:
         _mo("a", 0.99, False, False),
         _mo("b", None, False, False),
     ]) is False
-    # Init-failed mutations are excluded from the gate even if below_threshold.
+    # Init-failed mutations don't kill the gate on their own (their composite
+    # is vacuous, so 'graded' excludes them), but they DO count as applied.
+    # One mutation, init-failed only -> applied=True default -> survived, gate fails.
     assert mutate._aggregate_gate([_mo("a", None, True, True, init_failed=True)]) is False
+
+
+def test_gate_vacuous_when_no_outcomes() -> None:
+    """A port with zero applicable mutations (e.g. mpfr_swap, pure delegation)
+    passes vacuously per the bd mpfr-ts-9di carve-out. Empty outcomes list."""
+    assert mutate._aggregate_gate([]) is True
+    assert mutate._gate_status([]) == 'vacuous'
+
+
+def test_gate_vacuous_when_all_mutations_inapplicable() -> None:
+    """Mutators that listed mutations but every one returned exit-3
+    (applied=False) leave no algorithmic signal — vacuous pass."""
+    outcomes = [_mo("a", None, False, False, applied=False),
+                _mo("b", None, False, False, applied=False)]
+    assert mutate._aggregate_gate(outcomes) is True
+    assert mutate._gate_status(outcomes) == 'vacuous'
+
+
+def test_gate_status_killed() -> None:
+    """When ≥1 mutation drives composite below 0.95, status is 'killed'."""
+    outcomes = [_mo("a", 0.4, True, True), _mo("b", 0.99, False, False)]
+    assert mutate._aggregate_gate(outcomes) is True
+    assert mutate._gate_status(outcomes) == 'killed'
+
+
+def test_gate_status_survived_when_mutations_applied_but_none_below() -> None:
+    """Mutations applied but all stayed above 0.95 → 'survived' (gate fails)."""
+    outcomes = [_mo("a", 0.99, False, False), _mo("b", 0.97, False, False)]
+    assert mutate._aggregate_gate(outcomes) is False
+    assert mutate._gate_status(outcomes) == 'survived'
+
+
+def test_gate_status_survived_when_only_init_failures() -> None:
+    """If every applied mutation init-failed, that's a harness bug — survived,
+    not vacuous. (Vacuous is reserved for 'mutators.ts had nothing to apply'.)"""
+    outcomes = [_mo("a", None, False, False, init_failed=True, applied=True)]
+    assert mutate._aggregate_gate(outcomes) is False
+    assert mutate._gate_status(outcomes) == 'survived'
 
 
 # --- _rewrite_relative_imports unit tests (synthetic port_dir on /home/test) ---

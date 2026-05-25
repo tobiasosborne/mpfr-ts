@@ -1,153 +1,120 @@
-# Handoff — 122 ports + 2 shadow trials done; next: grader inequality ADR or third shadow
+# Handoff — 122 ports + Phase = Production; next: first Production mega-batch
 
-You are picking up mpfr-ts after a session that shipped all three
-priorities the previous HANDOFF queued: flag-state API module
-unblocking 4 predicate ports (Priority 1), gen_spec wired into
-ralph.py's prep prompt (Priority 2 / step 6), and a second shadow-mode
-trial validating both pieces live (Priority 3). State.db: **122 done,
-5 blocked, 2 pending**. ADR 0001 has now held across 2 trials and 8
-diverse functions at a 100% prediction rate.
+You are picking up mpfr-ts after a short, high-leverage session that
+closed all three priorities the previous HANDOFF queued: ADR 0002
+resolving the approximation-helper grading question (Priority 1),
+mutate.py vacuous-pass carve-out for trivial-body ports (Priority 2,
+option (a)), and the long-overdue Pilot → Production transition
+(Priority 4). State.db: **122 done, 5 blocked, 2 pending** (unchanged
+— this session was architecture, not new ports). PHASE.md now reads
+`Production`.
 
-The validation arc and its first live integration are complete. The
-next session **either lands an ADR + extension to the grader for
-approximation helpers**, **fixes mutate.py for trivial-body delegation
-ports**, or **runs another shadow trial focused on misc-class data**
-— see priority sequence below.
+This session also exposed that HANDOFF framings can drift from
+architecture: Priority 1's "wire-format inequality extension" turned
+out to be unneeded once the live `mpfr_div2_approx` port (composite=
+1.0, 129 cases) was inspected. Always check the state DB and the
+live ports before committing to a HANDOFF-suggested approach.
 
 ## ⚠ Three gotchas — read first
 
-1. **`.gitignore` `mpfr/` pattern.** Anchored to `/mpfr/` since `cb65ebe`. If you add a directory whose name collides with an ignored pattern, audit the gitignore. Last bite: ~12 hours of silently-dropped substrate files in the 50→85 session.
+1. **`.gitignore` `/mpfr/` pattern.** Anchored to `/mpfr/` since
+   `cb65ebe`. If you add a directory whose name collides with an
+   ignored pattern, audit the gitignore. Last bite: ~12 hours of
+   silently-dropped substrate files in the 50→85 session.
 
-2. **`bd` commands don't auto-export to JSONL.** `ralph.py --commit-batch` and `--ship` do this automatically. Manual `git commit` skips it. **Always run `bd export -o .beads/issues.jsonl` before manual commits**, or prefer `--commit-batch`/`--ship`. `mpfr-ts-i8e` tracks the pre-commit-hook fix.
+2. **`bd` commands don't auto-export to JSONL.** `ralph.py
+   --commit-batch` and `--ship` do this automatically. Manual `git
+   commit` skips it. **Always run `bd export -o .beads/issues.jsonl`
+   before manual commits**, or prefer `--commit-batch`/`--ship`.
+   `mpfr-ts-i8e` tracks the pre-commit-hook fix.
 
-3. **`PHASE.md` still says `Pilot`** despite 122 ports + 2 clean shadow trials + automation infra all green. Pilot's exit criterion (PIL.5: 10 functions clean in a single ralph-loop run with mutation-proved goldens) is comfortably exceeded. Rule 14 requires `docs/worklog/NNN-phase-transition.md` before flipping; this has been deferred across 4+ sessions. Not blocking — but now overdue enough that the next session should consider tackling it.
+3. **Phase is now Production.** Ralph loop dispatches should run as
+   `python3 eval/driver/ralph.py --phase production --parallel 8`.
+   PIL.* rules no longer apply. Cost cap ($50/session) and auto-
+   escalate failure-rate cap (10%/24h) ARE in effect — instrument
+   them on the first mega-batch.
 
 ## TL;DR — first 10 minutes
 
 ```bash
 git pull --rebase
-cat PHASE.md                                          # → Pilot (still)
+cat PHASE.md                                          # → Production
 cat HANDOFF.md                                        # this file
-cat docs/worklog/010-flags-step6-shadow2.md           # latest session
-cat docs/reports/011-shadow-trial-2.md                # latest shadow data
-cat docs/adr/0001-spec-merge-policy.md                # the still-load-bearing integration policy
+cat docs/worklog/011-phase-transition.md              # latest session
+cat docs/adr/0002-approximation-helper-grading.md     # the new ADR
+cat docs/adr/0001-spec-merge-policy.md                # still load-bearing
 
 sqlite3 eval/state.db "SELECT status, COUNT(*) FROM functions GROUP BY status"
 # Expected: blocked|5 done|122 pending|2
 
 bun test src/internal/mpfr/flags.test.ts              # 11 pass
-cd eval/driver && /home/tobiasosborne/.local/bin/pytest tests/ -q   # 114 pass
+cd eval/driver && /home/tobiasosborne/.local/bin/pytest tests/ -q   # 119 pass (up from 114)
 bash eval/golden_master/build.sh                      # all drivers compile
-bun x tsc --noEmit | grep -v "eval/driver/mutators.ts" # clean (mutators.ts has pre-existing @types issues)
+bun x tsc --noEmit | grep -v "eval/driver/mutators.ts" # clean
 
-bd ready                                              # 13 issues; top: mpfr-ts-52u (P2 NEW)
+# Smoke-check the carve-out is live:
+python3 eval/driver/mutate.py --function mpfr_swap --port src/ops/swap.ts \
+  --golden eval/functions/mpfr_swap/golden.jsonl
+# Expected: gate_passed: True (vacuous)
+
+bd ready                                              # 12 issues (was 13; -52u closed)
 ```
 
 ## Next-session priority sequence
 
-### Priority 1: `mpfr-ts-52u` (P2) — Grader inequality-output mode
+### Priority 1 (recommended): First Production mega-batch
 
-Surfaced by shadow trial 2 when opus parked `mpfr_sqrt2_approx`. The
-runner.ts `compareOutput` uses strict `===` on (value, ternary);
-approximation helpers have contracts of the form "output lies in
-[r0, r0+7]" — INEQUALITY, not equality. Affects ~5-10 functions in
-upcoming batches (`mpfr_div2_approx`, various Newton-seed substrate
-helpers, transcendental-class internal approximants).
+Ralph loop on auto-escalate, ~6-10 functions, instrument cost burn
+and auto-escalate rate per CLAUDE.md Production caveats. Pickup
+candidates from state.db pending rows:
 
-**Three options to consider**:
+- `mpfr_frac` (rank 198, misc)
+- `mpfr_rint_trunc` (rank 420, misc)
+- Plus next-rank picks from the topo-sorted ready list.
 
-- **(a) Extend the wire format**: add `output_range: [lo, hi]` as an
-  alternative to `output: <exact>` in golden cases; runner accepts a
-  result in the range. Requires changes to wire codec, runner, and
-  potentially the mutate.py gate logic.
-- **(b) Park them all**: formalise "approximation helpers are always
-  parked" as ADR 0002. Loses class-coverage data on the substrate
-  side but is the simplest change.
-- **(c) Always-delegate**: the standalone-wire-form-with-delegate-to-
-  unified-op pattern works when there's a unified TS public op the
-  helper would feed into. Already validated for `mpfr_div_2`,
-  `mpfr_sqrt1`, `mpfr_sqrt1n`. Limit: doesn't work when no public op
-  subsumes the helper.
+**Deliverable**: a clean batch landing (~6-10 ports), worklog 012
+documenting the first Production-mode run, mutate.py + ast_check
++ AST schema enforcement all green. First real measurement of the
+auto-escalate rate caveat noted in CLAUDE.md.
 
-**Deliverable**: ADR 0002 documenting the decision + (if a) the wire-
-format extension + runner update + at least one approximation helper
-unparked. ~80-150 LOC code delta + 30 LOC tests + ADR.
+Estimated cost: ~$5-15 (single mega-batch). Estimated effort:
+1-2 hours.
 
-Estimated effort: ~2-3 hours.
+### Priority 2: `mpfr-ts-9di` remainder (option b or c)
 
-### Priority 2: `mpfr-ts-9di` (P3) — mutate.py for trivial-body ports
+mutate.py carve-out shipped option (a) — zero-applicable carve-out.
+Applied-but-survived cases (sqrt1, set_inf, get_d1) remain
+`gate_status='survived'`. This is correct classification but flags
+ports as "needs human review" rather than auto-passing. If
+Production mega-batches start hitting these patterns at scale,
+land option (b) (complexity floor: <2 mutations exempt and flag for
+human golden review) or option (c) (per-spec `mutation_prove_exempt:
+true`).
 
-Hit live in shadow trial 2: `mpfr_sqrt1`'s pure-delegation body has no
-applicable mutations after `mpfr-ts-omy`/`mpfr-ts-agn` regex fixes (no
-`<`/`>` operators, no rnd dispatch, no value arithmetic). mutate.py
-gate fails for "0 applicable mutations" — looks like a port problem
-when it's a harness problem.
+**Defer** unless Production batches show >2-3 survived-status ports
+per batch.
 
-**Two paths**:
+Estimated effort: 1-2 hours if needed.
 
-- Add a carve-out: gate passes if `composite >= 0.95 AND zero
-  applicable mutations` (i.e., the gate explicitly recognises
-  trivial-body ports rather than failing them).
-- Synthesize delegation-targeting mutators: a "swap import target"
-  mutator that changes `mpfr_sqrt` to `mpfr_set` (or similar)
-  would give every delegation port a clean kill.
+### Priority 3: `mpfr-ts-i8e` (git pre-commit auto-export)
 
-Path 1 is smaller. Path 2 is more elegant but adds a real mutator.
+A `.git/hooks/pre-commit` shim that runs `bd export -o
+.beads/issues.jsonl` before any manual commit. The "gotcha 2"
+above; persistent QoL fix worth ~15 minutes.
 
-**Deliverable**: chosen path + tests + re-calibrate against the
-sqrt1/sqrt1n + div_2 corpus.
+### Priority 4: Other open P3 issues from previous HANDOFF
 
-Estimated effort: ~1-2 hours.
+Still open, still optional:
 
-**Why P2 / P3 sequencing matters**: HANDOFF Priority 4 (first
-replacement-mode trial) is gated on mutate.py providing reliable
-discrimination signal without opus's broken-port deliverable. With
-delegation ports failing the gate, replacement mode can't ship — keep
-shadow mode (opus broken-port + mutate combined) until 9di lands.
+- `mpfr-ts-18x` — comparison-swap multi-site
+- `mpfr-ts-2ls` — value_codec scalar strings
+- `mpfr-ts-ai4` — runner n_throw conflation
+- `mpfr-ts-d6o` — callgraph misses mpn_* substrate fns
+- `mpfr-ts-e4j` — expected_throw codec for domain-error goldens
+- `mpfr-ts-sr4` — enforce Rule 7 tag minimums at grade time
 
-### Priority 3: Third shadow trial — misc-class candidates
-
-The two `pending` rows in state.db (`mpfr_frac` rank=198,
-`mpfr_rint_trunc` rank=420) are natural candidates left over from the
-P3 seed in this session. They sit in the misc class — the class report
-009 flagged as mutate.py-weak. Picking them up would extend mutate.py
-calibration data to the previously-undersampled misc-with-loops
-shape (rather than misc-with-flags from shadow 1's predicates).
-
-**Candidates** (next-rank pending or callgraph-implicit):
-- `mpfr_frac` — misc; deps satisfied; fractional part of MPFR value
-- `mpfr_rint_trunc` — misc; deps satisfied; truncate-toward-zero
-- Additional candidates from `mpfr/src/rint.c`: `mpfr_rint`,
-  `mpfr_round`, `mpfr_floor`, `mpfr_ceil` (all have port files
-  already in `src/ops/` — check if they're done, would need
-  status flip)
-
-**Deliverable**: standard shadow-mode pattern (opus prep + sonnet wave
-+ parallel gen_spec/mutate analysis + report 012).
-
-Estimated cost: ~250-400K tokens. Same shape as shadow trials 1 + 2.
-
-### Priority 4: PHASE.md transition (Rule 14)
-
-Now 4+ sessions overdue. With 122 ports + 2 clean shadow trials +
-clean infra, Pilot exit criterion (PIL.5) is comfortably exceeded.
-Required: `docs/worklog/NNN-phase-transition.md` describing what the
-Pilot has now proved (the engine works at 120+ scale, ADR 0001 holds
-under live load, shadow mode reliably surfaces architectural gaps)
-and what auto-escalate caveats remain (mostly mutate.py limitations,
-documented in P3 above).
-
-**Deliverable**: phase-transition worklog + flip `PHASE.md` from
-`Pilot` to `Production`.
-
-Estimated effort: ~30 minutes.
-
-### Priority 5: First replacement-mode trial
-
-Gated on Priority 2 (`mpfr-ts-9di`). Drop opus's broken-port deliverable
-on a 3-5 function batch; rely on mutate.py alone for mutation-prove.
-Conservative criterion: replacement mode is OK if mutate.py gate
-agrees with the eventual ship decision on ≥80% of trial functions.
+None block scale-out. Pick up only if a Production batch surfaces
+one of these as a live blocker.
 
 ## What's working now (don't change)
 
@@ -155,32 +122,44 @@ agrees with the eventual ship decision on ≥80% of trial functions.
 |---|---|---|
 | Locked schema | `src/core.ts` | Frozen; never modify without ADR |
 | Worker isolation | `eval/harness/worker.ts` | Solid |
-| Grader | `eval/harness/runner.ts` | Solid; needs inequality-mode extension (mpfr-ts-52u) |
+| Grader | `eval/harness/runner.ts` | Strict equality; ADR 0002 ratifies this |
 | AST gate | `eval/harness/ast_check.ts` | Solid |
-| Substrate | `src/internal/{mpn,mpfr}/` | 19 files (was 18; +flags.ts this session) |
+| Substrate | `src/internal/{mpn,mpfr}/` | 19 files; div2_approx is the canonical golden-driver-substitute reference |
 | Callgraph | `eval/driver/callgraph.py` | 525 fns; re-run if you touch `mpfr/src/` |
 | State DB | `eval/state.db` | 129 rows; 122 done, 5 blocked, 2 pending |
 | gen_spec | `eval/driver/gen_spec.py` | 207 LOC; live-validated by shadow trials 1+2 |
-| **NEW**: gen_spec wired into prep prompt | `eval/driver/ralph.py` `_render_prep_prompt` | Step 6 done; verbatim ADR addendum + per-fn JSON scaffold |
-| Flag-state register | `src/internal/mpfr/flags.ts` | 88 LOC + 11 tests; unblocked 4 predicates this session |
-| mutators | `eval/driver/mutators.ts` | 185 LOC; 7 mutations; KNOWN WEAKNESS on pure-delegation ports (mpfr-ts-9di) |
-| mutate orchestrator | `eval/driver/mutate.py` | 242 LOC; import-rewrite + module-init-failed detection |
-| validate_specs | `eval/driver/validate_specs.py` | 167 LOC; gen_spec vs curator diff tool |
+| gen_spec wired into prep prompt | `eval/driver/ralph.py` `_render_prep_prompt` | Step 6 stable |
+| Flag-state register | `src/internal/mpfr/flags.ts` | 88 LOC + 11 tests |
+| mutators | `eval/driver/mutators.ts` | 185 LOC; 7 mutations |
+| **mutate.py (updated)** | `eval/driver/mutate.py` | now reports gate_status ∈ {killed, vacuous, survived}; vacuous = zero-applicable carve-out per bd `mpfr-ts-9di` |
+| validate_specs | `eval/driver/validate_specs.py` | 167 LOC |
 | calibrate | `eval/driver/calibrate.py` | 149 LOC |
-| run_all.sh | `eval/golden_master/run_all.sh` | 85 LOC; --filter mode used live this session |
-| ADR 0001 | `docs/adr/0001-spec-merge-policy.md` | Validated 17/17 prediction across 2 trials |
+| run_all.sh | `eval/golden_master/run_all.sh` | 85 LOC |
+| ADR 0001 | `docs/adr/0001-spec-merge-policy.md` | 17/17 prediction across 2 trials |
+| **ADR 0002 (new)** | `docs/adr/0002-approximation-helper-grading.md` | Golden-driver-substitute pattern formalized; inequality grading not built |
 
 ## What the next agent must NOT do
 
-- Modify `src/core.ts` without an ADR
-- Flip `PHASE.md` from `Pilot` to `Production` without writing `docs/worklog/NNN-phase-transition.md` first (Rule 14)
-- Disable harness gates to make a port pass. Fix the port instead
-- Skip mutation-prove (broken < 0.55 ideally < 0.30 per worklog 006 #6)
-- Re-introduce the absolute-path import bug (handled by `_promote_port`)
-- Dispatch all N sonnets simultaneously when N > 10. Waves of 6-10 remain the cost-disciplined default
-- **NEW**: Add dead code to port files purely to satisfy mutate.py. Surfaced in shadow trial 2 (sqrt1 had always-false post-condition added by sonnet). Gaming the gate destroys its signal value. Fix is in mutate.py (`mpfr-ts-9di`), not in port style.
-- Drop opus's broken-port deliverable BEFORE replacement-mode trial validates the gate (Priority 5). Current data justifies keeping it; sqrt1 + sqrt1n demonstrate why
-- Modify the shipped infrastructure tools (gen_spec, mutators, mutate, validate_specs, calibrate, prep-prompt wiring) without bd-driven justification — all validated and load-bearing
+- Modify `src/core.ts` without an ADR.
+- Modify ADR 0001 or 0002 without writing a successor ADR.
+- **Revive the inequality-grader wire format extension** unless a
+  concrete divergent-algorithm port (not faithful-substitute)
+  emerges. ADR 0002 §Revisit documents the exact conditions.
+- Disable harness gates to make a port pass. Fix the port instead.
+- Skip mutation-prove. Now that the vacuous carve-out exists,
+  there's no excuse for trivial ports to fail the gate — and any
+  applied-but-survived port should be human-reviewed.
+- Add dead code to port files purely to satisfy mutate.py
+  (carried over from worklog 010). Gaming the gate destroys signal
+  value. The vacuous carve-out is the *legitimate* way out for
+  truly trivial bodies.
+- Dispatch all N sonnets simultaneously when N > 10. Waves of 6-10
+  remain the cost-disciplined default.
+- Modify the shipped infrastructure tools (gen_spec, mutators,
+  mutate, validate_specs, calibrate, prep-prompt wiring) without
+  bd-driven justification.
+- Flip `PHASE.md` away from `Production` without writing
+  `docs/worklog/NNN-phase-transition.md` (Rule 14).
 
 ## Pickup-on-different-device checklist
 
@@ -193,18 +172,17 @@ agrees with the eventual ship decision on ≥80% of trial functions.
 7. Smoke-check:
    - `bun x tsc --noEmit | grep -v "eval/driver/mutators.ts"` (clean)
    - `bun test src/internal/mpfr/flags.test.ts`  # 11 pass
-   - `cd eval/driver && /home/tobiasosborne/.local/bin/pytest tests/ -q`  # 114 pass
+   - `cd eval/driver && /home/tobiasosborne/.local/bin/pytest tests/ -q`  # 119 pass
    - `bash eval/golden_master/build.sh`  # all drivers compile
-8. Read CLAUDE.md → this file → `docs/worklog/010-flags-step6-shadow2.md` → `docs/reports/011-shadow-trial-2.md` → `docs/adr/0001-spec-merge-policy.md`
+   - `python3 eval/driver/mutate.py --function mpfr_swap --port src/ops/swap.ts --golden eval/functions/mpfr_swap/golden.jsonl` # gate_passed: True (vacuous)
+8. Read CLAUDE.md → this file → `docs/worklog/011-phase-transition.md`
+   → `docs/adr/0002-approximation-helper-grading.md` → `docs/adr/0001-spec-merge-policy.md`
 
-## Open bd issues at session end (13 total)
+## Open bd issues at session end (12 total)
 
-P2 — block scale-out:
-- `mpfr-ts-52u` — **NEW**: grader inequality-output mode for approximation helpers (Priority 1 above)
+P3 — harness polish:
+- `mpfr-ts-9di` — **PARTIAL CLOSURE**: option (a) shipped; option (b)/(c) deferred
 - `mpfr-ts-i8e` — git pre-commit hook for bd auto-export
-
-P3 — harness polish (one blocks replacement-mode trial):
-- `mpfr-ts-9di` — **HIT LIVE** in shadow trial 2: mutate.py gate must pass trivial-body ports
 - `mpfr-ts-18x` — comparison-swap multi-site
 - `mpfr-ts-2ls` — value_codec scalar strings
 - `mpfr-ts-ai4` — runner n_throw conflation
@@ -215,25 +193,25 @@ P3 — harness polish (one blocks replacement-mode trial):
 P4 — cleanup:
 - `mpfr-ts-00m`, `mpfr-ts-bqq`, `mpfr-ts-c6b`, `mpfr-ts-6zg`
 
+Closed this session:
+- `mpfr-ts-52u` — ADR 0002 supersedes (inequality framing was a misread)
+
 `bd ready` for the live picture.
 
 ## One final thing
 
-This session validates the validation infrastructure under live load.
-Shadow trial 1 surfaced the flag-state gap (closed this session);
-shadow trial 2 surfaced the inequality-grader gap (filed
-`mpfr-ts-52u`). Each trial costs ~250K tokens and buys a major
-architectural finding that would otherwise hit a 10+-function batch
-at full cost. The pattern is reliable enough to bank on.
+This session's most valuable output isn't the ADR or the carve-out —
+it's the validation that **HANDOFF framings need verification before
+execution**. The "inequality grader extension" P1 looked load-bearing
+in the previous HANDOFF; one investigation pass against the live
+state.db and the `div2_approx` port revealed it was unnecessary. The
+right move was to write an ADR explaining why, not implement an
+unneeded ~150 LOC feature. Carry this discipline into Production: the
+HANDOFF is a starting hypothesis, not a spec.
 
-ADR 0001 has now held under 2 trials × 8 functions at 100% prediction
-rate. The integration is production-ready. The blockers between here
-and full Production scale-out are well-localised: the grader
-inequality mode (Priority 1), the mutate.py delegation carve-out
-(Priority 2), and a PHASE.md transition worklog (Priority 4).
-
-Priority 1 (`mpfr-ts-52u`) is the most-leverage next move: ~80-150
-LOC + ADR 0002 unblocks ~5-10 substrate/transcendental helpers in
-the next mega-batch. Start there.
+Production scale-out is ready. The harness is sound, the
+discipline holds, the ADRs are in place. The natural next move is to
+pick up `mpfr_frac` / `mpfr_rint_trunc` and run the first Production
+mega-batch with full instrumentation.
 
 Good luck.

@@ -48,18 +48,45 @@ class MutationOutcome:
     below_threshold: bool          # composite <= 0.95
     clean_kill: bool               # composite <= 0.55
     module_init_failed: bool       # True if grader's first_error matches an init-failure signature
+    applied: bool = True           # False iff mutators.ts returned exit 3 (not applicable to this port)
 
 
 @dataclass(frozen=True)
 class ProveResult:
     function_name: str
     mutations: list[MutationOutcome]
-    gate_passed: bool              # >= 1 applied non-init-failed mutation has below_threshold
+    gate_passed: bool              # >= 1 applied non-init-failed mutation has below_threshold, OR no applicable mutations (vacuous pass per bd mpfr-ts-9di)
     clean_kills: int
+    gate_status: str = 'killed'    # 'killed' | 'vacuous' | 'survived' — finer-grained than gate_passed
 
 
 def _aggregate_gate(outcomes: list[MutationOutcome]) -> bool:
-    return any(m.below_threshold for m in outcomes if not m.module_init_failed)
+    """Whether the mutation-prove gate passes. Returns True when either
+    (a) at least one mutation was applied, graded, and drove composite below
+    0.95 — the load-bearing case (PIL.3); or (b) no mutation was applicable
+    to this port at all — the "trivial body" vacuous pass per bd
+    mpfr-ts-9di. Returns False otherwise (mutations applied but survived,
+    or only init-failed mutants were present)."""
+    graded = [m for m in outcomes if m.composite is not None and not m.module_init_failed]
+    if any(m.below_threshold for m in graded):
+        return True
+    return not any(m.applied for m in outcomes)
+
+
+def _gate_status(outcomes: list[MutationOutcome]) -> str:
+    """Finer-grained gate classification. 'killed' means at least one mutation
+    drove composite ≤ 0.95 (gate pass, golden caught the mutant). 'vacuous'
+    means zero mutations were applicable (gate pass-by-carve-out — port has
+    no algorithmic surface to mutate; bd mpfr-ts-9di). 'survived' means
+    mutations applied but none broke the golden (gate fail — golden is
+    insufficient OR mutators too weak OR a harness fault like module-init
+    failure on every mutant)."""
+    graded = [m for m in outcomes if m.composite is not None and not m.module_init_failed]
+    if any(m.below_threshold for m in graded):
+        return 'killed'
+    if not any(m.applied for m in outcomes):
+        return 'vacuous'
+    return 'survived'
 
 
 def _rewrite_relative_imports(text: str, port_dir: Path) -> str:
@@ -181,11 +208,11 @@ def mutation_prove(
         for name in applicable:
             mutant = work_dir / f"mutant_{function_name}_{name}.ts"
             grade = work_dir / f"grade_{function_name}_{name}.json"
-            applied = _apply_mutation(port_path, mutant, name, repo_root)
-            if not applied:
+            did_apply = _apply_mutation(port_path, mutant, name, repo_root)
+            if not did_apply:
                 outcomes.append(MutationOutcome(name=name, composite=None,
                                                 below_threshold=False, clean_kill=False,
-                                                module_init_failed=False))
+                                                module_init_failed=False, applied=False))
                 continue
             composite, first_error = _grade_mutant(
                 function_name, mutant, golden_path, grade,
@@ -199,11 +226,12 @@ def mutation_prove(
             clean = composite is not None and composite <= CLEAN_KILL
             outcomes.append(MutationOutcome(name=name, composite=composite,
                                             below_threshold=below, clean_kill=clean,
-                                            module_init_failed=init_failed))
+                                            module_init_failed=init_failed, applied=True))
         gate = _aggregate_gate(outcomes)
+        status = _gate_status(outcomes)
         kills = sum(1 for m in outcomes if m.clean_kill)
         return ProveResult(function_name=function_name, mutations=outcomes,
-                           gate_passed=gate, clean_kills=kills)
+                           gate_passed=gate, clean_kills=kills, gate_status=status)
     finally:
         # Always clean: remove mutant_*.ts and grade_*.json in the work
         # dir; if we own the dir entirely, drop the whole tree.
@@ -230,11 +258,12 @@ def main(argv: list[str]) -> int:
                        repo_root=args.repo_root, tmp_dir=args.tmp_dir,
                        grader_timeout_s=args.grader_timeout_s)
     print(f"function: {r.function_name}")
-    print(f"gate_passed: {r.gate_passed}  clean_kills: {r.clean_kills}")
+    print(f"gate_passed: {r.gate_passed} ({r.gate_status})  clean_kills: {r.clean_kills}")
     for m in r.mutations:
         c = "None" if m.composite is None else f"{m.composite:.4f}"
-        print(f"  {m.name:<18} composite={c:<8} below={m.below_threshold} "
-              f"clean={m.clean_kill} init_failed={m.module_init_failed}")
+        print(f"  {m.name:<18} applied={m.applied} composite={c:<8} "
+              f"below={m.below_threshold} clean={m.clean_kill} "
+              f"init_failed={m.module_init_failed}")
     return 0 if r.gate_passed else 1
 
 
