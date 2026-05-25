@@ -1,0 +1,17 @@
+{
+  "function": "mpn_add_1",
+  "class": "substrate",
+  "signature": {
+    "params": ["s", "n", "x"],
+    "returns": "{ result: readonly bigint[], carry: bigint }"
+  },
+  "doc": "Pure-TS port of GMP mpn_add_1: add a single-limb scalar x to the n-limb non-negative integer stored in s (little-endian), returning the n-limb sum and the carry-out limb (0 or 1). Substrate-class -- operates on raw bigint arrays, not src/core.ts MPFR values; runner sets requireCoreImport=false for substrate. The carry chain propagates from limb 0 upward; net cost is O(1) expected (carry stops at the first non-ripple limb) and O(n) worst case (when s is all-ones).",
+  "c_signature": "mp_limb_t mpn_add_1(mp_limb_t *rp, const mp_limb_t *sp, mp_size_t n, mp_limb_t x)",
+  "limb_width_bits": 64,
+  "limb_order": "little-endian",
+  "refs": [
+    "GMP manual §8.3 (Low-level Functions): single-limb add with carry-out.",
+    "mpfr/src/add1.c, mpfr/src/add1sp.c -- canonical MPFR callers (significand += 1 ulp).",
+    "mpfr/src/div.c, mpfr/src/div_ui.c -- callers in the division path."
+  ]
+}
