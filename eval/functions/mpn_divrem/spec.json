@@ -1,0 +1,19 @@
+{
+  "function": "mpn_divrem",
+  "class": "substrate",
+  "signature": {
+    "params": ["qn", "np", "nn", "dp", "dn"],
+    "returns": "{ q: readonly bigint[], qHigh: bigint, r: readonly bigint[] }"
+  },
+  "c_signature": "mp_limb_t mpn_divrem(mp_limb_t *qp, mp_size_t qn, mp_limb_t *np, mp_size_t nn, const mp_limb_t *dp, mp_size_t dn)",
+  "limb_width_bits": 64,
+  "limb_order": "little-endian",
+  "doc": "Pure-TS port of GMP's mpn_divrem -- multi-precision multi-limb integer division with quotient and remainder. Substrate-class -- raw bigint arrays, schema ast_check requireCoreImport=false exemption applies (CLAUDE.md Law 3).\n\nC contract (GMP mpn_divrem with qn == 0, matching mpfr-mini-gmp's MPFR_ASSERTN(qn == 0)):\n  Numerator: an nn-limb non-negative integer in np[0..nn), little-endian.\n  Divisor: a dn-limb non-negative integer in dp[0..dn), little-endian, with the MSB of dp[dn-1] SET (normalized). Real GMP's mpn_divrem requires divisor normalization; the mini-gmp shim relaxes this via mpz_tdiv_qr, but the TS port operates on the normalized domain since the golden_driver generates only normalized cases.\n  Output: quotient = nn - dn limbs in qp[0..nn-dn) plus a 0/1-limb scalar return value (the (nn-dn)+1-th high quotient limb).\n  Remainder: a dn-limb non-negative integer < divisor, written back into np[0..dn).\n  Precondition: nn >= dn.\n\nMini-gmp shim equivalence (mpfr/src/mpfr-mini-gmp.c L216-L243):\n  MPFR_ASSERTN(qn == 0); qn = nn - dn; mpz_tdiv_qr(q, r, np_as_mpz, dp_as_mpz); qp[0..qn) = q->_mp_d[0..qn); return (q->_mp_size == qn) ? 0 : q->_mp_d[qn]; np[0..dn) = r->_mp_d[0..r->_mp_size) || 0-padded. The TS port mirrors this via native BigInt truncated division.\n\nTS signature (no-mutation):\n  mpn_divrem(qn: number, np: readonly bigint[], nn: number, dp: readonly bigint[], dn: number) -> { q: readonly bigint[], qHigh: bigint, r: readonly bigint[] }\n  - qn: must be 0 (mirroring MPFR_ASSERTN(qn == 0)); the TS port throws if nonzero.\n  - np: nn-limb dividend, little-endian.\n  - nn: dividend length, nn >= dn >= 1.\n  - dp: dn-limb divisor, little-endian; dp[dn-1] >= 2^63 (MSB set / normalized).\n  - dn: divisor length.\n  - returns: q has length nn - dn; qHigh is the high quotient limb (0n or the (nn-dn)+1-th quotient limb); r has length dn (zero-padded if the true remainder is shorter).\n\nClass 'substrate' (50ms per-case budget). Tag minimums apply (happy>=20, edge>=30, adversarial>=10, fuzz>=50, mined>=5 or all available). Mined absent -- mpfr/tests/ has no isolatable mpn_divrem test driver; the function is exercised internally by mpfr_div / mpz integration paths.",
+  "divergence_from_c": "1. C mutates qp and np in place; TS returns a fresh {q, qHigh, r} object with q and r as readonly bigint arrays of fixed lengths (nn-dn and dn respectively) and qHigh as a scalar bigint.\n2. C's qn-must-be-0 precondition: TS throws Error if qn != 0, matching MPFR_ASSERTN.\n3. Divisor normalization: real GMP requires dp[dn-1] MSB set; the golden_driver enforces this. The TS port may handle non-normalized divisors via BigInt division, but the golden does not exercise that subdomain (matching the C contract).\n4. Limb endianness: both little-endian.\n5. qHigh: a separate scalar return value in TS (cleaner than C's mixed-mode 'write quotient to qp and return the high limb'). The wire format emits qHigh as u64 decimal string distinct from the q array.",
+  "refs": [
+    "GMP manual section 8.3 -- mpn_divrem multi-limb divisor variant.",
+    "mpfr/src/mpfr-mini-gmp.c L216-L243 -- SHIM body the TS port mirrors (mpz_tdiv_qr semantics).",
+    "GMP section 8.3 -- divisor normalization requirement; high limb MSB must be set.",
+    "CLAUDE.md 'Hallucination-risk callouts' -- mpn limbs are LITTLE-ENDIAN by limb index."
+  ]
+}

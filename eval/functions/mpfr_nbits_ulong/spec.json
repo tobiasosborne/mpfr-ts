@@ -1,0 +1,18 @@
+{
+  "function": "mpfr_nbits_ulong",
+  "class": "misc",
+  "signature": {
+    "params": ["n"],
+    "returns": "number"
+  },
+  "c_signature": "int mpfr_nbits_ulong(unsigned long n)",
+  "prec_unit": "n/a",
+  "doc": "Pure-TS port of MPFR's mpfr_nbits_ulong (mpfr/src/nbits_ulong.c). Compute the number of significant bits of n, i.e. nbits(unsigned long) - count_leading_zeros(n) for n > 0. For n = 0 the C function asserts (MPFR_ASSERTD(n > 0)); the TS port treats n = 0 as a domain error and throws MPFRError with code 'EDOMAIN'. The return value equals floor(log2(n)) + 1 for n >= 1, equivalently the position of the highest set bit (1-indexed from the LSB).\n\nInput type: TypeScript has no `unsigned long` type. Since the C `unsigned long` on the platforms libmpfr targets is 64-bit (Linux x86_64 LP64), the TS port accepts a bigint and validates 0 < n < 2^64. A JS `number` input is rejected (use BigInt() at the call site). The harness's golden_driver emits `n` as a u64 decimal string via jl_kv_u64, which the value_codec decodes to a bigint, so the wire shape matches.\n\nReturn type: plain JS `number` (matches the C `int` return; the result is always in [1, 64], which fits a number trivially). The wire output is a bare JSON number via jl_output_scalar_int.\n\nAlgorithm note: the C source has two branches keyed on MPFR_LONG_WITHIN_LIMB. On x86_64 the macro is true, so a single count_leading_zeros call suffices. The TS port uses a divide-and-conquer bit search (the same shape as the C #else branch) over the BigInt input -- correct for any 0 < n < 2^64 and reasonably tight since BigInt comparisons against power-of-two constants are O(1) in V8 / JSC.\n\nClass 'misc' (1000ms per-case budget). Tag minimums (happy>=20, edge>=30, adversarial>=10, fuzz>=50, mined>=5) apply -- the function has a real input domain so the buildopt carve-out does not.",
+  "divergence_from_c": "1. Input type: C takes `unsigned long`; TS takes bigint and validates 0 < n < 2^64. A number-shaped input throws (MPFRError 'EPREC').\n2. n = 0 handling: C asserts (MPFR_ASSERTD); TS throws MPFRError 'EDOMAIN' (we don't model assertions as crashes -- the golden driver excludes n = 0 by construction).\n3. Return type: identical -- C `int`, TS `number`. The wire format is a bare JSON number.\n4. count_leading_zeros: C has two implementations (MPFR_LONG_WITHIN_LIMB true vs false); TS implements the divide-and-conquer search analogous to the C #else branch, since BigInt has no native CLZ in TS.",
+  "refs": [
+    "mpfr/src/nbits_ulong.c L29-L84 -- C reference body.",
+    "src/core.ts -- MPFRError (for the EDOMAIN throw).",
+    "GMP section 8.3 -- mp_limb_t is 64-bit on x86_64; MPFR_LONG_WITHIN_LIMB true on LP64.",
+    "CLAUDE.md 'Hallucination-risk callouts' -- prec_t is in bits; this function's input is unsigned long, not a precision."
+  ]
+}

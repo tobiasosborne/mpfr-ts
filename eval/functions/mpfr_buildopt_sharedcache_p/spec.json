@@ -1,0 +1,18 @@
+{
+  "function": "mpfr_buildopt_sharedcache_p",
+  "class": "misc",
+  "signature": {
+    "params": [],
+    "returns": "boolean"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_buildopt_sharedcache_p: build-time predicate reporting whether libmpfr was compiled with shared-cache support for thread-shared constants (MPFR_WANT_SHARED_CACHE). C returns int (0 or 1) per a preprocessor branch; TS returns boolean. The TS port has no shared-cache infrastructure (the constant cache, if/when one ships, will be per-Worker per the harness's per-test isolation model from CLAUDE.md Rule 4), so the value is the compile-time constant `false`. The libmpfr-side observable depends on how the system libmpfr was built; the golden_driver emits the TS-expected `false` unconditionally because the TS port does not (and cannot) advertise shared-cache support. Class 'misc' (1000ms per-case budget). Tag minimums (happy>=20, edge>=30, adversarial>=10, fuzz>=50, mined>=5) are inapplicable to no-arg accessor functions whose input domain is empty -- a single happy case is the entire test surface.",
+  "c_signature": "int mpfr_buildopt_sharedcache_p(void)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C returns int (0 or 1) from a preprocessor branch on MPFR_WANT_SHARED_CACHE; TS returns boolean and is unconditionally `false`. Pure-TS has no shared-cache infrastructure -- the harness model under CLAUDE.md Rule 4 is per-test Worker isolation, which would preclude sharing a process-wide cache across cases anyway -- so advertising shared-cache support would be a lie. The golden_driver does NOT call libmpfr's mpfr_buildopt_sharedcache_p() for the expected output (its return depends on the system libmpfr build flags) -- it hard-codes `false` to match the TS-port contract.",
+  "refs": [
+    "mpfr/src/buildopt.c L86-L94 -- the C reference (mpfr_buildopt_sharedcache_p preprocessor branch).",
+    "src/ops/buildopt_sharedcache_p.ts -- the production port.",
+    "CLAUDE.md Rule 7 -- tag minimums (carved out here per the spec.doc note above).",
+    "CLAUDE.md Rule 4 -- per-test Worker isolation is incompatible with a process-wide shared cache."
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "function": "mpfr_buildopt_gmpinternals_p",
+  "class": "misc",
+  "signature": {
+    "params": [],
+    "returns": "boolean"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_buildopt_gmpinternals_p: build-time predicate reporting whether libmpfr was compiled with access to GMP's internal headers (MPFR_HAVE_GMP_IMPL or WANT_GMP_INTERNALS). C returns int (0 or 1) per a preprocessor branch; TS returns boolean. The TS port does not link GMP at all -- the substrate is pure BigInt with hand-ported mpn_* helpers under src/internal/mpn/ -- so the value is the compile-time constant `false`. The libmpfr-side observable depends on how the system libmpfr was built; the golden_driver emits the TS-expected `false` unconditionally because the TS port does not (and cannot) advertise GMP internals access. Class 'misc' (1000ms per-case budget). Tag minimums (happy>=20, edge>=30, adversarial>=10, fuzz>=50, mined>=5) are inapplicable to no-arg accessor functions whose input domain is empty -- a single happy case is the entire test surface.",
+  "c_signature": "int mpfr_buildopt_gmpinternals_p(void)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C returns int (0 or 1) from a preprocessor branch on MPFR_HAVE_GMP_IMPL / WANT_GMP_INTERNALS; TS returns boolean and is unconditionally `false`. Pure-TS does not link GMP -- the substrate is pure BigInt and the mpn_* helpers are ported by hand under src/internal/mpn/ -- so advertising GMP internals access would be a lie. The golden_driver does NOT call libmpfr's mpfr_buildopt_gmpinternals_p() for the expected output (its return depends on the system libmpfr build flags) -- it hard-codes `false` to match the TS-port contract.",
+  "refs": [
+    "mpfr/src/buildopt.c L76-L84 -- the C reference (mpfr_buildopt_gmpinternals_p preprocessor branch).",
+    "src/ops/buildopt_gmpinternals_p.ts -- the production port.",
+    "CLAUDE.md Rule 7 -- tag minimums (carved out here per the spec.doc note above).",
+    "CLAUDE.md Rule 12 -- pure-TS port has no GMP link on either Bun or Node; CLAUDE.md Law 3 substrate split."
+  ]
+}

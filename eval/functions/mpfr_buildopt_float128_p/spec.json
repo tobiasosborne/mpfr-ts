@@ -1,0 +1,18 @@
+{
+  "function": "mpfr_buildopt_float128_p",
+  "class": "misc",
+  "signature": {
+    "params": [],
+    "returns": "boolean"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_buildopt_float128_p: build-time predicate reporting whether libmpfr was compiled with __float128 / IEEE 754 binary128 support (MPFR_WANT_FLOAT128). C returns int (0 or 1) per a preprocessor branch; TS returns boolean. The TS port has no native binary128 type (BigInt is unbounded but lacks IEEE-754 semantics; there is no Float128Array), so the value is the compile-time constant `false`. The libmpfr-side observable depends on how the system libmpfr was built; the golden_driver emits the TS-expected `false` unconditionally because the TS port does not (and cannot) advertise binary128 support. Class 'misc' (1000ms per-case budget). Tag minimums (happy>=20, edge>=30, adversarial>=10, fuzz>=50, mined>=5) are inapplicable to no-arg accessor functions whose input domain is empty -- a single happy case is the entire test surface.",
+  "c_signature": "int mpfr_buildopt_float128_p(void)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C returns int (0 or 1) from a preprocessor branch on MPFR_WANT_FLOAT128; TS returns boolean and is unconditionally `false`. Pure-TS has no native binary128 / __float128 type -- the typed-array surface is f32/f64 only -- so advertising binary128 support would be a lie. If/when a TS-native binary128 library lands and we wire it in, this flips to `true` and the golden is regenerated. The golden_driver does NOT call libmpfr's mpfr_buildopt_float128_p() for the expected output (its return depends on the system libmpfr build flags) -- it hard-codes `false` to match the TS-port contract.",
+  "refs": [
+    "mpfr/src/buildopt.c L56-L64 -- the C reference (mpfr_buildopt_float128_p preprocessor branch).",
+    "src/ops/buildopt_float128_p.ts -- the production port.",
+    "CLAUDE.md Rule 7 -- tag minimums (carved out here per the spec.doc note above).",
+    "CLAUDE.md Rule 12 -- pure-TS port runs on Bun OR Node; no native binary128 in either."
+  ]
+}

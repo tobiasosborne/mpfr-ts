@@ -1,0 +1,20 @@
+{
+  "function": "mpfr_scale2",
+  "class": "misc",
+  "signature": {
+    "params": ["d", "exp"],
+    "returns": "number"
+  },
+  "c_signature": "double mpfr_scale2(double d, int exp)",
+  "prec_unit": "n/a",
+  "doc": "Pure-TS port of MPFR's mpfr_scale2 (mpfr/src/scale2.c L29-L90). Multiply an IEEE 754 binary64 input d by 2^exp, returning a double. Equivalent to `d * 2^exp` evaluated exactly when the result is representable, with the same subnormal-handling behaviour as ldexp(d, exp) but written to avoid a libm dependency.\n\nC preconditions (mpfr/src/scale2.c L28-L46):\n  - 1/2 <= d <= 1 (i.e. d in [0.5, 1.0]). When d == 1.0 the C function rewrites it as 0.5 with exp += 1 to bring d strictly into [0.5, 1).\n  - -1073 <= exp <= 1025 (asserted, mpfr/src/scale2.c L45). This is the safe range: the IEEE-754 unbiased exponent of d is -1 (since 0.5 <= d < 1), and exp_max = 1024, exp_min = -1022 for binary64; -1073 = -1022 + (-52) accounts for the subnormal shift via DBL_EPSILON.\n  - Infinities and zeros are 'already checked' by callers (C comment L44); the function does not exercise them.\n\nImplementation (mpfr/src/scale2.c L33-L57, IEEE-754 fast path):\n  1. If d == 1.0: d = 0.5; exp += 1 (now d in [0.5, 1)).\n  2. Extract the IEEE-754 biased exponent field (11 bits, positions 52-62).\n  3. If exp < -1021 (subnormal target):\n       biased_exp += exp + 52\n       d *= DBL_EPSILON  (= 2^-52, which shifts the mantissa into the subnormal range)\n  4. Else (normal target):\n       biased_exp += exp\n  5. Reassemble the double from the modified exponent and the unchanged sign+mantissa fields.\n\nTS port: use a DataView over an ArrayBuffer to read/write the IEEE-754 bytes (same trick used by mpfr_get_d.ts and mpfr_set_d.ts). Native big-endian view of the binary64 layout: byte 0 carries sign (bit 7) and the high 7 bits of the biased exponent (bits 0-6); byte 1 carries the low 4 bits of the biased exponent (bits 4-7) plus the top 4 mantissa bits (bits 0-3).\n\nClass 'misc' (1000ms per-case budget). Tag minimums (happy>=20, edge>=30, adversarial>=10, fuzz>=50, mined>=5) apply -- non-trivial input domain. Mined is 0 (mpfr/tests/ has no isolatable scale2 test driver; the function is internal helper exercised through mpfr_get_d / mpfr_set_d).",
+  "divergence_from_c": "1. Input types: C `double` <-> TS `number`; C `int` <-> TS `number` (exp). Identical semantics.\n2. Return type: identical (C `double`, TS `number`).\n3. Subnormal handling: C uses DBL_EPSILON = 2^-52 and direct exponent-field arithmetic; TS port mirrors this exactly via DataView. Both produce IEEE-754 subnormal outputs when -1073 <= exp < -1021. The exact byte-for-byte equivalence is what the golden tests.\n4. Precondition checks: the C function asserts (MPFR_ASSERTD); the TS port validates the asserted preconditions and throws MPFRError 'EDOMAIN' if d is outside [0.5, 1.0] or exp outside [-1073, 1025]. The golden_driver respects the precondition envelope.\n5. d == 1.0 special case: identical -- both rewrite as d = 0.5, exp += 1 before the main path.",
+  "refs": [
+    "mpfr/src/scale2.c L29-L90 -- C reference body.",
+    "mpfr/src/get_d.c -- canonical caller (converts an MPFR value to double via scale2).",
+    "src/core.ts -- MPFRError (for EDOMAIN throw).",
+    "src/ops/get_d.ts -- sister TS port that may use scale2 in the BigInt-mantissa-to-double path.",
+    "IEEE 754-2019 binary64 layout: 1-bit sign, 11-bit biased exponent (bias 1023), 52-bit mantissa with implicit leading 1.",
+    "CLAUDE.md 'Hallucination-risk callouts' -- Subnormals exist in MPFR only when emin is set explicitly; this function targets IEEE-754 subnormals, not MPFR subnormals."
+  ]
+}

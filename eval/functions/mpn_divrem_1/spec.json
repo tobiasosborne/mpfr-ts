@@ -1,0 +1,19 @@
+{
+  "function": "mpn_divrem_1",
+  "class": "substrate",
+  "signature": {
+    "params": ["qxn", "np", "nn", "d0"],
+    "returns": "{ q: readonly bigint[], r: bigint }"
+  },
+  "c_signature": "mp_limb_t mpn_divrem_1(mp_limb_t *qp, mp_size_t qxn, mp_limb_t *np, mp_size_t nn, mp_limb_t d0)",
+  "limb_width_bits": 64,
+  "limb_order": "little-endian",
+  "doc": "Pure-TS port of GMP's mpn_divrem_1 -- divides a multi-precision integer by a single 64-bit limb, computing both quotient and remainder. Substrate-class -- operates on raw bigint arrays (decimal-string limbs over the wire), not src/core.ts MPFR values, so the schema ast_check requireCoreImport=false exemption applies.\n\nC contract (GMP mpn_divrem_1 with qxn fractional quotient extension):\n  Numerator: an (nn+qxn)-limb integer obtained by prepending qxn zero limbs to the LSB end of np[0..nn). I.e. np shifted left by qxn full limbs.\n  Divisor: a single nonzero limb d0.\n  Quotient: written to qp[0..nn+qxn), little-endian.\n  Remainder: a single limb in [0, d0), returned as mp_limb_t.\n  The remainder fits in one limb because the divisor is one limb.\n\nMini-gmp shim equivalence (mpfr/src/mpfr-mini-gmp.c L177-L213):\n  The MPFR mini-gmp shim wraps the operation in mpz_init/mpz_tdiv_qr/mpz_clear -- semantically identical to the underlying BigInt truncated division `(np_int << (qxn * 64)) /qr d0`. The TS port uses native BigInt division and matches this semantics exactly.\n\nTS signature (no-mutation-rewrite):\n  mpn_divrem_1(qxn: number, np: readonly bigint[], nn: number, d0: bigint) -> { q: readonly bigint[], r: bigint }\n  - qxn: number of zero limbs prepended to np to form the dividend (0 is the common case).\n  - np: nn-limb dividend in little-endian limb order; each limb in [0, 2^64).\n  - nn: length of np to consume; nn >= 0. (nn == 0 with qxn == 0 is degenerate -- empty dividend -- and returns {q: [], r: 0n}.)\n  - d0: single nonzero divisor limb in (0, 2^64).\n  - returns: q has length nn+qxn; r is a single bigint limb in [0, d0).\n\nClass 'substrate' (50ms per-case budget). Tag minimums apply (happy>=20, edge>=30, adversarial>=10, fuzz>=50, mined>=5 or all available). Mined absent -- mpfr/tests/ has no isolatable mpn_divrem_1 test driver; it is exercised internally by mpfr_set_z / mpfr_get_str.",
+  "divergence_from_c": "1. C mutates qp in place and returns remainder as scalar; TS returns a fresh {q, r} object with q as a freshly-allocated readonly bigint[] and r as a bigint.\n2. C accepts qxn > 0 with np providing the high-end nn limbs of a (nn+qxn)-limb dividend; TS port matches by computing dividend = np_combined << (qxn * 64) before division.\n3. Validation: TS throws Error on nn < 0, qxn < 0, np.length < nn, d0 == 0n. C asserts d0 != 0 in normalized form.\n4. Limb endianness: both little-endian (limbs[0] = least significant). Documented in spec, asserted at the limb-width invariant: GMP_NUMB_BITS == 64.",
+  "refs": [
+    "GMP manual section 8.3 -- mpn_divrem_1 single-limb divisor variant.",
+    "mpfr/src/mpfr-mini-gmp.c L177-L213 -- the SHIM body the TS port mirrors (mpz_tdiv_qr semantics).",
+    "GMP section 8.3 limb endianness: limbs[0] is the least-significant 64-bit word.",
+    "CLAUDE.md 'Hallucination-risk callouts' -- GMP mpn limbs are LITTLE-ENDIAN by limb index."
+  ]
+}

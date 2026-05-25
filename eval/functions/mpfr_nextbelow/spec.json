@@ -1,0 +1,22 @@
+{
+  "function": "mpfr_nextbelow",
+  "class": "misc",
+  "signature": {
+    "params": ["x"],
+    "returns": "MPFR"
+  },
+  "c_signature": "void mpfr_nextbelow(mpfr_ptr x)",
+  "prec_unit": "bits",
+  "doc": "Pure-TS port of MPFR's mpfr_nextbelow (mpfr/src/next.c L133-L147). Step x one ULP toward -infinity at x's own precision; this is IEEE 754-2008 nextDown restricted to a single MPFR precision. The mirror of mpfr_nextabove: the sign-based dispatch is INVERTED. No rounding occurs, so the TS port returns a bare MPFR rather than a Result {value, ternary}.\n\nC behaviour (mpfr/src/next.c L133-L147):\n  - NaN -> sets __gmpfr_flags |= MPFR_FLAGS_NAN; x stays NaN. (TS port: NaN -> NaN, no global flag.)\n  - Otherwise dispatches by sign:\n      * Negative x -> mpfr_nexttoinf(x): stepping below a negative value moves it further from zero (more negative -- toward -infinity).\n      * Positive x (including +0 per MPFR_IS_NEG semantics) -> mpfr_nexttozero(x): stepping below a non-negative value moves it toward zero. Note: nextbelow(+0) = nexttozero(+0) = -smallest (sign flip per nexttozero), and nextbelow(-0) = nexttoinf(-0) = -smallest (sign preserved per nexttoinf). Net: nextbelow(+/-0) = -smallest -- matches IEEE 754 nextDown(+/-0) = -minSubnormal.\n\nThe nextabove / nextbelow ASYMMETRY on signed zero is what makes both directions IEEE-correct: nextabove(+/-0) = +smallest and nextbelow(+/-0) = -smallest, with the sign-flip in nexttozero compensating for the lack of one in nexttoinf.\n\nTernary semantics: not applicable -- mpfr_nextbelow is exact in the precision-defined lattice. The TS port returns MPFR, not Result.",
+  "divergence_from_c": "1. Return shape: C mutates x in place; TS returns a fresh MPFR. The TS port composes mpfr_nexttozero / mpfr_nexttoinf (both already ported) and returns the result; the only difference from nextabove is the dispatch table.\n2. NaN handling: C sets the global __gmpfr_flags |= MPFR_FLAGS_NAN and leaves x as NaN. TS has no global flag register; it returns NAN_VALUE. The flag-side observable is not part of the TS surface; functional output is identical.\n3. emin/emax: inherited from the delegates (mpfr_nexttozero / mpfr_nexttoinf); both use EMIN_DEFAULT / EMAX_DEFAULT = +/-(2^30 - 1).",
+  "refs": [
+    "mpfr/src/next.c L133-L147 -- C reference body.",
+    "mpfr/src/next.c L45-L85 -- mpfr_nexttozero (delegate for non-negative x).",
+    "mpfr/src/next.c L87-L117 -- mpfr_nexttoinf (delegate for negative x).",
+    "src/ops/nexttozero.ts -- existing TS port of the non-negative-x delegate.",
+    "src/ops/nexttoinf.ts -- existing TS port of the negative-x delegate.",
+    "src/core.ts -- locked MPFR shape, NAN_VALUE.",
+    "mpfr/tests/tnext.c -- direct mined test cases for mpfr_nextbelow.",
+    "CLAUDE.md 'Hallucination-risk callouts' -- NaN propagation, signed zero observable."
+  ]
+}
