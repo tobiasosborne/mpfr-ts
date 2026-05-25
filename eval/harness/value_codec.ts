@@ -247,7 +247,7 @@ export type ExpectedOutput =
   | { readonly kind: 'result'; readonly value: MPFR; readonly ternary: Ternary }
   | { readonly kind: 'mpfr'; readonly value: MPFR }
   | { readonly kind: 'object'; readonly fields: Readonly<Record<string, unknown>> }
-  | { readonly kind: 'scalar'; readonly value: bigint | number | boolean };
+  | { readonly kind: 'scalar'; readonly value: bigint | number | boolean | string };
 
 /**
  * `true` iff `t` is a valid {@link Ternary} value (`-1`, `0`, or `1`).
@@ -295,7 +295,11 @@ export function decodeExpectedOutput(raw: unknown): ExpectedOutput {
       const n = Number(raw);
       if (Number.isFinite(n)) return { kind: 'scalar', value: n };
     }
-    throw new Error(`unrecognised scalar string output: ${JSON.stringify(raw)}`);
+    // Opaque-string passthrough — LAST branch so decimal-integer / NaN /
+    // +-Infinity / finite-double still take precedence. Unblocks
+    // mpfr_buildopt_tune_case (returns "default") and mpfr_fdump
+    // (multi-line dump). Codec gap closed per worklog 019.
+    return { kind: 'scalar', value: raw };
   }
   if (typeof raw === 'number') {
     return { kind: 'scalar', value: raw };
@@ -470,6 +474,17 @@ export function compareOutput(
           return null;
         }
         return `scalar mismatch: expected boolean ${expected.value}, got ${typeof actual} ${String(actual)}`;
+      }
+      if (typeof expected.value === 'string') {
+        // Opaque-string scalar — the mpfr_buildopt_tune_case / mpfr_fdump
+        // family. Strict `===` only; no normalisation. A port that returns
+        // a number, bigint, or differently-cased string must fail the
+        // grade. JSON.stringify is used in the message so embedded
+        // newlines/quotes are visible in grade.json's first_error.
+        if (typeof actual === 'string' && actual === expected.value) {
+          return null;
+        }
+        return `scalar mismatch: expected string ${JSON.stringify(expected.value)}, got ${typeof actual} ${JSON.stringify(actual)}`;
       }
       // number-valued scalar. Use `Object.is` rather than `===` so:
       //   - NaN equals NaN (=== returns false; CLAUDE.md hallucination

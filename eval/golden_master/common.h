@@ -267,15 +267,32 @@ static inline void jl_kv_double(FILE *f, int first, const char *key, double v) {
     fputc('"', f);
 }
 
-/* Emit ,"key":"<escaped>". Escapes only `"` and `\` — sufficient for
- * the controlled string values goldens carry (mostly short tags); we
- * are not a general JSON library. */
+/* Emit ,"key":"<escaped>". Full JSON-string escape: `"`, `\`, the
+ * standard short-form controls (\n \r \t \b \f), and \u00XX fallback
+ * for any other byte < 0x20. Bytes >= 0x20 (including high bytes from
+ * UTF-8 sequences) pass through verbatim — JSON permits raw UTF-8 in
+ * strings and we do not need to re-encode it.
+ *
+ * Goldens carry short tags here, but driver authors must not have to
+ * audit every callsite for stray newlines; the C side of the codec is
+ * a JSONL line discipline and a literal `\n` in any field would split
+ * one logical record across two physical lines. */
 static inline void jl_kv_str(FILE *f, int first, const char *key, const char *s) {
     jl__key(f, first, key);
     fputc('"', f);
-    for (const char *p = s; *p; ++p) {
-        if (*p == '"' || *p == '\\') fputc('\\', f);
-        fputc(*p, f);
+    for (const unsigned char *p = (const unsigned char *)s; *p; ++p) {
+        switch (*p) {
+            case '"':  fputs("\\\"", f); break;
+            case '\\': fputs("\\\\", f); break;
+            case '\n': fputs("\\n", f); break;
+            case '\r': fputs("\\r", f); break;
+            case '\t': fputs("\\t", f); break;
+            case '\b': fputs("\\b", f); break;
+            case '\f': fputs("\\f", f); break;
+            default:
+                if (*p < 0x20) fprintf(f, "\\u%04x", *p);
+                else fputc(*p, f);
+        }
     }
     fputc('"', f);
 }
@@ -579,13 +596,26 @@ static inline void jl_output_scalar_double(FILE *f, double v) {
     fputc('"', f);
 }
 
-/* Emit ,"output":"<escaped>" — scalar string output. Same simple
- * escape policy as jl_kv_str. */
+/* Emit ,"output":"<escaped>" — scalar string output. Full JSON-string
+ * escape: `"`, `\`, the standard short-form controls (\n \r \t \b \f),
+ * and \u00XX fallback for any other byte < 0x20. Bytes >= 0x20 pass
+ * through verbatim. Critical for mpfr_fdump (multi-line dumps) and
+ * any future driver that captures arbitrary printable output. */
 static inline void jl_output_scalar_str(FILE *f, const char *s) {
     fputs(",\"output\":\"", f);
-    for (const char *p = s; *p; ++p) {
-        if (*p == '"' || *p == '\\') fputc('\\', f);
-        fputc(*p, f);
+    for (const unsigned char *p = (const unsigned char *)s; *p; ++p) {
+        switch (*p) {
+            case '"':  fputs("\\\"", f); break;
+            case '\\': fputs("\\\\", f); break;
+            case '\n': fputs("\\n", f); break;
+            case '\r': fputs("\\r", f); break;
+            case '\t': fputs("\\t", f); break;
+            case '\b': fputs("\\b", f); break;
+            case '\f': fputs("\\f", f); break;
+            default:
+                if (*p < 0x20) fprintf(f, "\\u%04x", *p);
+                else fputc(*p, f);
+        }
     }
     fputc('"', f);
 }
