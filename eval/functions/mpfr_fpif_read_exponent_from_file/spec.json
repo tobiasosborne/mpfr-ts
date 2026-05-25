@@ -1,0 +1,19 @@
+{
+  "function": "mpfr_fpif_read_exponent_from_file",
+  "class": "substrate",
+  "signature": {
+    "params": ["bytes_value", "byte_length", "pos", "prec"],
+    "returns": "object"
+  },
+  "doc": "Pure-TS port of MPFR's static helper mpfr_fpif_read_exponent_from_file (mpfr/src/fpif.c L399-L473). Deserialises the sign+kind+exponent byte field of an fpif record from a byte buffer at a given cursor.\n\nFormat (fpif.c L44-L57): see mpfr_fpif_store_exponent spec.\n\nClass 'substrate' per ADR 0004 -- Uint8Array boundary, explicit cursor.\n\nTS substrate signature (locked by ADR 0004 worked example):\n  fpif_read_exponent(bytes: Uint8Array, pos: number, prec: bigint)\n    -> { kind: MPFR['kind']; sign: 1 | -1; exp: bigint; nextPos: number }\n\nThe `prec` parameter is plumbed through but only consulted indirectly -- the C side calls MPFR_SET_SIGN/MPFR_SET_EXP on the rop, which depends on x's prior init. In the TS version `prec` is the precision tag for downstream reconstruction; for kind='normal' the returned exp is the unbiased exponent.\n\nThrows MPFRError('EDOMAIN') per ADR Invariant 5 on malformed input (exponent_size > 16, exponent_size > mpfr_exp_t, exponent out of [MPFR_EMIN_MIN, MPFR_EMAX_MAX], invalid kind sentinel).\n\nWire-form harness signature (this spec):\n  Inputs:\n    bytes_value (decimal-bigint, LE byte buffer)\n    byte_length (int)\n    pos (int, starting cursor)\n    prec (decimal-bigint, the precision context for the output value)\n  Output: { kind: <string>, sign: <int 1|-1>, exp: <decimal-bigint>, nextPos: <int> }\n\nNB: for kind in {'zero','inf','nan'} the output exp is 0n (per src/core.ts singular-value convention). The TS layer represents NaN with sign=1 by convention; the wire encodes the actual MSB sign bit, so a 'nan' record with sign=-1 on the wire would round-trip back to sign=1 in the locked schema -- but only AFTER it leaves this substrate. This raw read returns what the bytes encode.\n\nOnly well-formed inputs appear in the golden. Tag minimums per Rule 7 apply.",
+  "c_signature": "static int mpfr_fpif_read_exponent_from_file(mpfr_ptr x, ext_data_ptr h)",
+  "prec_unit": "bits",
+  "divergence_from_c": "Six divergences:\n\n  1. Input shape: C (mpfr_ptr, ext_data_ptr) -> TS (Uint8Array, position, prec).\n\n  2. Output shape: C void return + mutates rop's sign/exp/kind, return int = success flag -> TS pure-function object {kind, sign, exp, nextPos}.\n\n  3. Errors: C 0/1 return -> TS MPFRError('EDOMAIN') throw per ADR Invariant 5.\n\n  4. Endianness: collapsed to single LE.\n\n  5. Sign convention for NaN: this raw substrate returns whatever the bytes encode (sign can be -1). The locked TS schema canonicalises NaN sign=1 only after the public-API wrapper folds the singular kinds via NAN_VALUE.\n\n  6. Wire shape: bytes as (decimal-bigint, byte_length) pair.\n\nNote: the C MPFR_EXP_IN_RANGE / MPFR_EMAX_MAX checks are kept but use the locked TS PREC_MAX-derived bounds (1 - 2^62 to 2^62 - 1 with default emin/emax = +/-(2^30 - 1) per src/core.ts conventions).",
+  "refs": [
+    "mpfr/src/fpif.c L44-L57 -- exponent field format spec.",
+    "mpfr/src/fpif.c L399-L473 -- mpfr_fpif_read_exponent_from_file C body.",
+    "mpfr/src/fpif.c L70-L74 -- MPFR_KIND constants.",
+    "docs/adr/0004-binary-io-api.md -- ADR locking the API + wire shape.",
+    "eval/functions/mpfr_fpif_store_exponent/spec.json -- inverse function."
+  ]
+}

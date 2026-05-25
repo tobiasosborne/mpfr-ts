@@ -1,0 +1,18 @@
+{
+  "function": "mpfr_fpif_store_precision",
+  "class": "substrate",
+  "signature": {
+    "params": ["precision"],
+    "returns": "object"
+  },
+  "doc": "Pure-TS port of MPFR's static helper mpfr_fpif_store_precision (mpfr/src/fpif.c L208-L240). Serialises an MPFR precision into the fpif binary header.\n\nFormat (fpif.c L30-L43):\n  Let B be the first byte.\n  * If 1 <= p <= 248 (MPFR_MAX_EMBEDDED_PRECISION = 255 - 7): B = p + 7 (i.e. 8 <= B <= 255).\n  * If 249 <= p <= 2^64 + 248: B = size_precision - 1 (0..7), then size_precision bytes hold p - 249 in little-endian.\n\nClass 'substrate' per ADR 0004 -- TS-native Uint8Array boundary, no src/core.ts surface touch.\n\nTS substrate signature (locked by ADR 0004 worked example):\n  fpif_store_precision(precision: bigint): Uint8Array\n\nThrows MPFRError('EDOMAIN') if precision < 1n (mirrors the C MPFR_ASSERTD(precision >= 1) but escalates to a recoverable throw per ADR Invariant 5).\n\nWire-form harness signature (this spec):\n  Input: precision (decimal-bigint string -> bigint in the port).\n  Output: { bytes: <decimal-bigint, little-endian unsigned interpretation of the byte buffer>, byte_length: <int> }.\n\nThe output is structured because the byte buffer for short precisions can have a leading-byte value that matters; the byte_length field disambiguates the trailing zeros from a shorter buffer's encoding.\n\nTag minimums per Rule 7 apply.",
+  "c_signature": "static unsigned char *mpfr_fpif_store_precision(unsigned char *buffer, size_t *buffer_size, mpfr_prec_t precision)",
+  "prec_unit": "bits",
+  "divergence_from_c": "Three divergences:\n\n  1. Buffer ownership: C takes a (possibly NULL) buffer + size_t pointer and may reallocate; returns the (possibly grown) buffer pointer. TS allocates a fresh Uint8Array of the exact required size and returns it. No realloc, no shared ownership.\n\n  2. Error reporting: C asserts precision >= 1 via MPFR_ASSERTD (debug-only, no-op in release builds; UB on violation). TS throws MPFRError('EDOMAIN') unconditionally on precision < 1n.\n\n  3. Wire shape for the harness: the byte buffer travels as a (decimal-bigint, byte_length) pair so the grader can use the existing scalar-bigint codec path (ADR 0004 Wire encoding).",
+  "refs": [
+    "mpfr/src/fpif.c L30-L43 -- fpif format spec for the precision field.",
+    "mpfr/src/fpif.c L208-L240 -- mpfr_fpif_store_precision C body (the reference).",
+    "docs/adr/0004-binary-io-api.md -- ADR locking the Uint8Array boundary and the wire-format choice.",
+    "mpfr/src/fpif.c L67-L68 -- MPFR_MAX_PRECSIZE, MPFR_MAX_EMBEDDED_PRECISION constants."
+  ]
+}

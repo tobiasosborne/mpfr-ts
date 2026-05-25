@@ -1,0 +1,19 @@
+{
+  "function": "mpfr_fpif_read_limbs",
+  "class": "substrate",
+  "signature": {
+    "params": ["bytes_value", "byte_length", "pos", "prec"],
+    "returns": "object"
+  },
+  "doc": "Pure-TS port of MPFR's static helper mpfr_fpif_read_limbs (mpfr/src/fpif.c L520-L542). Deserialises the significand portion of an fpif record from a byte buffer at a given cursor.\n\nFormat (fpif.c L59-L60): the inverse of mpfr_fpif_store_limbs. With endianness collapsed to LE (ADR 0004 Invariant 3), the equivalent direct formulation is:\n\n  nb_byte  = ceil(prec / 8)\n  read nb_byte little-endian bytes -> M_padded (an integer in [0, 2^(nb_byte*8)))\n  pad_bits = nb_byte*8 - prec  (0..7)\n  mant     = M_padded >> pad_bits\n\nThe returned mant is MSB-aligned to prec bits (matches the src/core.ts schema invariant). The caller's MPFR value's bit (prec-1) of mant is expected to be set for the value to be a valid normal MPFR.\n\nClass 'substrate' per ADR 0004 -- Uint8Array boundary, explicit cursor.\n\nTS substrate signature (locked by ADR 0004 worked example):\n  fpif_read_limbs(bytes: Uint8Array, pos: number, prec: bigint)\n    -> { mant: bigint; nextPos: number }\n\nThrows MPFRError('EDOMAIN') on truncated buffer or invalid prec.\n\nWire-form harness signature (this spec):\n  Inputs:\n    bytes_value (decimal-bigint, LE byte buffer)\n    byte_length (int)\n    pos (int, starting cursor)\n    prec (decimal-bigint)\n  Output: { mant: <decimal-bigint>, nextPos: <int> }\n\nTag minimums per Rule 7 apply.",
+  "c_signature": "static void mpfr_fpif_read_limbs(mpfr_ptr x, unsigned char *buffer, size_t nb_byte)",
+  "prec_unit": "bits",
+  "divergence_from_c": "Five divergences:\n\n  1. Input shape: C (mpfr_ptr, buffer, nb_byte) -> TS (Uint8Array, pos, prec). The C buffer is exactly nb_byte long; the TS Uint8Array can be longer with pos pointing into the limbs region.\n\n  2. Return shape: C void + mutates rop's MPFR_MANT -> TS pure-function {mant, nextPos}.\n\n  3. prec parameter: C reads it from the rop (mpfr_get_prec(x)); TS receives it explicitly so the helper is stateless.\n\n  4. Endianness: collapsed to single LE.\n\n  5. Wire shape: bytes as (decimal-bigint, byte_length) pair.\n\nBoth descriptions produce identical mant for the same byte stream.",
+  "refs": [
+    "mpfr/src/fpif.c L59-L60 -- significand format spec.",
+    "mpfr/src/fpif.c L520-L542 -- mpfr_fpif_read_limbs C body.",
+    "src/core.ts L113-L135 -- locked MPFR shape; mant MSB-aligned to prec bits.",
+    "docs/adr/0004-binary-io-api.md -- ADR locking the API + wire shape.",
+    "eval/functions/mpfr_fpif_store_limbs/spec.json -- inverse function."
+  ]
+}

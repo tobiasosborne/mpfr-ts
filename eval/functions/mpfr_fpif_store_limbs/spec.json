@@ -1,0 +1,18 @@
+{
+  "function": "mpfr_fpif_store_limbs",
+  "class": "substrate",
+  "signature": {
+    "params": ["x"],
+    "returns": "object"
+  },
+  "doc": "Pure-TS port of MPFR's static helper mpfr_fpif_store_limbs (mpfr/src/fpif.c L483-L511). Serialises the significand of a regular MPFR value into the fpif binary format.\n\nFormat (fpif.c L59-L60 and L483-L511):\n  nb_byte = ceil(precision / 8) -- exact number of bytes to write.\n  The C implementation writes `nb_partial_byte = nb_byte mod 8` bytes from the high (MSB) end of _d[0] (the LSB limb in GMP convention), then writes full limbs _d[1], _d[2], ..., _d[k-1] each as 8 little-endian bytes. With endianness collapsed to LE (ADR 0004 Invariant 3), the equivalent simpler description is: write the top `nb_byte` bytes of the MSB-aligned padded mantissa (mant << pad_bits where pad_bits = nb_byte*8 - prec, 0..7) in little-endian byte order.\n\nClass 'substrate' per ADR 0004 -- Uint8Array boundary.\n\nTS substrate signature (locked by ADR 0004 worked example):\n  fpif_store_limbs(x: MPFR): Uint8Array\n\nThe TS port reads x.prec and x.mant. For kind != 'normal' the function is undefined-behaviour in C (reads uninitialised MPFR_MANT); the TS port throws MPFRError('EDOMAIN') instead.\n\nWire-form harness signature (this spec):\n  Input: x (MPFR wire object; kind must be 'normal').\n  Output: { bytes: <decimal-bigint, little-endian unsigned int>, byte_length: <int> }.\n\nTag minimums per Rule 7 apply.",
+  "c_signature": "static unsigned char *mpfr_fpif_store_limbs(unsigned char *buffer, size_t *buffer_size, mpfr_srcptr x)",
+  "prec_unit": "bits",
+  "divergence_from_c": "Four divergences:\n\n  1. Buffer ownership: C realloc-capable; TS fresh Uint8Array.\n\n  2. Domain: C is undefined for non-regular x (reads MPFR_MANT garbage); TS throws EDOMAIN.\n\n  3. Endianness: collapsed to single LE implementation.\n\n  4. Storage: C reads raw mp_limb_t[] from MPFR_MANT(x); TS reconstructs the padded limb layout from the MSB-aligned x.mant bigint by shifting up by (nb_byte*8 - prec) bits, then writing little-endian.\n\nBoth descriptions produce identical bytes.",
+  "refs": [
+    "mpfr/src/fpif.c L59-L60 -- significand format spec.",
+    "mpfr/src/fpif.c L483-L511 -- C function body.",
+    "src/core.ts L113-L135 -- locked MPFR shape; mant is MSB-aligned to prec bits.",
+    "docs/adr/0004-binary-io-api.md -- ADR locking the Uint8Array boundary."
+  ]
+}

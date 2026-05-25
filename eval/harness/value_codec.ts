@@ -141,9 +141,14 @@ function looksLikeMpfrWire(o: object): o is MpfrWire {
   // pattern below would otherwise be ill-typed.
   const r = o as Readonly<Record<string, unknown>>;
   const kind = r['kind'];
-  return (
-    kind === 'normal' || kind === 'zero' || kind === 'inf' || kind === 'nan'
-  );
+  if (kind !== 'normal' && kind !== 'zero' && kind !== 'inf' && kind !== 'nan') {
+    return false;
+  }
+  // Distinguishes from arbitrary substrate outputs that happen to carry a
+  // `kind` field with an MPFR-kind value (e.g. fpif_read_exponent's
+  // {kind, sign, exp, nextPos}). MPFR wire records always include prec as
+  // a decimal-integer string per jl_kv_mpfr in common.h.
+  return typeof r['prec'] === 'string';
 }
 
 /**

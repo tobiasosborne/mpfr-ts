@@ -1,0 +1,19 @@
+{
+  "function": "mpfr_fpif_store_exponent",
+  "class": "substrate",
+  "signature": {
+    "params": ["x"],
+    "returns": "object"
+  },
+  "doc": "Pure-TS port of MPFR's static helper mpfr_fpif_store_exponent (mpfr/src/fpif.c L317-L387). Serialises the sign-bit + exponent (or kind sentinel) field of an MPFR value into the fpif binary format.\n\nFormat (fpif.c L44-L57):\n  Byte A = [seeeeeee] where s = sign bit (0x80), E = [eeeeeee] (7 bits).\n  * For PURE_FP (kind='normal'):\n      - If -47 <= e <= 47: E = e + 47, exponent_size = 0 (single byte).\n      - Else: E = MPFR_EXTERNAL_EXPONENT + exponent_size where exponent_size is 1..16, then exponent_size bytes hold (|e| - 47) with the top bit of the last byte set if e < 0. Shift uexp = (|e| - 47) << 1 to count bytes; sign bit OR'd in.\n  * For singular values:\n      - E = MPFR_KIND_ZERO (119) for signed zero.\n      - E = MPFR_KIND_INF (120) for signed infinity.\n      - E = MPFR_KIND_NAN (121) for NaN.\n  * Sign bit is ORed into byte[0] high bit for all kinds (including NaN).\n\nClass 'substrate' per ADR 0004 -- Uint8Array boundary.\n\nTS substrate signature (locked by ADR 0004 worked example):\n  fpif_store_exponent(x: MPFR): Uint8Array\n\nWire-form harness signature (this spec):\n  Input: x (MPFR wire object).\n  Output: { bytes: <decimal-bigint, little-endian unsigned int>, byte_length: <int> }.\n\nThe TS port reads x.kind, x.sign, x.exp. Per ADR 0004 Invariant 5, malformed inputs throw MPFRError('EDOMAIN'). Per src/core.ts NaN convention, NaN has sign=1 (no observable sign), but C preserves the sign bit even for NaN -- on the TS side this means our serialisation always emits sign=1's encoding for NaN, which matches what the C side emits for an MPFR_SET_POS NaN.\n\nTag minimums per Rule 7 apply.",
+  "c_signature": "static unsigned char *mpfr_fpif_store_exponent(unsigned char *buffer, size_t *buffer_size, mpfr_srcptr x)",
+  "prec_unit": "bits",
+  "divergence_from_c": "Four divergences:\n\n  1. Buffer ownership: C realloc-capable buffer pointer; TS fresh Uint8Array.\n\n  2. Input shape: C mpfr_srcptr opaque struct -> TS MPFR value-type (src/core.ts).\n\n  3. NaN sign: C preserves MPFR_SIGN(x) bit for NaN; the TS schema canonicalises NaN to sign=1 (src/core.ts NAN_VALUE). The driver only emits NaN cases with sign=+1 so the round-trip is observable.\n\n  4. Endianness: collapsed to single little-endian implementation (ADR 0004 Invariant 3).\n\n  5. Wire shape: byte buffer travels as (decimal-bigint, byte_length) pair.",
+  "refs": [
+    "mpfr/src/fpif.c L44-L57 -- exponent field format spec.",
+    "mpfr/src/fpif.c L317-L387 -- mpfr_fpif_store_exponent C body.",
+    "mpfr/src/fpif.c L70-L74 -- MPFR_KIND_ZERO/INF/NAN, MAX_EMBEDDED_EXPONENT, EXTERNAL_EXPONENT constants.",
+    "docs/adr/0004-binary-io-api.md -- ADR locking the Uint8Array boundary.",
+    "src/core.ts -- locked MPFR shape, NaN sign convention."
+  ]
+}

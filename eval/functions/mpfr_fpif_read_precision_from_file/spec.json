@@ -1,0 +1,18 @@
+{
+  "function": "mpfr_fpif_read_precision_from_file",
+  "class": "substrate",
+  "signature": {
+    "params": ["bytes_value", "byte_length", "pos"],
+    "returns": "object"
+  },
+  "doc": "Pure-TS port of MPFR's static helper mpfr_fpif_read_precision_from_file (mpfr/src/fpif.c L248-L302). Deserialises an fpif-encoded precision from a byte buffer at a given cursor position.\n\nFormat (fpif.c L30-L43): see mpfr_fpif_store_precision spec.\n\nClass 'substrate' per ADR 0004 -- Uint8Array boundary, explicit cursor.\n\nTS substrate signature (locked by ADR 0004 worked example):\n  fpif_read_precision(bytes: Uint8Array, pos: number)\n    -> { precision: bigint; nextPos: number }\n\nThrows MPFRError('EDOMAIN') per ADR Invariant 5 on malformed input (truncated buffer, precision-byte = 0 with empty payload, precision encoding overflows mpfr_prec_t).\n\nWire-form harness signature (this spec):\n  Inputs:\n    bytes_value (decimal-bigint, little-endian unsigned interpretation of the byte buffer)\n    byte_length (int, exact buffer length so leading-zero bytes are preserved)\n    pos (int, starting cursor)\n  Output: { precision: <decimal-bigint>, nextPos: <int> }\n\nThe TS port reconstructs the Uint8Array via bigIntToBytes(bytes_value, byte_length), then runs fpif_read_precision(bytes, pos).\n\nOnly well-formed inputs appear in the golden -- the runner classifies an exception as n_throw (failure). Edge cases that the C side rejects with `return 0` are EXCLUDED from the golden to keep grading meaningful.\n\nTag minimums per Rule 7 apply.",
+  "c_signature": "static mpfr_prec_t mpfr_fpif_read_precision_from_file(ext_data_ptr h)",
+  "prec_unit": "bits",
+  "divergence_from_c": "Five divergences:\n\n  1. Input shape: C ext_data_ptr (vtable + state) -> TS (Uint8Array, position) per ADR 0004 Invariant 2.\n\n  2. Return shape: C bare mpfr_prec_t (0 = error sentinel) -> TS {precision, nextPos} on success; throws MPFRError('EDOMAIN') on malformed input per ADR Invariant 5.\n\n  3. Endianness: collapsed to single LE implementation (ADR 0004 Invariant 3).\n\n  4. Range check: the C source rejects precisions whose top bit is set (so the unsigned read wouldn't fit in the signed mpfr_prec_t). The TS port keeps this -- precision returns are bigint and could in principle overflow mpfr_prec_t conventions; we enforce the same upper bound.\n\n  5. Wire shape: input bytes carried as (decimal-bigint, byte_length) pair.",
+  "refs": [
+    "mpfr/src/fpif.c L30-L43 -- precision field format spec.",
+    "mpfr/src/fpif.c L248-L302 -- mpfr_fpif_read_precision_from_file C body.",
+    "docs/adr/0004-binary-io-api.md -- ADR locking the API + wire shape.",
+    "eval/functions/mpfr_fpif_store_precision/spec.json -- inverse function."
+  ]
+}
