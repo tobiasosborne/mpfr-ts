@@ -1,0 +1,14 @@
+{
+  "function": "mpfr_const_euler_bs_clear",
+  "class": "misc",
+  "signature": {"params": ["s"], "returns": "object"},
+  "doc": "Pure-TS port of MPFR's mpfr_const_euler_bs_clear (mpfr/src/const_euler.c L62-L71). Deallocates the 6 mpz_t fields in a binary-splitting state struct used by the Euler-Mascheroni constant computation.\n\nC body calls mpz_clear on each of the 6 fields.\n\nThe TS port: BigInt is GC-managed; nothing to free. Returns a fully-zeroed state {P: 0n, Q: 0n, T: 0n, C: 0n, D: 0n, V: 0n} as the closest immutable analog to 'object cleared'.\n\nINTERNAL helper, not part of the public API. Lives in src/internal/mpfr/.\n\nClass 'misc'. Tag minimums per Rule 7 apply -- input domain is any well-formed BS state.",
+  "c_signature": "static void mpfr_const_euler_bs_clear(mpfr_const_euler_bs_t s)",
+  "prec_unit": "n/a",
+  "divergence_from_c": "Three divergences: (1) C `static` -> TS internal; (2) C void (mutates) -> TS object (returns zeroed state); (3) C frees mpz_t fields; TS has GC, so the operation reduces to producing the zeroed state.",
+  "refs": [
+    "mpfr/src/const_euler.c L62-L71 -- the C reference body.",
+    "mpfr/src/const_euler.c L39-L49 -- struct definition.",
+    "eval/functions/mpfr_const_euler_bs_init/spec.json -- sister constructor."
+  ]
+}

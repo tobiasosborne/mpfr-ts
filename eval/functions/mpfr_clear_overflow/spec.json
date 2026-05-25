@@ -1,0 +1,18 @@
+{
+  "function": "mpfr_clear_overflow",
+  "class": "misc",
+  "signature": {
+    "params": ["mask"],
+    "returns": "bigint"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_clear_overflow (mpfr/src/exceptions.c L160-L166). Three-line C body: `__gmpfr_flags &= MPFR_FLAGS_ALL ^ MPFR_FLAGS_OVERFLOW` -- clear the OVERFLOW bit (bit 1 = 2). C returns void.\n\nThe TS port follows the same immutable-API contract used by the rest of the flag family: takes `mask: bigint`, applies the clear-OVERFLOW operation, returns the new flag state as `bigint`. In-library wiring goes through clearFlags(MPFR_FLAGS_OVERFLOW) from src/internal/mpfr/flags.ts.\n\nClass 'misc'. Tag minimums per Rule 7 apply.",
+  "c_signature": "void mpfr_clear_overflow(void)",
+  "prec_unit": "n/a",
+  "divergence_from_c": "Three: (1) return void -> bigint (new state); (2) param void -> mask:bigint; (3) mechanism: clearFlags(MPFR_FLAGS_OVERFLOW) or inline `mask & (63n ^ 2n)`.",
+  "refs": [
+    "mpfr/src/exceptions.c L160-L166 -- C reference.",
+    "/usr/include/mpfr.h L77-L88 -- MPFR_FLAGS_OVERFLOW=2.",
+    "src/internal/mpfr/flags.ts -- shipped TS flag register.",
+    "eval/functions/mpfr_clear_divby0/spec.json -- sibling template."
+  ]
+}

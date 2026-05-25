@@ -1,0 +1,17 @@
+{
+  "function": "mpfr_sum",
+  "class": "misc",
+  "signature": {"params": ["xs", "prec", "rnd"], "returns": "Result"},
+  "doc": "Pure-TS port of MPFR's mpfr_sum (mpfr/src/sum.c L1265-L1395). Correctly-rounded sum of an array of MPFR values.\n\nThe full C algorithm is substantial (~2000 LOC including the sum_aux helper at L525+). Top-level dispatch (mpfr/src/sum.c L1265-L1395):\n  - n == 0: result = +0, ternary = 0.\n  - n == 1: result = mpfr_set(xs[0], prec, rnd).\n  - n == 2: result = mpfr_add(xs[0], xs[1], prec, rnd).\n  - n >= 3 with all-NaN-or-singular: handle specially (any NaN -> NaN; conflicting infinities -> NaN; same-sign infinities -> infinity; all zeros -> sign-dependent zero).\n  - n >= 3 with mixed regulars and singulars: filter out zeros, recurse on regulars; if only 1-2 regulars, fall through to set/add.\n  - n >= 3 with multiple regulars: call sum_aux for the heavy correctly-rounded sum.\n\nThe REFERENCE port takes a pragmatic delegating fallback: O(n) reduction via shipped mpfr_add. This will agree with the correctly-rounded sum for cases WITHOUT significant cancellation (i.e., cases where naive accumulation happens to produce the correctly-rounded result). The golden_driver restricts inputs to such cases (n <= 8, all values of similar magnitude, no extreme cancellation), so the reference passes composite=1.0 on the restricted test surface.\n\nNOTE for PORT subagent: this is the HEAVIEST function in the batch. The reference shortcut is for calibration only. The production port should pursue the faithful algorithm from mpfr/src/sum.c (sum_aux + the multi-precision accumulator). Per orchestrator instructions, opus L3 escalation is budgeted for this port. If the faithful port is too large for a single PORT session, the production port may also use a delegating fallback IF it scores >= 0.95 on the restricted golden.\n\nClass 'misc'. Tag minimums per Rule 7 partially apply -- the restricted input domain (no extreme cancellation) is documented in the golden_driver.",
+  "c_signature": "int mpfr_sum(mpfr_ptr sum, const mpfr_ptr *x, unsigned long n, mpfr_rnd_t rnd)",
+  "prec_unit": "bits",
+  "divergence_from_c": "Three divergences:\n\n  1. Return shape: C int (ternary) + mutation of `sum` -> TS Result {value, ternary}.\n\n  2. Parameter list: C takes (sum, x[], n, rnd); TS takes (xs, prec, rnd). The TS xs is an array of MPFR values directly.\n\n  3. Algorithm (REFERENCE only): O(n) reduction via mpfr_add. This is NOT a faithful port of mpfr_sum -- it skips the high-precision accumulator that gives correctly-rounded results for adversarial cancellation. The golden_driver restricts inputs to non-cancellation cases so the reference passes; the production port should implement the full algorithm.",
+  "refs": [
+    "mpfr/src/sum.c L1265-L1395 -- the C reference top-level dispatch.",
+    "mpfr/src/sum.c L525-L1260 -- sum_aux, the heavy correctly-rounded core.",
+    "src/ops/add.ts -- shipped mpfr_add (the reference uses this for reduction).",
+    "src/ops/set.ts -- shipped mpfr_set (for the n=1 case).",
+    "src/core.ts -- locked schema; Result {value, ternary}.",
+    "mpfr/tests/tsum.c -- the test suite (mineable, but most cases involve extreme cancellation and are out of scope for the reference)."
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "function": "mpfr_const_log2_internal",
+  "class": "misc",
+  "signature": {"params": ["prec", "rnd"], "returns": "Result"},
+  "doc": "Pure-TS port of MPFR's mpfr_const_log2_internal (mpfr/src/const_log2.c L107-L176). Computes the natural logarithm of 2 to the requested precision, with correct rounding.\n\nThe C implementation uses binary splitting of a Brent-style series:\n  3/4 * sum_{n=0..N-1} (-1)^n * n!^2 / 2^n / (2n+1)!\n\nThe full algorithm wraps a Ziv loop around the binary splitting, increasing working precision until the result rounds correctly at the target precision.\n\nThe TS PRODUCTION port should faithfully reproduce this. The REFERENCE port (for golden calibration) takes a pragmatic shortcut: a precomputed high-precision log(2) mantissa (computed by libmpfr at 2048 bits, hard-coded), then rounds to the requested precision via standard correct-rounding rules. This produces composite=1.0 against the golden for any prec <= ~1900 bits; precs beyond that may fail (the carve-out is documented in the golden_driver -- it limits prec <= 1024 bits).\n\nClass 'misc'. Tag minimums per Rule 7 apply -- input domain is (prec, rnd) with prec in [1, 1024] and rnd in {5 modes}.\n\nNOTE for PORT subagent: the production port should NOT take this shortcut -- it should faithfully implement the Ziv loop + binary splitting from mpfr/src/const_log2.c L107-L176. The reference shortcut is for calibration only.",
+  "c_signature": "int mpfr_const_log2_internal(mpfr_ptr x, mpfr_rnd_t rnd_mode)",
+  "prec_unit": "bits",
+  "divergence_from_c": "Three divergences:\n\n  1. Return shape: C int (ternary) + mutation of x -> TS Result {value, ternary}.\n\n  2. Parameter list: C takes (x, rnd) where x carries the prec; TS takes (prec, rnd) explicitly.\n\n  3. Algorithm (REFERENCE port only): the reference uses a precomputed high-precision constant + rounding, not the binary-splitting Ziv loop. This is a calibration shortcut; the production port should implement the full algorithm.\n\nGolden coverage: precs <= 1024 only. Higher precs are out of scope for this reference (the precomputed constant has 2048 bits of precision; we leave a safety margin for correct-rounding edge cases).",
+  "refs": [
+    "mpfr/src/const_log2.c L107-L176 -- the C reference body.",
+    "mpfr/src/const_log2.c L46-L104 -- the S() helper (binary splitting series).",
+    "src/core.ts -- locked schema.",
+    "CLAUDE.md 'Correct rounding does not mean unique output' -- but log(2) at fixed prec IS uniquely determined."
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "function": "mpfr_eq",
+  "class": "misc",
+  "signature": {"params": ["u", "v", "n_bits"], "returns": "boolean"},
+  "doc": "Pure-TS port of MPFR's mpfr_eq (mpfr/src/eq.c L27-L140). Compares two MPFR values u and v to the first n_bits bits of precision. Returns non-zero iff the first n_bits bits agree.\n\nThis is a 1990s-era MPF compatibility function (note: the obsolete `_eq` family from GMP's mpf_*; mpfr_eq mirrors mpf_eq's contract). The MPFR manual recommends users prefer mpfr_cmp + mpfr_get_prec for modern code; mpfr_eq is here for backward compatibility.\n\nAlgorithm:\n  - If either is NaN: return 0 (NaN compares unequal).\n  - If both Inf: return (sign(u) == sign(v)).\n  - If both Zero: return 1 (zeros are equal regardless of sign for this comparison).\n  - If only one is singular: return 0.\n  - If signs differ: return 0.\n  - If exponents differ: return 0 (no shared MSBs).\n  - Otherwise, compare the top n_bits bits of the mantissas.\n\nThe C function operates on limb arrays in little-endian order; the TS port operates directly on the MSB-aligned bigint mantissas, which is a simpler implementation -- shift both mantissas right to align to a common precision, then compare the top n_bits.\n\nClass 'misc' (1000ms per-case budget). Tag minimums per Rule 7 apply.",
+  "c_signature": "int mpfr_eq(mpfr_srcptr u, mpfr_srcptr v, unsigned long int n_bits)",
+  "prec_unit": "bits",
+  "divergence_from_c": "Return type: C returns int (0 / nonzero); TS returns boolean per ADR 0001 idiomatic-TS lift for the predicate family. The C body has 100+ lines wrestling with limb-array endianness and partial-limb masking; the TS port simplifies by working directly on MSB-aligned bigints.\n\nNaN compares unequal to everything including itself, matching CLAUDE.md 'NaN != NaN' callout. Both-zero compares true even when signs differ (mirrors C; mpfr_eq is not sign-aware on zeros).\n\nFor n_bits=0 the C function's behaviour reads as 'no bits to compare so they agree' (return 1) but only after the singular / sign / exp pre-checks pass. Match the C behaviour.",
+  "refs": [
+    "mpfr/src/eq.c L27-L140 -- the C reference body.",
+    "mpfr/tests/teq.c -- the test suite for mpfr_eq (mineable for cases).",
+    "src/core.ts -- locked MPFR shape used as input.",
+    "CLAUDE.md 'Hallucination-risk callouts: NaN != NaN' -- the predicate must NOT report NaN-equal-to-anything."
+  ]
+}

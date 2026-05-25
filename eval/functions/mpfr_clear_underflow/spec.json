@@ -1,0 +1,18 @@
+{
+  "function": "mpfr_clear_underflow",
+  "class": "misc",
+  "signature": {
+    "params": ["mask"],
+    "returns": "bigint"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_clear_underflow (mpfr/src/exceptions.c L152-L158). Three-line C body: `__gmpfr_flags &= MPFR_FLAGS_ALL ^ MPFR_FLAGS_UNDERFLOW` -- clear the UNDERFLOW bit (bit 0 = 1) from the global flag register. C returns void.\n\nThe TS port follows the same immutable-API contract used by the rest of the flag family (see mpfr_divby0_p, mpfr_nanflag_p): takes `mask: bigint` describing the pre-clear flag state, applies the clear-UNDERFLOW operation, returns the new flag state as `bigint`. Pure/stateless on the surface; exercises the same `flags &= ALL ^ BIT` arithmetic the C performs.\n\nIn-library wiring: clearFlags(MPFR_FLAGS_UNDERFLOW) from src/internal/mpfr/flags.ts.\n\nClass 'misc' (1000ms per-case budget). Tag minimums per Rule 7 apply.",
+  "c_signature": "void mpfr_clear_underflow(void)",
+  "prec_unit": "n/a",
+  "divergence_from_c": "Three divergences: (1) return type C void -> TS bigint (new flag state); (2) param list C void -> TS `mask: bigint` (pre-clear state); (3) mechanism: clearFlags(MPFR_FLAGS_UNDERFLOW) or inline `mask & (63n ^ 1n) = mask & 62n`. Both correct. Reference port uses inline arithmetic for self-containment.",
+  "refs": [
+    "mpfr/src/exceptions.c L152-L158 -- the C reference body.",
+    "/usr/include/mpfr.h L77-L88 -- MPFR_FLAGS_* bit constants (UNDERFLOW=1).",
+    "src/internal/mpfr/flags.ts -- the TS flag register (already shipped).",
+    "eval/functions/mpfr_clear_divby0/spec.json -- sibling template (same shape; different bit)."
+  ]
+}

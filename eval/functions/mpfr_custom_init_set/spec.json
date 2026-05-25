@@ -1,0 +1,16 @@
+{
+  "function": "mpfr_custom_init_set",
+  "class": "misc",
+  "signature": {"params": ["kind", "exp", "prec", "mantissa"], "returns": "MPFR"},
+  "doc": "Pure-TS port of MPFR's mpfr_custom_init_set (mpfr/src/stack_interface.c L60-L89). Constructs an MPFR value from explicit kind, exponent, precision, and mantissa fields.\n\nC body (paraphrased):\n  if kind >= 0: type = (mpfr_kind_t)kind, sign = +1\n  else:         type = (mpfr_kind_t)-kind, sign = -1\n  exp_sentinel = kind == REGULAR ? exp\n               : kind == NAN ? __MPFR_EXP_NAN\n               : kind == INF ? __MPFR_EXP_INF\n               :               __MPFR_EXP_ZERO\n  set the four MPFR fields and return\n\nThe TS port maps:\n  - kind: signed JS number, |kind| in [0, 3] per the MPFR enum (NAN=0, INF=1, ZERO=2, REGULAR=3); the sign is sign(kind), with kind=0 always meaning NAN (sign=+1 by schema convention).\n  - exp: bigint (only meaningful for REGULAR kind; ignored otherwise per C sentinel logic).\n  - prec: bigint precision in bits, in [PREC_MIN, PREC_MAX] for non-NaN.\n  - mantissa: bigint, MSB-aligned to prec bits (only meaningful for REGULAR; ignored otherwise).\n\nReturns a fresh MPFR value validate()-passing.\n\nClass 'misc'. Tag minimums per Rule 7 apply.",
+  "c_signature": "void mpfr_custom_init_set(mpfr_ptr x, int kind, mpfr_exp_t exp, mpfr_prec_t prec, void *mantissa)",
+  "prec_unit": "bits",
+  "divergence_from_c": "Five divergences:\n\n  1. Return type: C void (mutates x in place) -> TS MPFR (fresh immutable value). Standard immutable-API lift.\n\n  2. Mantissa parameter: C `void *mantissa` (pointer to caller's limb buffer) -> TS `mantissa: bigint` (the MSB-aligned mantissa value). The TS schema stores mantissa inline; there is no caller-managed buffer.\n\n  3. Kind encoding: identical -- signed int where |kind| selects the discriminant and sign(kind) selects the sign. C uses macros (MPFR_REGULAR_KIND etc., values 0/1/2/3); TS uses the same numeric values inline.\n\n  4. NaN canonicalization: when kind=0 (NAN), the TS port returns NAN_VALUE (per src/core.ts L243-L249), which has sign=+1 and prec=0n by convention -- the caller's `prec` argument is discarded for NaN, matching the schema's NaN representation.\n\n  5. Validation: TS port validates the returned MPFR via validate() and throws EPREC if the (kind, sign, exp, prec, mantissa) tuple is malformed (e.g., REGULAR with mant not MSB-aligned). The C function performs only MPFR_ASSERTD (debug-only) checks.",
+  "refs": [
+    "mpfr/src/stack_interface.c L60-L89 -- the C reference body.",
+    "mpfr/src/mpfr.h L287-L292 -- kind enum.",
+    "src/core.ts L243-L249 -- NAN_VALUE canonical shape.",
+    "src/core.ts L113-L135 -- MPFR shape and invariants the result must pass.",
+    "mpfr/tests/tcustom.c -- mineable cases."
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "function": "mpfr_clear_erangeflag",
+  "class": "misc",
+  "signature": {"params": ["mask"], "returns": "bigint"},
+  "doc": "Pure-TS port of MPFR's mpfr_clear_erangeflag (mpfr/src/exceptions.c L192-L198). Three-line C body: `__gmpfr_flags &= MPFR_FLAGS_ALL ^ MPFR_FLAGS_ERANGE` -- clear the ERANGE bit (bit 4 = 16). C returns void.\n\nThe TS port follows the immutable flag-family contract. In-library wiring: clearFlags(MPFR_FLAGS_ERANGE).\n\nClass 'misc'. Tag minimums per Rule 7 apply.",
+  "c_signature": "void mpfr_clear_erangeflag(void)",
+  "prec_unit": "n/a",
+  "divergence_from_c": "Three: (1) void -> bigint; (2) void -> mask:bigint; (3) `mask & (63n ^ 16n) = mask & 47n`.",
+  "refs": [
+    "mpfr/src/exceptions.c L192-L198 -- C reference.",
+    "/usr/include/mpfr.h L77-L88 -- MPFR_FLAGS_ERANGE=16.",
+    "src/internal/mpfr/flags.ts -- shipped TS flag register.",
+    "eval/functions/mpfr_clear_divby0/spec.json -- sibling template."
+  ]
+}

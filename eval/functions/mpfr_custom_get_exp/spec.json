@@ -1,0 +1,16 @@
+{
+  "function": "mpfr_custom_get_exp",
+  "class": "misc",
+  "signature": {"params": ["x"], "returns": "bigint"},
+  "doc": "Pure-TS port of MPFR's mpfr_custom_get_exp (mpfr/src/stack_interface.c L46-L51). One-line C body: `return MPFR_EXP(x)` -- returns the raw exponent field from an MPFR value.\n\nFor a normal (regular) value the C function returns the unbiased base-2 exponent (the same value the public mpfr_get_exp returns). For singular values (NaN/Inf/Zero) the C function returns one of the sentinel exponents __MPFR_EXP_NAN / __MPFR_EXP_INF / __MPFR_EXP_ZERO -- these are large negative numbers chosen so they're guaranteed-distinguishable from legitimate exponents.\n\nThe TS schema (src/core.ts) does NOT carry sentinel exponents -- singular values have exp = 0n by convention (see core.ts L99-L107 and src/core.ts §validate). To avoid this sentinel divergence, the golden_driver restricts inputs to NORMAL (regular) values only: NaN/Inf/Zero are out of scope for this port. For those cases callers should use mpfr_nan_p / mpfr_inf_p / mpfr_zero_p instead.\n\nClass 'misc' (1000ms per-case budget). Tag minimums per Rule 7 apply -- input domain is MPFR normals across precs and exponent magnitudes.",
+  "c_signature": "mpfr_exp_t mpfr_custom_get_exp(mpfr_srcptr x)",
+  "prec_unit": "bits",
+  "divergence_from_c": "Two divergences:\n\n  1. Return type: C returns `mpfr_exp_t` (signed long); TS returns `bigint` for unbounded range. Numeric value is identical for normal inputs.\n\n  2. Sentinel exponents: C returns __MPFR_EXP_NAN / __MPFR_EXP_INF / __MPFR_EXP_ZERO for singular inputs (large negative numbers); the TS schema has no such sentinels (singular values carry exp=0n by convention). To resolve this cleanly, the golden_driver restricts inputs to NORMAL values; the TS port returns x.exp directly. Callers wanting kind-detection use mpfr_nan_p/mpfr_inf_p/mpfr_zero_p instead.\n\nThe port throws MPFRError EPREC if x is not a well-formed MPFR (caught by validate() in src/core.ts) or if a singular value is passed (carve-out -- avoids the sentinel ambiguity).",
+  "refs": [
+    "mpfr/src/stack_interface.c L46-L51 -- the C reference body.",
+    "mpfr/src/mpfr.h L243-L245 -- sentinel exponents __MPFR_EXP_*.",
+    "mpfr/src/mpfr.h L935-L938 -- mpfr_nan_p / mpfr_inf_p / mpfr_zero_p (alternatives for kind-detection).",
+    "src/core.ts L99-L107, L113-L135 -- MPFR shape; singular values have exp=0n by convention.",
+    "src/ops/get_exp.ts -- sister public-API exponent accessor (handles singulars differently)."
+  ]
+}

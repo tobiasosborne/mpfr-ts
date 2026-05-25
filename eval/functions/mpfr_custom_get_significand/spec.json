@@ -1,0 +1,13 @@
+{
+  "function": "mpfr_custom_get_significand",
+  "class": "misc",
+  "signature": {"params": ["x"], "returns": "bigint"},
+  "doc": "Pure-TS port of MPFR's mpfr_custom_get_significand (mpfr/src/stack_interface.c L39-L44). One-line C body: `return (void*) MPFR_MANT(x)` -- returns a pointer to the limb array storing the mantissa.\n\nIn the TS port the mantissa is a single MSB-aligned bigint (src/core.ts L113-L135), so 'get significand' means: return x.mant.\n\nFor singular values (NaN/Inf/Zero) the C function returns whatever pointer happens to be in the _mpfr_d slot -- the contents are uninitialised/meaningless. The TS schema has x.mant=0n for singulars (convention), but reading the mantissa of a singular value is logically undefined either way. The golden_driver restricts inputs to NORMAL values to avoid the meaningless-on-both-sides case.\n\nClass 'misc'. Tag minimums per Rule 7 apply -- input domain is normal MPFR values across precisions.",
+  "c_signature": "void *mpfr_custom_get_significand(mpfr_srcptr x)",
+  "prec_unit": "bits",
+  "divergence_from_c": "Two divergences:\n\n  1. Return type: C `void *` (pointer to mp_limb_t array) -> TS `bigint` (MSB-aligned mantissa value). The C surface is a raw pointer, opaque to callers without companion prec/exp; the TS surface returns the actual mantissa bits as a single bigint, matching the schema convention.\n\n  2. Singular inputs: C returns an opaque (and meaningless) pointer; TS would return 0n. Avoid the meaningless case by restricting golden_driver to NORMAL inputs; the TS port throws EDOMAIN on singular inputs.",
+  "refs": [
+    "mpfr/src/stack_interface.c L39-L44 -- C reference body.",
+    "src/core.ts L113-L135 -- MPFR.mant; MSB-aligned bigint."
+  ]
+}

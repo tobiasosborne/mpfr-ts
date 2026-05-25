@@ -1,0 +1,16 @@
+{
+  "function": "mpfr_custom_get_size",
+  "class": "misc",
+  "signature": {"params": ["prec"], "returns": "bigint"},
+  "doc": "Pure-TS port of MPFR's mpfr_custom_get_size (mpfr/src/stack_interface.c L25-L30). One-line C body: `return MPFR_PREC2LIMBS(prec) * MPFR_BYTES_PER_MP_LIMB` -- returns the number of bytes needed to store a mantissa at the given precision.\n\nMPFR_PREC2LIMBS(p) = ceil(p / GMP_NUMB_BITS) = (p + GMP_NUMB_BITS - 1) / GMP_NUMB_BITS. On 64-bit platforms GMP_NUMB_BITS=64 and MPFR_BYTES_PER_MP_LIMB=8. So the formula is: ((prec + 63) / 64) * 8.\n\nIn the TS port the substrate uses a single bigint for the mantissa, so this byte-size computation has no operational meaning -- but the function is part of the public ABI (consumer-facing) and the answer is well-defined: it's the byte-count a hypothetical libmpfr-style storage would need at that precision. We compute it via the same formula as C, using GMP_NUMB_BITS=64 and 8 bytes per limb (matching the LP64/x86_64 / aarch64 ABI the project targets).\n\nClass 'misc' (1000ms per-case budget). Tag minimums per Rule 7 apply -- the input domain (prec in [1, PREC_MAX]) is enumerable. Focus coverage on the per-limb boundaries (prec=1, 63, 64, 65, 127, 128, 129, etc.) where the ceil division shifts.",
+  "c_signature": "size_t mpfr_custom_get_size(mpfr_prec_t prec)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C returns `size_t` (target-pointer-sized, 8 bytes on LP64); TS returns `bigint` for unbounded range. The numeric value is identical: ceil(prec / 64) * 8 (using the project-target 64-bit limbs).\n\nNo input validation difference: the C function asserts no preconditions explicitly. The TS port throws MPFRError EPREC on prec < 1 or prec > PREC_MAX to match the rest of the library's validation discipline.",
+  "refs": [
+    "mpfr/src/stack_interface.c L25-L30 -- the C reference body.",
+    "mpfr/src/mpfr-impl.h -- MPFR_PREC2LIMBS macro definition.",
+    "/usr/include/x86_64-linux-gnu/gmp.h -- GMP_NUMB_BITS=64 on LP64.",
+    "src/core.ts -- PREC_MIN, PREC_MAX bounds the TS port validates against.",
+    "CLAUDE.md 'Hallucination-risk callouts: mpfr_prec_t is in bits, not decimal digits' -- prec=53 means 53 bits, not 53 digits."
+  ]
+}

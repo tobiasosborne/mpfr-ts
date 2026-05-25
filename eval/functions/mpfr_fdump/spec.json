@@ -1,0 +1,14 @@
+{
+  "function": "mpfr_fdump",
+  "class": "misc",
+  "signature": {"params": ["x"], "returns": "string"},
+  "doc": "Pure-TS port of MPFR's mpfr_fdump (mpfr/src/dump.c L43-L125). Debug-dump an MPFR value to a stream in a human-readable format.\n\nC format (from mpfr/src/dump.c):\n  - NaN:    '@NaN@\\n' (with leading '-' if MPFR_IS_NEG, though NaN sign isn't usually checked)\n  - +Inf:   '@Inf@\\n'\n  - -Inf:   '-@Inf@\\n'\n  - +Zero:  '0\\n'\n  - -Zero:  '-0\\n'\n  - Normal: [-]0.{binary mantissa}E{decimal exponent}\\n\n\nAPI DESIGN NOTE: The C function writes to a FILE* stream. The TS port takes the idiom 'return a string'. The C mpfr_fdump and mpfr_dump (which calls fdump(stdout, ...)) collapse to a single TS function that returns the string the C would have printed. Callers wanting stdout behaviour do their own `console.log(mpfr_fdump(x))` or similar.\n\nClass 'misc' (1000ms per-case budget). Tag minimums per Rule 7 apply -- input domain is any well-formed MPFR.\n\nNOTE for PORT subagent: this is a string-formatting port. The TS port needs to:\n  1. For singulars, return the documented strings.\n  2. For normal values, format the mantissa as binary digits (one per bit, MSB to LSB), strip trailing zeros, then append 'E<decimal exp>'.\n  3. The output always ends with '\\n' to match the C newline.\n\nThe trailing '\\n' is part of the string in the wire form -- the runner's compareOutput uses strict === on strings, so the newline matters.",
+  "c_signature": "void mpfr_fdump(FILE *stream, mpfr_srcptr x)",
+  "prec_unit": "bits",
+  "divergence_from_c": "Three divergences:\n\n  1. Return shape: C void (writes to stream) -> TS string (returns the formatted dump).\n\n  2. Parameter list: C takes (FILE *stream, mpfr_srcptr x); TS takes (x). The stream is replaced by 'return the string'.\n\n  3. UBF / debug-validity markers: the C function emits '!!!N!!!' / '!!!T!!!' / '!!!<!!!' / '!!!>!!!' for malformed values (not normalized / has trailing bits / exp out of range). The TS port's input domain is always well-formed (validate() ran during decode), so these markers never appear in the output. The TS port can omit them entirely.\n\nThe trailing newline IS part of the returned string. The exponent format matches '%lld' in C; we match it as a decimal integer with no padding.",
+  "refs": [
+    "mpfr/src/dump.c L43-L125 -- the C reference body (mpfr_fdump).",
+    "mpfr/src/dump.c L127-L131 -- mpfr_dump (= fdump(stdout, ...)).",
+    "src/core.ts L113-L135 -- MPFR shape (input)."
+  ]
+}

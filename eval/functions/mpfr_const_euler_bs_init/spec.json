@@ -1,0 +1,14 @@
+{
+  "function": "mpfr_const_euler_bs_init",
+  "class": "misc",
+  "signature": {"params": [], "returns": "object"},
+  "doc": "Pure-TS port of MPFR's mpfr_const_euler_bs_init (mpfr/src/const_euler.c L51-L60). Initialises a binary-splitting state struct used by the Euler-Mascheroni constant computation. The struct (mpfr/src/const_euler.c L39-L49) is a 6-tuple of mpz_t fields:\n\n  struct mpfr_const_euler_bs_struct {\n    mpz_t P; mpz_t Q; mpz_t T;\n    mpz_t C; mpz_t D; mpz_t V;\n  };\n\nThe C function calls mpz_init on each of the six -- creating six zero-valued GMP integers.\n\nThe TS port returns a fresh object {P: 0n, Q: 0n, T: 0n, C: 0n, D: 0n, V: 0n}. BigInt has no separate 'init' phase; literal 0n is a zero-valued bigint.\n\nThis function is an INTERNAL helper, not part of the public mpfr_const_euler API. It exists to support binary-splitting recursion in the Euler-constant cache.\n\nClass 'misc'. No-arg function -- single output. Rule 7 minimums carved out per buildopt_float128_p precedent.",
+  "c_signature": "static void mpfr_const_euler_bs_init(mpfr_const_euler_bs_t s)",
+  "prec_unit": "n/a",
+  "divergence_from_c": "Three divergences:\n\n  1. Visibility: C is `static`; the TS port lives in src/internal/mpfr/ (substrate territory).\n\n  2. Return type: C void (mutates s) -> TS object (returns fresh state).\n\n  3. Storage: C uses mpz_t (heap-allocated GMP); TS uses BigInt. mpz_init creates a zero-valued mpz; the TS equivalent is just creating 0n bigints.",
+  "refs": [
+    "mpfr/src/const_euler.c L51-L60 -- the C reference body.",
+    "mpfr/src/const_euler.c L39-L49 -- the struct definition (6 mpz_t fields).",
+    "eval/functions/mpfr_const_euler_bs_clear/spec.json -- sister destructor."
+  ]
+}

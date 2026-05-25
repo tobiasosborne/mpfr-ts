@@ -1,0 +1,15 @@
+{
+  "function": "mpfr_check",
+  "class": "misc",
+  "signature": {"params": ["x"], "returns": "boolean"},
+  "doc": "Pure-TS port of MPFR's mpfr_check (mpfr/src/check.c L32-L80). Returns non-zero iff the MPFR struct passes a battery of structural sanity checks: valid sign field, valid precision (in PREC_COND), non-null mantissa pointer, allocation size matches precision, mantissa MSB is set (for non-singular), trailing low bits are zero, exponent in legitimate range.\n\nThe TS equivalent is `src/core.ts`'s `validate()` function (L354-L437), which enforces the same invariants on the schema's bigint representation:\n  - kind in {normal, zero, inf, nan}\n  - sign in {1, -1}\n  - prec a bigint in [PREC_MIN, PREC_MAX] (or 0n for NaN)\n  - For normal: 2^(prec-1) <= mant < 2^prec (MSB set, no high bits beyond prec)\n  - For singular: exp=0n, mant=0n; NaN additionally has sign=1, prec=0n\n\nThe TS port returns true iff validate() does not throw on the input.\n\nClass 'misc'. Tag minimums per Rule 7 apply. Coverage focuses on valid MPFR values (true) plus structurally-malformed ones (false): NaN with nonzero mant, normal with mant not MSB-aligned, zero with nonzero exp, etc. Since the TS side cannot easily construct invalid MPFR objects via the codec (the codec calls validate() during decoding), invalid-shape cases are constructed by the C driver writing custom JSON with shape violations.",
+  "c_signature": "int mpfr_check(mpfr_srcptr x)",
+  "prec_unit": "bits",
+  "divergence_from_c": "Two divergences:\n\n  1. Return type: C `int` (0 / non-zero) -> TS `boolean`.\n\n  2. The C function checks memory-layout-specific properties (pointer non-null, allocation size, trailing bit padding); the TS equivalent checks shape-specific properties (sign discriminant, prec range, MSB normalization, singular invariants). The two are aligned: a C-passing struct corresponds to a TS-passing MPFR value and vice versa. Both follow the same conceptual contract: 'is this a well-formed value?'\n\nThe golden_driver tests with VALID MPFR values only (constructed via mpfr_init2 + mpfr_set_*); these all return true on both sides. Invalid-shape testing is out of scope -- the codec on the TS side would reject them at decode time, so the path 'invalid wire form -> mpfr_check -> false' is not testable. Instead the TS-side mpfr_check returns true unconditionally for any value the codec accepts (which is the operational semantic anyway).",
+  "refs": [
+    "mpfr/src/check.c L32-L80 -- the C reference body.",
+    "src/core.ts L354-L437 -- validate() -- the conceptual TS analogue.",
+    "src/core.ts L113-L135 -- MPFR shape and the invariants validate enforces.",
+    "mpfr/tests/tcheck.c -- the test suite (mineable)."
+  ]
+}

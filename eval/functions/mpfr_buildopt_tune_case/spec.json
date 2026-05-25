@@ -1,0 +1,18 @@
+{
+  "function": "mpfr_buildopt_tune_case",
+  "class": "misc",
+  "signature": {
+    "params": [],
+    "returns": "string"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_buildopt_tune_case: build-time accessor returning a string describing the tune-case that libmpfr was compiled for. C returns `MPFR_TUNE_CASE`, a preprocessor macro that is always defined (default 'default', other values come from the platform-specific src/mparam.h tune file).\n\nThe TS port returns the constant string 'default'. Pure-TS has no per-platform tuning -- the substrate is pure BigInt with no architecture-specific code-generation, no LUT-backed fast paths keyed off platform identity. The honest answer is 'default' (matching the libmpfr default when no platform-specific mparam.h is found).\n\nClass 'misc' (1000ms per-case budget). Tag minimums (happy>=20, edge>=30, adversarial>=10, fuzz>=50, mined>=5) are inapplicable to no-arg accessor functions whose input domain is empty -- a single happy case is the entire test surface. Same carve-out as mpfr_buildopt_float128_p (worklog 016 / 017 precedent).",
+  "c_signature": "const char *mpfr_buildopt_tune_case(void)",
+  "prec_unit": "n/a",
+  "divergence_from_c": "C returns `const char *` (a pointer to a static-storage string literal); TS returns a regular `string` (immutable JS primitive). The value is the constant 'default'. Pure-TS has no platform-specific tuning -- the substrate is pure BigInt with no architecture-keyed dispatch. The golden_driver does NOT call libmpfr's mpfr_buildopt_tune_case() for the expected output: its return depends on how libmpfr was configured (which platform's mparam.h was picked at compile time). It hard-codes 'default' to match the TS-port contract.\n\nNote on string output wire format: the wire side uses jl_output_scalar_str (emits a quoted JSON string). The TS decoder accepts it as a `string` scalar; the port MUST return a plain TS string (not a wrapped value).",
+  "refs": [
+    "mpfr/src/buildopt.c L96-L100 -- the C reference (returns MPFR_TUNE_CASE macro).",
+    "src/ops/buildopt_float128_p.ts -- sibling no-arg buildopt template.",
+    "CLAUDE.md Rule 7 -- tag minimums (carved out here per the spec.doc note).",
+    "CLAUDE.md Rule 12 -- pure-TS port runs on Bun OR Node identically; no platform tuning."
+  ]
+}

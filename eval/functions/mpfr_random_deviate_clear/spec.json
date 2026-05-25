@@ -1,0 +1,14 @@
+{
+  "function": "mpfr_random_deviate_clear",
+  "class": "misc",
+  "signature": {"params": ["x"], "returns": "object"},
+  "doc": "Pure-TS port of MPFR's mpfr_random_deviate_clear (mpfr/src/random_deviate.c L80-L84). One-line C body: `mpz_clear(x->f)` -- deallocates the GMP mpz used for the fraction's low bits.\n\nIn the TS port, BigInt is GC-managed; there is nothing to deallocate. The closest immutable analog is to return a fully-zeroed state {e: 0n, h: 0n, f: 0n} -- the same shape mpfr_random_deviate_init returns.\n\nClass 'misc'. Tag minimums per Rule 7 apply -- input domain is any well-formed deviate state.\n\nNOTE for PORT subagent: this is effectively a destructor. The TS port returning a zeroed state is the cleanest representation of 'this object is no longer in use'.",
+  "c_signature": "void mpfr_random_deviate_clear(mpfr_random_deviate_ptr x)",
+  "prec_unit": "n/a",
+  "divergence_from_c": "Three divergences:\n\n  1. Return type: C void (frees mpz) -> TS object (returns zeroed state).\n\n  2. Memory model: C explicitly frees the heap-allocated mpz_t; TS uses GC, so there's nothing to free. Returning the zeroed state is the closest immutable analog.\n\n  3. Output value: always {e: 0n, h: 0n, f: 0n} regardless of input. The input mask is preserved for wire-form consistency with the rest of the random_deviate family but does not affect the output.",
+  "refs": [
+    "mpfr/src/random_deviate.c L80-L84 -- the C reference body.",
+    "mpfr/src/random_deviate.h L33-L41 -- the struct definition.",
+    "eval/functions/mpfr_random_deviate_init/spec.json -- sister init function (same return shape)."
+  ]
+}

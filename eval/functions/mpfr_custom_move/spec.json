@@ -1,0 +1,14 @@
+{
+  "function": "mpfr_custom_move",
+  "class": "misc",
+  "signature": {"params": ["x"], "returns": "MPFR"},
+  "doc": "Pure-TS port of MPFR's mpfr_custom_move (mpfr/src/stack_interface.c L53-L58). One-line C body: `MPFR_MANT(x) = (mp_limb_t *) new_position` -- rebinds the MPFR's mantissa pointer to a new caller-supplied buffer.\n\nIn the immutable TS surface, MPFR values are frozen and the mantissa is stored inline (as a bigint) rather than via a caller-managed pointer. 'Moving' storage has no operational meaning. The TS port reduces to the IDENTITY function: takes an MPFR, returns the same value unchanged.\n\nThe `new_position` parameter from the C signature is omitted -- it would have no effect in TS. If a future use case needs to track 'logical storage identity' across moves, that's a separate API design call.\n\nClass 'misc'. Tag minimums per Rule 7 apply -- input domain is any well-formed MPFR.\n\nNOTE for PORT subagent: this is a pure identity function in the TS world. The reference port returns x unchanged. The 'production' port should do likewise; do NOT add machinery to satisfy mutate.py (gaming the gate destroys signal value -- see feedback_no_mutator_bait.md).",
+  "c_signature": "void mpfr_custom_move(mpfr_ptr x, void *new_position)",
+  "prec_unit": "bits",
+  "divergence_from_c": "Three divergences:\n\n  1. Return type: C void (mutates x) -> TS MPFR (returns the input unchanged). Standard immutable lift.\n\n  2. Parameter list: C takes (mpfr_ptr x, void *new_position); TS takes only (x). The new_position parameter is meaningless in the immutable-bigint surface.\n\n  3. Operation: C rebinds the mantissa pointer; TS does nothing (identity function). This is the only honest representation of 'move' when there is no mutable storage to rebind.",
+  "refs": [
+    "mpfr/src/stack_interface.c L53-L58 -- the C reference body.",
+    "src/core.ts L113-L135 -- MPFR shape (mantissa stored inline, no pointer).",
+    "mpfr/tests/tcustom.c -- the test suite (mineable)."
+  ]
+}

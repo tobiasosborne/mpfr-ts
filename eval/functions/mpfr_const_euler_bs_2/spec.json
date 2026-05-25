@@ -1,0 +1,14 @@
+{
+  "function": "mpfr_const_euler_bs_2",
+  "class": "misc",
+  "signature": {"params": ["n1", "n2", "N", "cont"], "returns": "object"},
+  "doc": "Pure-TS port of MPFR's mpfr_const_euler_bs_2 (mpfr/src/const_euler.c L138-L180). Binary-splitting recursion for the second of two product series used in Euler-Mascheroni constant computation.\n\nBase case (n2 - n1 == 1):\n  if n1 == 0: P = 1, Q = 4N\n  else:       P = (2*n1 - 1)^3, Q = 32 * n1 * N^2\n  T = P\n\nRecursive case (n2 - n1 > 1):\n  m = (n1 + n2) / 2\n  recurse on (n1, m) -> (P, Q, T)\n  recurse on (m, n2) -> (P2, Q2, T2)\n  T = T * Q2 + T2 * P\n  if cont: P = P * P2\n  Q = Q * Q2\n\nThe TS port takes (n1, n2, N, cont) as bigints (n1, n2, N are unsigned long counts; cont is a flag). Returns an object {P, Q, T} with the three output bigints.\n\nThis is a real algorithmic port (substantial body); the reference port faithfully recreates the recursion using native BigInt arithmetic.\n\nClass 'misc'. Tag minimums per Rule 7 apply -- input domain is (n1, n2) pairs with n1 < n2, N a precision-derived constant, cont a flag.",
+  "c_signature": "static void mpfr_const_euler_bs_2(mpz_t P, mpz_t Q, mpz_t T, unsigned long n1, unsigned long n2, unsigned long N, int cont)",
+  "prec_unit": "n/a",
+  "divergence_from_c": "Three divergences:\n\n  1. Visibility: C `static` -> TS internal.\n\n  2. Return shape: C void with three mpz_t outputs -> TS object {P, Q, T}.\n\n  3. Storage: C mpz_t -> TS bigint. Same arithmetic; different storage backend.\n\nThe cont flag controls whether P is computed in the outer level (false at the top call, true in inner recursive calls). The TS port honors this verbatim.",
+  "refs": [
+    "mpfr/src/const_euler.c L138-L180 -- the C reference body.",
+    "mpfr/src/const_euler.c L182-L275 -- the parent mpfr_const_euler_internal (caller).",
+    "src/internal/mpfr/ -- expected home for the substrate port."
+  ]
+}

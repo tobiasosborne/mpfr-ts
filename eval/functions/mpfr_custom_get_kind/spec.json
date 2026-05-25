@@ -1,0 +1,14 @@
+{
+  "function": "mpfr_custom_get_kind",
+  "class": "misc",
+  "signature": {"params": ["x"], "returns": "number"},
+  "doc": "Pure-TS port of MPFR's mpfr_custom_get_kind (mpfr/src/stack_interface.c L91-L103). Returns a signed integer encoding both the kind discriminant and the sign:\n\n  - REGULAR (normal): returns REGULAR_KIND (3) * sign(x)  ->  +3 or -3\n  - INF:              returns INF_KIND (1) * sign(x)      ->  +1 or -1\n  - NAN:              returns NAN_KIND (0)                ->  0\n  - ZERO:             returns ZERO_KIND (2) * sign(x)     ->  +2 or -2\n\n(See mpfr/src/mpfr.h L287-L292 for the MPFR_*_KIND enum.) The C body uses MPFR_INT_SIGN which is +1 or -1.\n\nThe TS port returns a plain JS `number` (in [-3, 3]), matching the C int return. The wire format emits the number as a bare JSON int via jl_output_scalar_int.\n\nClass 'misc'. Tag minimums per Rule 7 apply.",
+  "c_signature": "int mpfr_custom_get_kind(mpfr_srcptr x)",
+  "prec_unit": "bits",
+  "divergence_from_c": "Return type: C `int` -> TS `number`. Numeric value identical. The enum constants are not redefined in the TS port -- the port computes the value inline:\n\n  switch (x.kind) {\n    case 'nan':    return 0;\n    case 'inf':    return 1 * x.sign;\n    case 'zero':   return 2 * x.sign;\n    case 'normal': return 3 * x.sign;\n  }\n\nValidates against the locked MPFR shape from src/core.ts.",
+  "refs": [
+    "mpfr/src/stack_interface.c L91-L103 -- C reference body.",
+    "mpfr/src/mpfr.h L287-L292 -- MPFR_NAN_KIND=0, INF=1, ZERO=2, REGULAR=3.",
+    "src/core.ts L73 -- MPFRKind discriminant the TS port pattern-matches over."
+  ]
+}

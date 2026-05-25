@@ -1,0 +1,15 @@
+{
+  "function": "mpfr_custom_init",
+  "class": "misc",
+  "signature": {"params": ["prec"], "returns": "MPFR"},
+  "doc": "Pure-TS port of MPFR's mpfr_custom_init (mpfr/src/stack_interface.c L32-L37). The C function takes a caller-allocated mantissa buffer and a precision; the body is `return;` -- a literal no-op. The mantissa buffer is the storage; the rest of the MPFR struct (sign, exp, kind) is populated later by mpfr_custom_init_set.\n\nThe TS port follows the same pattern as mpfr_init2 (already shipped): takes prec, returns posZero(prec) -- a fresh +0 at the requested precision. The immutable-API surface has no concept of caller-managed mantissa storage (every MPFR is a frozen value), so there is no buffer to attach to. The 'init' aspect is captured by producing a fresh, validated MPFR at the requested precision; the 'no-op' aspect is captured by NOT setting the value to anything meaningful (caller is expected to call mpfr_custom_init_set or other setters next).\n\nClass 'misc' (1000ms per-case budget). Tag minimums per Rule 7 apply -- input domain is prec in [1, PREC_MAX].",
+  "c_signature": "void mpfr_custom_init(void *mantissa, mpfr_prec_t prec)",
+  "prec_unit": "bits",
+  "divergence_from_c": "Three divergences:\n\n  1. Return type: C void (no-op) -> TS MPFR. The TS port returns posZero(prec) as a placeholder, matching mpfr_init2's contract.\n\n  2. Parameter list: C takes (void *mantissa, mpfr_prec_t prec); TS takes (prec). The mantissa-buffer parameter is meaningless in the immutable-bigint world -- the TS schema stores the mantissa as part of the MPFR value, not in a caller-managed buffer.\n\n  3. Mechanism: The C body literally returns. The TS port produces a fresh +0 at the requested precision, identical to mpfr_init2. This is the same divergence rationale as mpfr_init2 (see eval/functions/mpfr_init2/spec.json divergence_from_c).",
+  "refs": [
+    "mpfr/src/stack_interface.c L32-L37 -- the C reference body.",
+    "eval/functions/mpfr_init2/spec.json -- sister init function with the same posZero return contract.",
+    "src/core.ts L278-L281 -- posZero constructor.",
+    "mpfr/tests/tcustom.c -- the test suite (mineable)."
+  ]
+}

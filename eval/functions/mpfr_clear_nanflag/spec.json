@@ -1,0 +1,15 @@
+{
+  "function": "mpfr_clear_nanflag",
+  "class": "misc",
+  "signature": {"params": ["mask"], "returns": "bigint"},
+  "doc": "Pure-TS port of MPFR's mpfr_clear_nanflag (mpfr/src/exceptions.c L176-L182). Three-line C body: `__gmpfr_flags &= MPFR_FLAGS_ALL ^ MPFR_FLAGS_NAN` -- clear the NAN bit (bit 2 = 4). C returns void.\n\nThe TS port follows the immutable flag-family contract: takes `mask: bigint`, applies the clear-NAN operation, returns the new flag state. In-library wiring goes through clearFlags(MPFR_FLAGS_NAN) from src/internal/mpfr/flags.ts.\n\nClass 'misc'. Tag minimums per Rule 7 apply.",
+  "c_signature": "void mpfr_clear_nanflag(void)",
+  "prec_unit": "n/a",
+  "divergence_from_c": "Three: (1) return void -> bigint; (2) param void -> mask:bigint; (3) inline `mask & (63n ^ 4n)`.",
+  "refs": [
+    "mpfr/src/exceptions.c L176-L182 -- C reference.",
+    "/usr/include/mpfr.h L77-L88 -- MPFR_FLAGS_NAN=4.",
+    "src/internal/mpfr/flags.ts -- shipped TS flag register.",
+    "eval/functions/mpfr_clear_divby0/spec.json -- sibling template."
+  ]
+}

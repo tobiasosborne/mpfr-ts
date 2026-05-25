@@ -1,0 +1,15 @@
+{
+  "function": "mpfr_clear_flags",
+  "class": "misc",
+  "signature": {"params": ["mask"], "returns": "bigint"},
+  "doc": "Pure-TS port of MPFR's mpfr_clear_flags (mpfr/src/exceptions.c L144-L150). Three-line C body: `__gmpfr_flags = 0` -- wipe the entire global flag register. C returns void.\n\nThe TS port follows the immutable flag-family contract: takes `mask: bigint` describing the pre-clear flag state, applies the wipe-all operation, returns the new flag state as `bigint`. The output is ALWAYS `0n` regardless of input mask -- that's the contract.\n\nIn-library wiring goes through clearFlags() (with no argument; defaults to MPFR_FLAGS_ALL) from src/internal/mpfr/flags.ts.\n\nClass 'misc' (1000ms per-case budget). Tag minimums per Rule 7 apply -- the input domain is the 6-bit mask space; the output is constant `0n`. Coverage focuses on verifying the constant return (any input -> 0).",
+  "c_signature": "void mpfr_clear_flags(void)",
+  "prec_unit": "n/a",
+  "divergence_from_c": "Three divergences:\n\n  1. Return type: C returns void (mutates global state); TS returns `bigint` (the new flag state = always 0n).\n\n  2. Parameter list: C takes void; TS takes `mask: bigint` (pre-clear state). The mask is largely informational -- the output is always 0n -- but it's the same wire form the sister flag-clearing ports use, so the input is preserved for consistency. The reference port returns 0n unconditionally; a correct production port should do the same.\n\n  3. Mechanism: clearFlags() in src/internal/mpfr/flags.ts (no arg -> defaults to MPFR_FLAGS_ALL -> wipes everything). Inline: simply `return 0n`.",
+  "refs": [
+    "mpfr/src/exceptions.c L144-L150 -- the C reference body.",
+    "/usr/include/mpfr.h L77-L88 -- MPFR_FLAGS_ALL=63 (mask wiped).",
+    "src/internal/mpfr/flags.ts -- shipped TS flag register; clearFlags() is the canonical entry.",
+    "eval/functions/mpfr_clear_divby0/spec.json -- sibling clear-bit template (single bit; clear_flags clears all)."
+  ]
+}

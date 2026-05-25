@@ -1,0 +1,15 @@
+{
+  "function": "mpfr_clear_inexflag",
+  "class": "misc",
+  "signature": {"params": ["mask"], "returns": "bigint"},
+  "doc": "Pure-TS port of MPFR's mpfr_clear_inexflag (mpfr/src/exceptions.c L184-L190). Three-line C body: `__gmpfr_flags &= MPFR_FLAGS_ALL ^ MPFR_FLAGS_INEXACT` -- clear the INEXACT bit (bit 3 = 8). C returns void.\n\nThe TS port follows the immutable flag-family contract. In-library wiring: clearFlags(MPFR_FLAGS_INEXACT).\n\nClass 'misc'. Tag minimums per Rule 7 apply.",
+  "c_signature": "void mpfr_clear_inexflag(void)",
+  "prec_unit": "n/a",
+  "divergence_from_c": "Three: (1) void -> bigint; (2) void -> mask:bigint; (3) `mask & (63n ^ 8n) = mask & 55n`.",
+  "refs": [
+    "mpfr/src/exceptions.c L184-L190 -- C reference.",
+    "/usr/include/mpfr.h L77-L88 -- MPFR_FLAGS_INEXACT=8.",
+    "src/internal/mpfr/flags.ts -- shipped TS flag register.",
+    "eval/functions/mpfr_clear_divby0/spec.json -- sibling template."
+  ]
+}

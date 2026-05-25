@@ -1,0 +1,20 @@
+{
+  "function": "mpfr_buildopt_tls_p",
+  "class": "misc",
+  "signature": {
+    "params": [],
+    "returns": "boolean"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_buildopt_tls_p: build-time predicate reporting whether libmpfr was compiled with thread-safe / thread-local-storage support (MPFR_USE_THREAD_SAFE). C returns int (0 or 1) per a preprocessor branch; TS returns boolean.\n\nThe TS port returns the compile-time constant `false`. Pure-TS modules execute in a single-threaded JavaScript event loop -- there is no concept of cross-thread global state, no need for thread-local storage. Web Workers / Node Worker threads have their OWN module-level state by construction (each worker is a fresh isolate), so 'thread-local storage' is vacuously true at the worker boundary but the question 'does this libmpfr have TLS' has no meaningful TS analogue: there is no shared mutable __gmpfr_flags across workers in our port.\n\nReturning `false` is the most honest answer: the TS port has no TLS infrastructure because it has no shared mutable state that would NEED TLS. This matches the convention used by the other buildopt_* ports in the batch (buildopt_float128_p, buildopt_decimal_p, etc.) which all return `false` for capabilities that don't translate to pure-TS.\n\nClass 'misc' (1000ms per-case budget). Tag minimums (happy>=20, edge>=30, adversarial>=10, fuzz>=50, mined>=5) are inapplicable to no-arg accessor functions whose input domain is empty -- a single happy case is the entire test surface. This is the same carve-out used by mpfr_buildopt_float128_p; see worklog 016 / 017 for the precedent.",
+  "c_signature": "int mpfr_buildopt_tls_p(void)",
+  "prec_unit": "n/a",
+  "divergence_from_c": "C returns int (0 or 1) from a preprocessor branch on MPFR_USE_THREAD_SAFE; TS returns boolean and is unconditionally `false`. Pure-TS has no shared cross-thread mutable state (each Worker is its own isolate), so the question 'does this libmpfr have TLS' has no meaningful answer in TS. Returning `false` is consistent with the rest of the buildopt_*_p ports in src/ops/. The golden_driver does NOT call libmpfr's mpfr_buildopt_tls_p() for the expected output (its return depends on how the system libmpfr was built); it hard-codes `false` to match the TS-port contract.",
+  "refs": [
+    "mpfr/src/buildopt.c L25-L33 -- the C reference (mpfr_buildopt_tls_p preprocessor branch).",
+    "src/ops/buildopt_float128_p.ts -- sibling no-arg predicate template (returns false).",
+    "src/ops/buildopt_decimal_p.ts -- another sibling (returns false).",
+    "src/ops/buildopt_sharedcache_p.ts -- another sibling (returns false).",
+    "CLAUDE.md Rule 7 -- tag minimums (carved out here per the spec.doc note).",
+    "CLAUDE.md Rule 12 -- pure-TS port runs on Bun OR Node; both are single-threaded with worker isolates."
+  ]
+}
