@@ -1,0 +1,13 @@
+{
+  "function": "mpfr_exp_rational",
+  "class": "parked",
+  "signature": {"params": ["y", "p", "r", "m", "P", "mult"], "returns": "void"},
+  "c_signature": "static void mpfr_exp_rational (mpfr_ptr y, mpz_ptr p, long r, int m, mpz_t *P, mpfr_prec_t *mult)",
+  "prec_unit": "n/a",
+  "doc": "PARKED. Static helper for mpfr_exp (mpfr/src/exp3.c). Computes the rational-approximation core of exp via a Brent-style binary-splitting recursion. ADR 0002 criterion (i): no public-API caller in the TS port (mpfr_exp not yet selected). Standalone port would produce dead code.\n\nUnblock condition: when mpfr_exp is selected for porting.",
+  "divergence_from_c": "PARKED -- not ported. See ADR 0002.",
+  "refs": [
+    "mpfr/src/exp3.c -- C reference body.",
+    "docs/adr/0002-approximation-helper-grading.md -- parking criteria (i)."
+  ]
+}

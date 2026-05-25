@@ -1,0 +1,13 @@
+{
+  "function": "mpfr_strtofr",
+  "class": "blocked",
+  "signature": {"params": ["string", "base", "prec", "rnd"], "returns": "{value: MPFR, end: number, ternary: Ternary}"},
+  "c_signature": "int mpfr_strtofr (mpfr_ptr x, const char *string, char **end, int base, mpfr_rnd_t rnd)",
+  "prec_unit": "bits",
+  "doc": "BLOCKED -- needs TS-native string-IO API ADR. The C version is a 500+ line parser handling decimal, hex, binary, octal bases, special strings (NaN, @Inf@), and various edge cases. The natural TS surface is fundamentally different:\n\n  1. Returning `char **end` doesn't map cleanly to TS (no pointer-to-pointer).\n  2. The TS port has alternative paths (`mpfr_set_d(parseFloat(s))`, custom decimal parsers) that may be more idiomatic.\n  3. Locale handling, base-prefix parsing, and the @-syntax for special strings all need API-shape decisions.\n\nUntil a TS-native string-IO ADR lands, the port is blocked. This is a non-trivial port (multiple weeks of careful work) and should be planned, not pushed into a routine ralph-loop batch.",
+  "divergence_from_c": "BLOCKED on string-IO API ADR.",
+  "refs": [
+    "mpfr/src/strtofr.c -- C reference body (~750 LOC).",
+    "src/core.ts -- locked schema; need to extend if string parsing is added."
+  ]
+}

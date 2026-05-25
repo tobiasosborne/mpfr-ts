@@ -1,0 +1,13 @@
+{
+  "function": "mpfr_extract",
+  "class": "parked",
+  "signature": {"params": ["y", "p", "i"], "returns": "void"},
+  "c_signature": "static void mpfr_extract (mpz_ptr y, mpfr_srcptr p, unsigned int i)",
+  "prec_unit": "n/a",
+  "doc": "PARKED. Static helper for mpfr_exp / mpfr_exp_rational (mpfr/src/exp3.c). Extracts a chunk of mantissa bits into an mpz. ADR 0002 criterion (i): no public-API caller in the TS port (mpfr_exp not selected for porting; no exp*.ts in src/ops/). Standalone port would produce dead code.\n\nUnblock condition: when mpfr_exp is selected for porting via the Brent-Salamin or AGM family, mpfr_extract inlines into the parent.",
+  "divergence_from_c": "PARKED -- not ported. See ADR 0002.",
+  "refs": [
+    "mpfr/src/exp3.c -- C reference body.",
+    "docs/adr/0002-approximation-helper-grading.md -- parking criteria (i)."
+  ]
+}

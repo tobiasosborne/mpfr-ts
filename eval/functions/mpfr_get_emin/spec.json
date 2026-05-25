@@ -1,0 +1,19 @@
+{
+  "function": "mpfr_get_emin",
+  "class": "misc",
+  "signature": {
+    "params": [],
+    "returns": "bigint"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_get_emin: read the global minimum-exponent setting. C returns mpfr_exp_t (signed integer type) from the process-wide `__gmpfr_emin` variable. TS returns bigint, the compile-time constant EMIN_DEFAULT = -(2^30 - 1) = -1073741823 (mpfr/src/mpfr.h L232 — MPFR_EMIN_DEFAULT = -MPFR_EMAX_DEFAULT). The TS port has no mutable global exponent state: mpfr_set_emin / mpfr_set_emax are not yet ported (and when they are, will compose via an explicit context arg, not a global), so mpfr_get_emin always returns the documented default. Class 'misc' (1000ms per-case budget). Tag minimums (happy>=20, edge>=30, adversarial>=10, fuzz>=50, mined>=5) are inapplicable to no-arg accessor functions whose input domain is empty — a single happy case is the entire test surface.",
+  "c_signature": "mpfr_exp_t mpfr_get_emin(void)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C returns mpfr_exp_t (signed long-ish); TS returns bigint to keep the precision/exponent invariant (all such fields are bigint per src/core.ts). C reads the process-wide __gmpfr_emin which can be mutated by mpfr_set_emin; TS has no mutable global and returns the default unconditionally. The golden_driver assumes libmpfr is at the default emin (no prior mpfr_set_emin call in the driver). If a future port wires up mpfr_set_emin / mpfr_set_emax, this port needs a context arg and the golden has to be regenerated with explicit set/get pairs.",
+  "refs": [
+    "mpfr/src/exceptions.c L28-L34 — the C reference (mpfr_get_emin returning __gmpfr_emin).",
+    "mpfr/src/mpfr.h L231-L232 — MPFR_EMAX_DEFAULT = (1 << 30) - 1 and MPFR_EMIN_DEFAULT = -MPFR_EMAX_DEFAULT.",
+    "src/ops/get_emin.ts — the production port.",
+    "src/ops/sqr_1.ts L80-L89 — same EMIN_DEFAULT / EMAX_DEFAULT module-local constants (reused inline, no core.ts refactor in this batch).",
+    "CLAUDE.md Rule 7 — tag minimums (carved out here per the spec.doc note above)."
+  ]
+}

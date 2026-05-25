@@ -1,0 +1,14 @@
+{
+  "function": "mpfr_add_z",
+  "class": "blocked",
+  "signature": {"params": ["x", "z", "prec", "rnd"], "returns": "Result"},
+  "c_signature": "int mpfr_add_z (mpfr_ptr y, mpfr_srcptr x, mpz_srcptr z, mpfr_rnd_t r)",
+  "prec_unit": "bits",
+  "doc": "BLOCKED -- needs mpz/bigint integration ADR. C signature takes mpz_srcptr (GMP multi-precision integer). Natural TS surface is `mpfr_add_z(x: MPFR, z: bigint, prec: bigint, rnd: RoundingMode): Result`, but we need a project-wide decision on:\n\n  1. Whether the public TS API exposes `_z` variants at all, or whether users compose `mpfr_set_from_bigint(z) -> mpfr_add(x, ..., prec, rnd)` instead.\n  2. If yes to _z variants: the bigint-to-mantissa coercion strategy (how do we represent the integer 2^64 + 1 inside the MPFR mantissa model?).\n\nUntil that ADR lands, the port is blocked. The C source is straightforward (delegates to mpfr_add after converting z to a temporary mpfr) but the API decision is upstream.",
+  "divergence_from_c": "BLOCKED on mpz API ADR.",
+  "refs": [
+    "mpfr/src/gmp_op.c -- C reference body.",
+    "src/core.ts -- bigint is the natural TS analog of mpz_t.",
+    "src/ops/add.ts -- the underlying mpfr+mpfr add the _z variant would compose with."
+  ]
+}

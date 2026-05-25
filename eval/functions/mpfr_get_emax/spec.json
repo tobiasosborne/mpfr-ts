@@ -1,0 +1,19 @@
+{
+  "function": "mpfr_get_emax",
+  "class": "misc",
+  "signature": {
+    "params": [],
+    "returns": "bigint"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_get_emax: read the global maximum-exponent setting. C returns mpfr_exp_t (signed integer type) from the process-wide `__gmpfr_emax` variable. TS returns bigint, the compile-time constant EMAX_DEFAULT = 2^30 - 1 = 1073741823 (mpfr/src/mpfr.h L231 — MPFR_EMAX_DEFAULT = (1 << 30) - 1). The TS port has no mutable global exponent state: mpfr_set_emin / mpfr_set_emax are not yet ported (and when they are, will compose via an explicit context arg, not a global), so mpfr_get_emax always returns the documented default. Class 'misc' (1000ms per-case budget). Tag minimums (happy>=20, edge>=30, adversarial>=10, fuzz>=50, mined>=5) are inapplicable to no-arg accessor functions whose input domain is empty — a single happy case is the entire test surface.",
+  "c_signature": "mpfr_exp_t mpfr_get_emax(void)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C returns mpfr_exp_t (signed long-ish); TS returns bigint to keep the precision/exponent invariant (all such fields are bigint per src/core.ts). C reads the process-wide __gmpfr_emax which can be mutated by mpfr_set_emax; TS has no mutable global and returns the default unconditionally. The golden_driver assumes libmpfr is at the default emax (no prior mpfr_set_emax call in the driver). If a future port wires up mpfr_set_emin / mpfr_set_emax, this port needs a context arg and the golden has to be regenerated with explicit set/get pairs.",
+  "refs": [
+    "mpfr/src/exceptions.c L64-L70 — the C reference (mpfr_get_emax returning __gmpfr_emax).",
+    "mpfr/src/mpfr.h L231 — MPFR_EMAX_DEFAULT = (1 << 30) - 1.",
+    "src/ops/get_emax.ts — the production port.",
+    "src/ops/sqr_1.ts L80-L89 — same EMIN_DEFAULT / EMAX_DEFAULT module-local constants (reused inline, no core.ts refactor in this batch).",
+    "CLAUDE.md Rule 7 — tag minimums (carved out here per the spec.doc note above)."
+  ]
+}

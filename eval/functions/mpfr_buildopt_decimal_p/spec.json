@@ -1,0 +1,18 @@
+{
+  "function": "mpfr_buildopt_decimal_p",
+  "class": "misc",
+  "signature": {
+    "params": [],
+    "returns": "boolean"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_buildopt_decimal_p: build-time predicate reporting whether libmpfr was compiled with decimal-float support (MPFR_WANT_DECIMAL_FLOATS, IEEE 754-2008 decimal32/64/128). C returns int (0 or 1) per a preprocessor branch; TS returns boolean. The TS port has no decimal-float type and the substrate is binary all the way down — so the value is the compile-time constant `false`. The libmpfr-side observable depends on how the system libmpfr was built; the golden_driver emits the TS-expected `false` unconditionally. Class 'misc' (1000ms per-case budget). Tag minimums (happy>=20, edge>=30, adversarial>=10, fuzz>=50, mined>=5) are inapplicable to no-arg accessor functions whose input domain is empty — a single happy case is the entire test surface.",
+  "c_signature": "int mpfr_buildopt_decimal_p(void)",
+  "prec_unit": "bits",
+  "divergence_from_c": "C returns int (0 or 1) from a preprocessor branch on MPFR_WANT_DECIMAL_FLOATS; TS returns boolean and is unconditionally `false`. Pure-TS has no IEEE-754-2008 decimal type, so advertising decimal-float support would be a lie. The golden_driver does NOT call libmpfr's mpfr_buildopt_decimal_p() for the expected output (its return depends on the system libmpfr build flags) — it hard-codes `false` to match the TS-port contract.",
+  "refs": [
+    "mpfr/src/buildopt.c L65-L73 — the C reference (mpfr_buildopt_decimal_p preprocessor branch).",
+    "src/ops/buildopt_decimal_p.ts — the production port.",
+    "CLAUDE.md Rule 7 — tag minimums (carved out here per the spec.doc note above).",
+    "CLAUDE.md Rule 12 — pure-TS port has no decimal-float interop on either Bun or Node."
+  ]
+}

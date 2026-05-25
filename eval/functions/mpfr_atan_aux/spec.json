@@ -1,0 +1,14 @@
+{
+  "function": "mpfr_atan_aux",
+  "class": "parked",
+  "signature": {"params": ["y", "p", "r", "m", "tab"], "returns": "void"},
+  "c_signature": "static void mpfr_atan_aux (mpfr_ptr y, mpz_ptr p, unsigned long r, int m, mpz_t *tab)",
+  "prec_unit": "n/a",
+  "doc": "PARKED. Static helper for mpfr_atan (mpfr/src/atan.c L91). Computes the inner sum of an atan series expansion using GMP mpz arithmetic. ADR 0002 criterion (i): no public-API caller in the TS port (mpfr_atan is not selected for porting; src/ops/ has no atan*.ts). Standalone porting would produce dead code in src/. Additionally: signature uses mpz_ptr / mpz_t* — natural TS surface would use bigint, but no parent op needs this transformation today.\n\nUnblock condition: when mpfr_atan is selected for porting, mpfr_atan_aux is inlined into it (no public TS surface).",
+  "divergence_from_c": "PARKED -- not ported. See ADR 0002.",
+  "refs": [
+    "mpfr/src/atan.c L91-L? -- C reference body.",
+    "mpfr/src/atan.c L478 -- the call site inside the unported mpfr_atan.",
+    "docs/adr/0002-approximation-helper-grading.md -- parking criteria (i)."
+  ]
+}

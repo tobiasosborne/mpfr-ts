@@ -1,0 +1,13 @@
+{
+  "function": "mpfr_gamma_2_minus_x_exact",
+  "class": "parked",
+  "signature": {"params": ["x"], "returns": "bigint"},
+  "c_signature": "static mpfr_prec_t mpfr_gamma_2_minus_x_exact (mpfr_srcptr x)",
+  "prec_unit": "bits",
+  "doc": "PARKED. Static helper for mpfr_gamma (mpfr/src/gamma.c). Returns the minimum precision at which 2 - x is exact for a given x. ADR 0002 criterion (i): no public-API caller in the TS port (mpfr_gamma not yet selected). Standalone port would produce dead code.\n\nUnblock condition: when mpfr_gamma is selected for porting.",
+  "divergence_from_c": "PARKED -- not ported. See ADR 0002.",
+  "refs": [
+    "mpfr/src/gamma.c -- C reference body.",
+    "docs/adr/0002-approximation-helper-grading.md -- parking criteria (i)."
+  ]
+}

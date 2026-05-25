@@ -1,0 +1,13 @@
+{
+  "function": "mpfr_assert_fail",
+  "class": "parked",
+  "signature": {"params": ["filename", "linenum", "expr"], "returns": "void"},
+  "c_signature": "MPFR_COLD_FUNCTION_ATTR void mpfr_assert_fail (const char *filename, int linenum, const char *expr)",
+  "prec_unit": "n/a",
+  "doc": "PARKED. C runtime assertion handler -- prints diagnostic + calls abort(). The TS port uses native `throw new Error(...)` for invariant violations (CLAUDE.md Rule 1: fail fast, fail loud) and MPFRError for documented domain errors. There is no equivalent function to port and no public-API consumer would invoke it.\n\nNot ADR 0002 criterion specifically -- this is a runtime-system function that has no semantic equivalent in idiomatic TS. Similar to mpfr_allocate_func / mpfr_free_func / mpfr_reallocate_func (parked in the same vein during earlier session).",
+  "divergence_from_c": "PARKED -- not ported. TS uses throw + MPFRError.",
+  "refs": [
+    "mpfr/src/mpfr-gmp.c -- C reference body.",
+    "src/core.ts -- MPFRError, the TS equivalent for domain-error throws."
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "function": "mpfr_asprintf",
+  "class": "blocked",
+  "signature": {"params": ["fmt", "args"], "returns": "string"},
+  "c_signature": "int mpfr_asprintf (char **pp, const char *fmt, ...)",
+  "prec_unit": "n/a",
+  "doc": "BLOCKED -- needs TS-native format API ADR. The C version is a varargs printf-style formatter with MPFR-specific format specifiers (%Rf, %Rg, %Re, etc.). TypeScript has no native varargs equivalent, and the printf-style format string approach is unidiomatic in TS.\n\nNatural TS alternatives:\n  - `mpfr.toString(base?, prec?, rnd?)` -- a value-method or free function returning a string.\n  - Template-literal helpers using tagged templates.\n  - JSON-style serialization via the MPFR-wire-format codec already in eval/harness/value_codec.ts.\n\nUntil a TS-native printf/format ADR lands, the port is blocked. Like mpfr_strtofr, this is a multi-week port requiring upstream design, not a routine ralph-loop batch.",
+  "divergence_from_c": "BLOCKED on format-string API ADR.",
+  "refs": [
+    "mpfr/src/printf.c -- C reference body.",
+    "mpfr/src/vasprintf.c -- the underlying vasprintf implementation."
+  ]
+}
