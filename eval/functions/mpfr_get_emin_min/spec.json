@@ -1,0 +1,16 @@
+{
+  "function": "mpfr_get_emin_min",
+  "class": "misc",
+  "signature": {"params": [], "returns": "bigint"},
+  "doc": "Pure-TS port of MPFR's mpfr_get_emin_min (mpfr/src/exceptions.c L52-L56). Two-line C body: `return MPFR_EMIN_MIN`. Returns the smallest legal value the active emin (minimum exponent) may take.\n\nMPFR_EMIN_MIN is defined in mpfr/src/mpfr-impl.h L1048 as `(1 - MPFR_EXP_INVALID)` where MPFR_EXP_INVALID = MPFR_EXP_MAX/2 + 1. On 64-bit systems with mpfr_exp_t = long, this evaluates to -(2^62 - 1) - 1 + 1 = -(2^62) + 1 = -4611686018427387903.\n\nThe TS port returns this constant as a bigint. Tag minimums per Rule 7 inapplicable -- no-arg accessor returning a compile-time constant. Carve-out per buildopt_float128_p precedent: single happy case verifies the constant.",
+  "c_signature": "mpfr_exp_t mpfr_get_emin_min(void)",
+  "prec_unit": "n/a",
+  "divergence_from_c": "Two divergences:\n\n  1. Return type: C returns mpfr_exp_t (long); TS returns bigint to match the locked schema's exponent bigint convention.\n\n  2. Value: C value depends on the host's mpfr_exp_t size. The probed system libmpfr value is -4611686018427387903 (= -(2^62 - 1) = 1 - 2^62, the 1 - MPFR_EXP_INVALID formula on 64-bit). The TS port hardcodes this value.",
+  "refs": [
+    "mpfr/src/exceptions.c L52-L56 -- the C reference body.",
+    "mpfr/src/mpfr-impl.h L1048 -- MPFR_EMIN_MIN definition.",
+    "mpfr/src/mpfr-impl.h L1036-L1037 -- MPFR_EXP_INVALID = MPFR_EXP_MAX/2 + 1.",
+    "src/core.ts -- PREC_MAX uses similar platform-dependent clamping.",
+    "CLAUDE.md Rule 7 -- tag minimums (carved out for no-arg constant accessors)."
+  ]
+}

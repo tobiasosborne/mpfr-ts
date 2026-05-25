@@ -1,0 +1,18 @@
+{
+  "function": "mpfr_flags_set",
+  "class": "misc",
+  "signature": {
+    "params": ["pre", "mask"],
+    "returns": "bigint"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_flags_set (mpfr/src/exceptions.c L109-L115). Three-line C body: `__gmpfr_flags |= mask` -- OR the bits in mask into the global flag register.\n\nThe TS port takes (pre, mask) and returns the new flag state `(pre | mask) & MPFR_FLAGS_ALL`. Wire form encodes pre because the function depends on the prior global state.\n\nClass 'misc' (1000ms per-case budget). Tag minimums per Rule 7 apply.",
+  "c_signature": "void mpfr_flags_set(mpfr_flags_t mask)",
+  "prec_unit": "n/a",
+  "divergence_from_c": "Three divergences:\n\n  1. Return type: C returns void (mutates global state); TS returns bigint -- the new flag state after OR.\n\n  2. Parameter list: C takes (mask); TS takes (pre, mask).\n\n  3. Mechanism: `(pre | mask) & 63n`. Equivalent to calling setFlags(pre) then setFlags(mask) from src/internal/mpfr/flags.ts.",
+  "refs": [
+    "mpfr/src/exceptions.c L109-L115 -- the C reference body.",
+    "src/internal/mpfr/flags.ts -- the TS flag register module; setFlags(mask) is the canonical OR path.",
+    "eval/functions/mpfr_flags_clear/spec.json -- sibling.",
+    "/usr/include/mpfr.h L77-L88 -- MPFR_FLAGS_* bit constants."
+  ]
+}

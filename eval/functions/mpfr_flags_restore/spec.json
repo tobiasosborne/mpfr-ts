@@ -1,0 +1,17 @@
+{
+  "function": "mpfr_flags_restore",
+  "class": "misc",
+  "signature": {
+    "params": ["pre", "flags", "mask"],
+    "returns": "bigint"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_flags_restore (mpfr/src/exceptions.c L133-L141). Five-line C body:\n  __gmpfr_flags = (__gmpfr_flags & (MPFR_FLAGS_ALL ^ mask)) | (flags & mask)\n\nReplaces the bits of __gmpfr_flags named in mask with the corresponding bits of flags; bits NOT in mask are preserved from the prior register state.\n\nThe TS port takes (pre, flags, mask) where pre is the prior global flag state. Returns `(pre & ~mask | (flags & mask)) & MPFR_FLAGS_ALL`.\n\nClass 'misc' (1000ms per-case budget). Tag minimums per Rule 7 apply.",
+  "c_signature": "void mpfr_flags_restore(mpfr_flags_t flags, mpfr_flags_t mask)",
+  "prec_unit": "n/a",
+  "divergence_from_c": "Three divergences:\n\n  1. Return type: C void -> TS bigint (new state).\n\n  2. Parameter list: C takes (flags, mask); TS takes (pre, flags, mask) -- pre encodes the prior global state. The 3-input wire form lets the grader synthesize the C side's deterministic post-state.\n\n  3. Mechanism: `((pre & ~mask) | (flags & mask)) & 63n`.",
+  "refs": [
+    "mpfr/src/exceptions.c L133-L141 -- the C reference body.",
+    "src/internal/mpfr/flags.ts -- the TS flag register module.",
+    "eval/functions/mpfr_flags_save/spec.json -- sibling."
+  ]
+}

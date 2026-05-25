@@ -1,0 +1,15 @@
+{
+  "function": "mpfr_get_cputime",
+  "class": "misc",
+  "signature": {"params": [], "returns": "number"},
+  "doc": "Pure-TS port of MPFR's mpfr_get_cputime (mpfr/src/logging.c L114-L132). Returns elapsed user-mode CPU time in milliseconds as an int. The C implementation uses getrusage on POSIX or clock() on ANSI-only systems. In libmpfr, this function exists for logging instrumentation only; it is part of the MPFR_USE_LOGGING-conditional compilation block.\n\nThe TS port returns 0 unconditionally. CPU time is not portably observable from pure-TS in a way that matches the C semantics (Bun and Node have process.cpuUsage().user but it's microseconds and TS callers should use performance.now() for wall time anyway). The C function exists for logging instrumentation, not for application logic; the TS port is a no-op that documents the gap. The golden_driver emits 0 unconditionally to match.\n\nTag minimums per Rule 7 inapplicable; single happy case (carve-out per no-arg accessor pattern).",
+  "c_signature": "int mpfr_get_cputime(void)",
+  "prec_unit": "n/a",
+  "divergence_from_c": "Two divergences:\n\n  1. Return value: C returns elapsed user-mode CPU ms since process start; TS returns 0 unconditionally. The C function is for libmpfr internal logging only -- this is not load-bearing for any other port.\n\n  2. Return type: C returns int; TS returns number (consistent with TS-native numeric scalar return convention).\n\nThe golden_driver emits 0 to match the TS contract; calling the actual mpfr_get_cputime would yield a host-dependent observation that varies per invocation, making the golden non-reproducible.",
+  "refs": [
+    "mpfr/src/logging.c L114-L132 -- the C reference body.",
+    "mpfr/src/logging.c L99-L112 -- MPFR_USE_LOGGING-conditional compilation note.",
+    "CLAUDE.md Rule 12 -- pure-TS port; no Bun-specific or Node-specific APIs in src/.",
+    "eval/functions/mpfr_buildopt_float128_p/spec.json -- precedent: divergent behavior whose golden hard-codes the TS-expected value."
+  ]
+}

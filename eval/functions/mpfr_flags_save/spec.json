@@ -1,0 +1,16 @@
+{
+  "function": "mpfr_flags_save",
+  "class": "misc",
+  "signature": {
+    "params": ["pre"],
+    "returns": "bigint"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_flags_save (mpfr/src/exceptions.c L125-L131). Two-line C body: `return __gmpfr_flags` -- read and return the global flag register.\n\nThe TS port takes a single `pre: bigint` (the desired prior flag state) and returns `pre & MPFR_FLAGS_ALL`. Since flags_save is a pure read, output equals input (after masking to the 6-bit domain).\n\nClass 'misc' (1000ms per-case budget). Tag minimums per Rule 7 apply.",
+  "c_signature": "mpfr_flags_t mpfr_flags_save(void)",
+  "prec_unit": "n/a",
+  "divergence_from_c": "Two divergences:\n\n  1. Return type: C returns mpfr_flags_t (unsigned int); TS returns bigint.\n\n  2. Parameter list: C takes void; TS takes (pre: bigint) -- the prior global state. Identity after masking: output = pre & 63n. Mirrors getFlags() after setFlags(pre).",
+  "refs": [
+    "mpfr/src/exceptions.c L125-L131 -- the C reference body.",
+    "src/internal/mpfr/flags.ts -- getFlags() is the canonical read path."
+  ]
+}

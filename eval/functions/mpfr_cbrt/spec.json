@@ -1,0 +1,20 @@
+{
+  "function": "mpfr_cbrt",
+  "class": "transcendental",
+  "signature": {
+    "params": ["x", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "c_signature": "int mpfr_cbrt(mpfr_t y, mpfr_srcptr x, mpfr_rnd_t rnd)",
+  "prec_unit": "bits",
+  "doc": "Pure-TS port of MPFR's mpfr_cbrt (mpfr/src/cbrt.c L47-L175). Cube root with correct rounding to prec bits per rnd. The implementation is ALGEBRAIC (not Ziv-loop based) -- writes x = sign * m * 2^(3*e), computes integer cube root s of m via mpz_root(m, m, 3), then assembles s * 2^e and rounds.\n\nThe TS PRODUCTION port can mirror this verbatim using bigint integer cube root (binary-search or Newton iteration on bigint).\n\nThe REFERENCE port (for golden calibration) uses a faithful but bigint-based icbrt (integer cube root by binary search / Newton). Composite=1.0 expected against the golden for any well-formed input.\n\nClass 'transcendental' (200ms per-case budget). The algorithm body is O(prec * cost_of_icbrt(3*prec_bits)); for prec <= 256 bits and reasonable icbrt this completes well under 200ms.\n\nNOTE for PORT subagent: the production port may opt for the same approach as the reference, OR may take a 'cbrt(x) = sign * pow(|x|, 1/3)' approach IF mpfr_pow_root is in scope (it's not in state.db yet -- check before delegating). The faithful icbrt path is preferred.\n\nTag minimums per Rule 7 apply -- input domain is any well-formed MPFR x plus prec, rnd.",
+  "divergence_from_c": "Three divergences:\n\n  1. Return shape: C int (ternary) + mutation -> TS Result {value, ternary}.\n\n  2. Parameter list: C takes (y, x, rnd) where y carries the prec; TS takes (x, prec, rnd) explicitly.\n\n  3. Algorithm: identical (algebraic icbrt + correct rounding). The TS port computes icbrt via bigint binary search; the C uses mpz_root. Both arrive at the same integer cube root deterministically.\n\nSpecial values mirror C exactly: cbrt(NaN) = NaN, cbrt(+/-Inf) = +/-Inf (same sign), cbrt(+/-0) = +/-0 (same sign).",
+  "refs": [
+    "mpfr/src/cbrt.c L47-L175 -- C reference body.",
+    "mpfr/src/cbrt.c L24-L45 -- algorithm exposition (cube root of integer mantissa, then assemble).",
+    "src/core.ts -- locked schema; cbrt preserves signed zero / inf.",
+    "src/internal/mpfr/round_raw.ts -- the roundMantissa primitive for the final rounding step.",
+    "CLAUDE.md 'Hallucination-risk callouts' -- signed zero preserved; correct rounding is uniquely determined; ternary = sign of (rounded - exact).",
+    "mpfr/tests/tcbrt.c -- mined source."
+  ]
+}

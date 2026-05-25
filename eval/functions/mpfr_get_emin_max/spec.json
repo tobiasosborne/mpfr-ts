@@ -1,0 +1,14 @@
+{
+  "function": "mpfr_get_emin_max",
+  "class": "misc",
+  "signature": {"params": [], "returns": "bigint"},
+  "doc": "Pure-TS port of MPFR's mpfr_get_emin_max (mpfr/src/exceptions.c L58-L62). Two-line C body: `return MPFR_EMIN_MAX`. Returns the largest legal value the active emin (minimum exponent) may take.\n\nMPFR_EMIN_MAX = MPFR_EXP_INVALID - 1, evaluating to +4611686018427387903 on 64-bit systems (= 2^62 - 1). The TS port hardcodes this constant.\n\nTag minimums per Rule 7 inapplicable; single happy case (carve-out per buildopt_float128_p precedent).",
+  "c_signature": "mpfr_exp_t mpfr_get_emin_max(void)",
+  "prec_unit": "n/a",
+  "divergence_from_c": "C returns mpfr_exp_t (long); TS returns bigint. Value hardcoded to +4611686018427387903 (= 2^62 - 1) per the probed system libmpfr observation.",
+  "refs": [
+    "mpfr/src/exceptions.c L58-L62 -- the C reference body.",
+    "mpfr/src/mpfr-impl.h L1049 -- MPFR_EMIN_MAX = MPFR_EXP_INVALID - 1.",
+    "eval/functions/mpfr_get_emin_min/spec.json -- sibling template."
+  ]
+}

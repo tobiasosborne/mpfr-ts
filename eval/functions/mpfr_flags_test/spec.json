@@ -1,0 +1,17 @@
+{
+  "function": "mpfr_flags_test",
+  "class": "misc",
+  "signature": {
+    "params": ["pre", "mask"],
+    "returns": "bigint"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_flags_test (mpfr/src/exceptions.c L117-L123). Three-line C body: `return __gmpfr_flags & mask` -- AND of the global flag register with mask, returned as an int.\n\nThe TS port takes (pre, mask) and returns `(pre & mask) & MPFR_FLAGS_ALL` as a bigint. Wire form encodes pre because the function depends on the prior global state.\n\nClass 'misc' (1000ms per-case budget). Tag minimums per Rule 7 apply.",
+  "c_signature": "mpfr_flags_t mpfr_flags_test(mpfr_flags_t mask)",
+  "prec_unit": "n/a",
+  "divergence_from_c": "Two divergences:\n\n  1. Return type: C returns mpfr_flags_t (unsigned int); TS returns bigint to match the rest of the flag family which returns bigint flag states.\n\n  2. Parameter list: C takes (mask); TS takes (pre, mask) -- pre is the prior global state.\n\n  Mechanism: `(pre & mask) & 63n`. Mirrors getFlags() & mask after setFlags(pre).",
+  "refs": [
+    "mpfr/src/exceptions.c L117-L123 -- the C reference body.",
+    "src/internal/mpfr/flags.ts -- getFlags() is the canonical read path.",
+    "eval/functions/mpfr_flags_save/spec.json -- sibling read."
+  ]
+}

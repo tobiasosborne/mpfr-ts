@@ -1,0 +1,14 @@
+{
+  "function": "mpfr_get_emax_min",
+  "class": "misc",
+  "signature": {"params": [], "returns": "bigint"},
+  "doc": "Pure-TS port of MPFR's mpfr_get_emax_min (mpfr/src/exceptions.c L88-L92). Two-line C body: `return MPFR_EMAX_MIN`. Returns the smallest legal value the active emax (maximum exponent) may take.\n\nMPFR_EMAX_MIN = (1 - MPFR_EXP_INVALID), evaluating to -4611686018427387903 on 64-bit systems (= 1 - 2^62). The TS port hardcodes this constant.\n\nTag minimums per Rule 7 inapplicable; single happy case (carve-out).",
+  "c_signature": "mpfr_exp_t mpfr_get_emax_min(void)",
+  "prec_unit": "n/a",
+  "divergence_from_c": "C returns mpfr_exp_t; TS returns bigint. Value hardcoded to -4611686018427387903 per probed system libmpfr.",
+  "refs": [
+    "mpfr/src/exceptions.c L88-L92 -- the C reference body.",
+    "mpfr/src/mpfr-impl.h L1050 -- MPFR_EMAX_MIN.",
+    "eval/functions/mpfr_get_emin_min/spec.json -- sibling template."
+  ]
+}

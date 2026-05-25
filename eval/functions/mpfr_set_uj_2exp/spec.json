@@ -1,0 +1,21 @@
+{
+  "function": "mpfr_set_uj_2exp",
+  "class": "misc",
+  "signature": {
+    "params": ["j", "e", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "c_signature": "int mpfr_set_uj_2exp(mpfr_t rop, uintmax_t j, intmax_t e, mpfr_rnd_t rnd)",
+  "prec_unit": "bits",
+  "doc": "Pure-TS port of MPFR's mpfr_set_uj_2exp (mpfr/src/set_uj.c L36-L132). Sets the result to j * 2^e, correctly rounded to prec bits per rnd, where j is an unsigned integer (uintmax_t in C, on Linux/x86_64 this is uint64).\n\nAlgorithmically near-identical to mpfr_set_z_2exp (composite=1.0, shipped via ADR 0003), except:\n  (a) j is unsigned (no sign bit; absJ = j directly).\n  (b) sign is always positive when j != 0; for j == 0 the result is +0 (per C source L48-L53).\n  (c) The C source unpacks j into uintmax_t-sized limb chunks rather than using mpz_get_z_2exp; the TS port collapses this to a single bigint (j -> bigint losslessly since j fits in uint64).\n\nThe TS port takes j as a bigint constrained to [0n, 2^64-1n] (matching the C uintmax_t domain), and e as bigint matching the schema's exp type.\n\nClass: 'misc' (1000ms per-case budget) -- explicitly overridden from the callgraph's 'conversion' class because the runner.ts rejects 'conversion' as a class (per worklog 005 hard-won lesson).\n\nDelegates morally to set_z_2exp with z constrained to non-negative.",
+  "divergence_from_c": "Three divergences:\n\n  1. j type: C uintmax_t (typically uint64 on 64-bit) -> TS bigint constrained to [0n, 2^64 - 1n]. The TS port REJECTS j < 0n or j >= 2n**64n with MPFRError EDOMAIN. The golden_driver stays well within uint64 to keep C and TS in agreement.\n\n  2. e type: C intmax_t (typically int64) -> TS bigint (per locked schema's exp type). The golden_driver stays within int64 range [-1000, 1000] for compatibility.\n\n  3. Return shape: C int (ternary) + mutation -> TS Result {value, ternary}.\n\n  4. C clamps e against MPFR's emax/emin (set_uj.c L55-L56); TS schema has no exponent range surface and emits the value at its mathematical exponent. The golden_driver stays within the default MPFR range so C and TS agree on every case.\n\n  5. C uses a multi-limb loop to unpack uintmax_t (since uintmax_t may exceed mp_limb_t on some platforms); the TS port treats j as a single bigint -- equivalent.",
+  "refs": [
+    "mpfr/src/set_uj.c L36-L132 -- the C reference body.",
+    "mpfr/src/set_uj.c L30-L34 -- mpfr_set_uj wrapper (e=0 specialization; not in this port's surface).",
+    "eval/functions/mpfr_set_z_2exp/spec.json -- sibling signed-bigint variant (just shipped at composite=1.0).",
+    "eval/reference_ports/correct/mpfr_set_z_2exp.ts -- structural template; the TS port differs only in narrowing j to non-negative.",
+    "docs/adr/0003-mpz-api.md -- API decision; bigint-as-mpz-analog applies equally to uintmax_t -> bigint.",
+    "CLAUDE.md -- 'conversion' class is rejected by runner.ts; this spec overrides to 'misc' per worklog 005.",
+    "mpfr/tests/tset_uj.c -- mined source."
+  ]
+}

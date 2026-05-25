@@ -1,0 +1,15 @@
+{
+  "function": "mpfr_dump",
+  "class": "misc",
+  "signature": {"params": ["x"], "returns": "string"},
+  "doc": "Pure-TS port of MPFR's mpfr_dump (mpfr/src/dump.c L127-L131). One-line C body: `mpfr_fdump(stdout, x)`.\n\nThe TS port DELEGATES to the shipped mpfr_fdump (which returns the formatted string per its idiomatic-TS lift; see eval/functions/mpfr_fdump/spec.json). The C side writes to stdout; the TS side returns the string. Callers wanting stdout behavior do `console.log(mpfr_dump(x))` themselves.\n\nClass 'misc' (1000ms per-case budget). Tag minimums per Rule 7 apply -- input domain is any well-formed MPFR.",
+  "c_signature": "void mpfr_dump(mpfr_srcptr x)",
+  "prec_unit": "bits",
+  "divergence_from_c": "Two divergences (inherited from mpfr_fdump):\n\n  1. Return shape: C void (writes to stdout) -> TS string (returns the formatted dump).\n\n  2. Parameter list: C takes (mpfr_srcptr x); TS takes (x). The stream is implicit (stdout) in C and absent in TS.\n\nThe trailing newline is part of the returned string (matches mpfr_fdump's output format).",
+  "refs": [
+    "mpfr/src/dump.c L127-L131 -- the C reference body (mpfr_dump = mpfr_fdump(stdout, x)).",
+    "mpfr/src/dump.c L43-L125 -- mpfr_fdump (the actual formatter).",
+    "src/ops/fdump.ts -- the shipped delegating target (composite=1.0).",
+    "eval/functions/mpfr_fdump/spec.json -- the canonical spec for the format details (mpfr_dump inherits)."
+  ]
+}

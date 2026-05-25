@@ -1,0 +1,19 @@
+{
+  "function": "mpn_tdiv_qr",
+  "class": "substrate",
+  "signature": {
+    "params": ["qxn", "np", "nn", "dp", "dn"],
+    "returns": "object"
+  },
+  "doc": "Pure-TS port of GMP's mpn_tdiv_qr -- truncated division on raw limb arrays.\n\nMirrors the mpfr-mini-gmp shim semantics (mpfr/src/mpfr-mini-gmp.c L246-L262): asserts qxn == 0, then performs mpz_tdiv_qr(n, d) on the bigint-packed numerator and divisor, returning {q: limbs[nn-dn+1], r: limbs[dn]}. NOTE: unlike mpn_divrem which returns a separate qHigh and emits q of length nn-dn, mpn_tdiv_qr (the GMP higher-level function) is documented to write nn-dn+1 quotient limbs directly to qp.\n\nIn the shipped mpn_divrem port (src/internal/mpn/divrem.ts) the result shape is {q, qHigh, r}; this port's result shape is {q, r} where q.length === nn - dn + 1 and q[nn-dn] is the analog of mpn_divrem's qHigh. The TS port can DELEGATE to mpn_divrem by concatenating qHigh as q's top limb.\n\nC signature:\n  void mpn_tdiv_qr(mp_limb_t *qp, mp_limb_t *rp, mp_size_t qxn,\n                   const mp_limb_t *np, mp_size_t nn,\n                   const mp_limb_t *dp, mp_size_t dn);\n\n  - qxn must be 0 (the only path MPFR exercises; mini-gmp asserts it).\n  - On return: qp[0..nn-dn] holds the quotient limbs (length nn-dn+1);\n    rp[0..dn) holds the dn-limb remainder.\n\nClass 'substrate' -- raw limb arrays, no src/core.ts schema touch (CLAUDE.md Law 3).\n\nTag minimums per Rule 7 apply -- the input domain (nn, dn limb shapes; normalized dp) is enumerable.",
+  "c_signature": "void mpn_tdiv_qr(mp_limb_t *qp, mp_limb_t *rp, mp_size_t qxn, const mp_limb_t *np, mp_size_t nn, const mp_limb_t *dp, mp_size_t dn)",
+  "prec_unit": "n/a",
+  "divergence_from_c": "Three divergences:\n\n  1. Return shape: C void with two mp_limb_t* outputs (qp, rp) -> TS object {q: bigint[], r: bigint[]}.\n\n  2. q.length: C writes nn - dn + 1 limbs to qp; TS returns q.length === nn - dn + 1.\n\n  3. qxn: C takes (qp, rp, qxn, np, nn, dp, dn); TS takes (qxn, np, nn, dp, dn). The shim contract MPFR_ASSERTN(qxn == 0) is enforced as a throw in TS.\n\nThe TS port can DELEGATE to the shipped mpn_divrem by concatenating qHigh to the top of q: `q = [...divremResult.q, divremResult.qHigh]`. Both functions perform truncated division on bigint-packed limbs; the only difference is whether qHigh is reported separately or appended to q.",
+  "refs": [
+    "GMP manual section 8.3 -- mpn_tdiv_qr.",
+    "mpfr/src/mpfr-mini-gmp.c L246-L262 -- the mini-gmp shim body this port mirrors.",
+    "src/internal/mpn/divrem.ts -- the shipped mpn_divrem port; tdiv_qr can delegate to it.",
+    "eval/functions/mpn_divrem/spec.json -- sister substrate function with similar shape.",
+    "eval/functions/mpn_divrem/golden_driver.c -- driver pattern (xs64 + normalized divisor)."
+  ]
+}

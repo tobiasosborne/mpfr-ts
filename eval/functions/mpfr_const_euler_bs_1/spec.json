@@ -1,0 +1,15 @@
+{
+  "function": "mpfr_const_euler_bs_1",
+  "class": "misc",
+  "signature": {"params": ["n1", "n2", "N", "cont"], "returns": "object"},
+  "doc": "Pure-TS port of MPFR's mpfr_const_euler_bs_1 (mpfr/src/const_euler.c L73-L135). Binary-splitting recursion for the first of two product series used in Euler-Mascheroni constant computation. The 6-tuple {P, Q, T, C, D, V} extends the simpler 3-tuple {P, Q, T} of bs_2 with three additional accumulators (C, D, V).\n\nBase case (n2 - n1 == 1):\n  P = N^2\n  Q = (n1+1)^2\n  C = 1\n  D = n1+1\n  T = N^2  (same as P)\n  V = N^2  (same as P)\n\nRecursive case (n2 - n1 > 1):\n  m = (n1 + n2) / 2\n  recurse (n1, m) cont=1 -> L\n  recurse (m, n2) cont=1 -> R\n  if cont: P = L.P * R.P\n  Q = L.Q * R.Q\n  D = L.D * R.D\n  T = L.P * R.T + R.Q * L.T\n  if cont: C = L.C * R.D + R.C * L.D\n  V = R.D * (R.Q * L.V + L.C * L.P * R.T) + L.D * L.P * R.V  -- see C source\n\nThe TS port takes (n1, n2, N, cont) as bigints and returns an object {P, Q, T, C, D, V}.\n\nClass 'misc'. Tag minimums per Rule 7 apply.",
+  "c_signature": "static void mpfr_const_euler_bs_1(mpfr_const_euler_bs_t s, unsigned long n1, unsigned long n2, unsigned long N, int cont)",
+  "prec_unit": "n/a",
+  "divergence_from_c": "Three divergences:\n\n  1. Visibility: C static -> TS internal.\n\n  2. Return shape: C void with mpz_t s output struct -> TS object {P, Q, T, C, D, V}.\n\n  3. Storage: C mpz_t -> TS bigint.\n\nThe cont flag controls whether P and C are accumulated; the recursive structure mirrors bs_2.",
+  "refs": [
+    "mpfr/src/const_euler.c L73-L135 -- the C reference body.",
+    "mpfr/src/const_euler.c L138-L180 -- sister function mpfr_const_euler_bs_2 (already shipped at composite=1.0).",
+    "mpfr/src/const_euler.c L182-L275 -- the parent mpfr_const_euler_internal (caller).",
+    "eval/functions/mpfr_const_euler_bs_2/spec.json -- sibling template (3-tuple variant)."
+  ]
+}

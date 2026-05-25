@@ -1,0 +1,15 @@
+{
+  "function": "mpfr_get_default_rounding_mode",
+  "class": "misc",
+  "signature": {"params": [], "returns": "string"},
+  "doc": "Pure-TS port of MPFR's mpfr_get_default_rounding_mode (mpfr/src/set_rnd.c L34-L38). Two-line C body: `return __gmpfr_default_rounding_mode`. The default-rounding state is initialized to MPFR_RNDN at module load (mpfr/src/set_rnd.c L25).\n\nThe TS port returns the default rounding mode as a RoundingMode string (per the locked schema's RoundingMode type). Since the test harness creates a fresh worker per case (CLAUDE.md Rule 4) and the TS module-level default initializer fires per worker, the returned value is always 'RNDN' -- there's no API to perturb the default from the wire form. Tag minimums per Rule 7 inapplicable; single happy case (carve-out).\n\nNote: src/internal/mpfr/flags.ts is the analog for the flag register; this port would likely live alongside it in a small rounding-mode state module (currently absent; one of three places that hold module-level state in the TS port).",
+  "c_signature": "mpfr_rnd_t mpfr_get_default_rounding_mode(void)",
+  "prec_unit": "n/a",
+  "divergence_from_c": "Three divergences:\n\n  1. Return type: C returns mpfr_rnd_t (enum int); TS returns RoundingMode string ('RNDN'|'RNDZ'|'RNDU'|'RNDD'|'RNDA') per the locked schema.\n\n  2. Module-level state: C has thread-local __gmpfr_default_rounding_mode; TS replicates via a module-level variable (fresh per Bun worker per CLAUDE.md Rule 4). Default 'RNDN'.\n\n  3. No setter API in this batch: only the read path is in scope; mpfr_set_default_rounding_mode is a separate function.",
+  "refs": [
+    "mpfr/src/set_rnd.c L34-L38 -- the C reference body.",
+    "mpfr/src/set_rnd.c L25 -- MPFR_THREAD_VAR default = MPFR_RNDN.",
+    "src/core.ts -- RoundingMode enum (5 modes, no RNDNA).",
+    "src/internal/mpfr/flags.ts -- precedent module-level state (one of three module-state slots in TS substrate)."
+  ]
+}

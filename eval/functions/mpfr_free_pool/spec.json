@@ -1,0 +1,15 @@
+{
+  "function": "mpfr_free_pool",
+  "class": "misc",
+  "signature": {"params": [], "returns": "null"},
+  "doc": "Pure-TS port of MPFR's mpfr_free_pool (mpfr/src/pool.c L105-L118). C body iterates over the static mpz_tab pool, calls mpz_clear on each entry, and resets n_alloc to 0. The pool exists in C to amortize mpz_init/mpz_clear churn across calls.\n\nThe TS port is a no-op. TypeScript has garbage collection -- bigint values are not pool-allocated, and there is no analog of the C mpz_tab. The function returns null to signal void semantics on the wire form (per the codec convention).\n\nTag minimums per Rule 7 inapplicable; single happy case (carve-out per no-arg accessor pattern). The wire-form output is JSON null.",
+  "c_signature": "void mpfr_free_pool(void)",
+  "prec_unit": "n/a",
+  "divergence_from_c": "Three divergences:\n\n  1. Return: C void -> TS null. The wire codec maps void-returning C functions to null on the JSON output.\n\n  2. Effect: C frees the mpz_tab pool entries; TS does nothing (no pool exists). The TS port relies on the runtime GC.\n\n  3. The golden_driver emits null unconditionally to match the TS-port contract; it still calls mpfr_free_pool() to verify the C side runs without error, but does not observe pool state.",
+  "refs": [
+    "mpfr/src/pool.c L105-L118 -- the C reference body.",
+    "mpfr/src/pool.c L48-L104 -- the pool-allocation primitives that this function tears down.",
+    "memory/project_future_bigint_refactor.md -- post-port plan to collapse limb-array substrate to native BigInt; TS has no analog to MPFR's mpz_tab pool now and won't after the refactor.",
+    "eval/functions/mpfr_buildopt_float128_p/spec.json -- precedent (vacuous-port shape)."
+  ]
+}

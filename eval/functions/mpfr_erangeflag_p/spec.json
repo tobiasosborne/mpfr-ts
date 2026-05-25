@@ -1,0 +1,20 @@
+{
+  "function": "mpfr_erangeflag_p",
+  "class": "misc",
+  "signature": {
+    "params": ["mask"],
+    "returns": "boolean"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_erangeflag_p (mpfr/src/exceptions.c L377-L382). Three-line C body: reads the global `__gmpfr_flags` register and returns `__gmpfr_flags & MPFR_FLAGS_ERANGE` (bit 16) as an int (0 or non-zero). The TS port returns a boolean per ADR 0001 idiomatic-TS lift for the `_p` predicate family.\n\nWire form takes `mask: bigint` describing the desired pre-test flag state. The driver clears + sets mask before reading the predicate; the TS port mirrors that via setFlags + getFlags & MPFR_FLAGS_ERANGE.\n\nClass 'misc' (1000ms per-case budget). Tag minimums per Rule 7 apply -- input domain mask in [0,63] enumerable but small.\n\nNote: bit value is 16 (0x10), not the highest bit. Common bug: testing against MPFR_FLAGS_NAN (4) or MPFR_FLAGS_DIVBY0 (32).",
+  "c_signature": "int mpfr_erangeflag_p(void)",
+  "prec_unit": "n/a",
+  "divergence_from_c": "Three divergences:\n\n  1. Return type: C int (0 or non-zero) -> TS boolean (ADR 0001 idiomatic-TS lift).\n\n  2. Parameter list: C void -> TS (mask: bigint). The wire form encodes the prior global flag state.\n\n  3. Global flag state: C reads __gmpfr_flags; TS routes through getFlags() after setFlags(mask). Same composition as the rest of the *_p predicate family.",
+  "refs": [
+    "mpfr/src/exceptions.c L377-L382 -- the C reference body.",
+    "/usr/include/mpfr.h L77-L88 -- MPFR_FLAGS_ERANGE=16.",
+    "src/internal/mpfr/flags.ts -- TS flag register; getFlags() & 16n is the canonical predicate.",
+    "eval/functions/mpfr_divby0_p/spec.json -- sibling _p template.",
+    "mpfr/tests/texceptions.c -- mined source pattern.",
+    "docs/adr/0001-spec-merge-policy.md -- idiomatic-TS lift (_p returns boolean)."
+  ]
+}
