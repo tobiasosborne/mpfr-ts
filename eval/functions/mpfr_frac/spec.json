@@ -1,0 +1,25 @@
+{
+  "function": "mpfr_frac",
+  "class": "misc",
+  "signature": {
+    "params": ["u", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "c_signature": "int mpfr_frac (mpfr_ptr r, mpfr_srcptr u, mpfr_rnd_t rnd_mode)",
+  "prec_unit": "bits",
+  "doc": "Fractional part of an MPFR value: frac(u) = u - trunc(u), preserving sign. The C source extracts the fractional bits below the binary point directly by bit-level mantissa manipulation (count-leading-zeros + mpn_lshift) and then rounds. The result is correctly rounded to the target precision in the given rounding mode.\n\nSpecial cases (mpfr/src/frac.c L43-L57):\n  - NaN -> NaN, ternary 0 (RET_NAN).\n  - Inf or integer u -> signed zero (sign(u)), ternary 0.\n  - |u| < 1 -> set(r, u, rnd) (u is already its own fractional part).\n  - Otherwise: extract bits below the binary point as a new mantissa, compute the new exponent, round_raw / set to target precision.\n\nTernary semantics: standard sign-of-(rounded - exact). For the |u| < 1 fast path, ternary is inherited from mpfr_set's rounding. For the main path, ternary comes from mpfr_round_raw (when r has insufficient precision) or 0 (when r has enough precision to hold the result exactly).\n\nThe TS port can either (a) mirror the C bit-extraction algorithm using bigint shift/lzcnt, or (b) compose existing ports: trunc(u) at full precision (exact since trunc only zeros bits below the binary point) then sub(u, trunc_u, prec, rnd). Both produce identical correctly-rounded outputs by construction; (b) is shorter and reuses the already-shipped mpfr_trunc + mpfr_sub.",
+  "divergence_from_c": "1. Return shape: C mutates `r` and returns int ternary. TS returns Result {value, ternary} per src/core.ts.\n2. Global flag side effects (mpfr_overflow / mpfr_underflow flag mutation via MPFR_SAVE_EXPO_MARK/FREE and mpfr_check_range) are omitted; the returned value is still correctly rounded. The C function calls mpfr_check_range at the tail which adjusts the value if it overflows/underflows the exponent range — for frac specifically, the algorithm guarantees |result| < 1, so overflow is impossible and underflow only fires for very-small frac values (which produce exact subnormal-shaped outputs).\n3. The intermediate tmp variable (mpfr_t) used in the C when r's precision is too small to hold the fractional part is internal scratch; the TS port either uses an intermediate bigint mantissa (algorithm a) or composes existing ops (algorithm b) which handle precision sizing transparently.\n4. The C code's MPFR_ASSERTN debug assertions are not ported (TS port trusts internal invariants per CLAUDE.md Rule 1 — fail-fast on invariant violations).",
+  "refs": [
+    "mpfr/src/frac.c L29-L143 -- C reference body.",
+    "src/core.ts -- locked MPFR shape, Result return type, RoundingMode enum.",
+    "src/ops/trunc.ts -- mpfr_trunc, candidate delegation target for algorithm (b).",
+    "src/ops/sub.ts -- mpfr_sub, candidate delegation target for algorithm (b).",
+    "src/ops/set.ts -- mpfr_set, used in the |u| < 1 fast path.",
+    "src/ops/integer_p.ts -- mpfr_integer_p, used in the integer/Inf fast path.",
+    "src/internal/mpfr/round_raw.ts -- substrate dep for algorithm (a).",
+    "src/internal/mpn/lshift.ts -- substrate dep for algorithm (a).",
+    "mpfr/tests/tfrac.c -- mined test cases.",
+    "CLAUDE.md hallucination callouts -- NaN!=NaN; signed zero; ternary sign convention.",
+    "docs/adr/0001-spec-merge-policy.md -- per-field precedence."
+  ]
+}
