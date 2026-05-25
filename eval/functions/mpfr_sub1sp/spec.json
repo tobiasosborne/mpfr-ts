@@ -1,0 +1,22 @@
+{
+  "function": "mpfr_sub1sp",
+  "class": "misc",
+  "signature": {
+    "params": ["b", "c", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "c_signature": "int mpfr_sub1sp (mpfr_ptr a, mpfr_srcptr b, mpfr_srcptr c, mpfr_rnd_t rnd_mode)",
+  "prec_unit": "bits",
+  "doc": "Same-precision same-sign subtraction dispatcher. Routes to one of 5 prec-specialised fast paths (mpfr_sub1sp1/1n/2/2n/3, already shipped) based on the operand precision, with a fallback to the general mpfr_sub for prec >= 3*GMP_NUMB_BITS (192 bits).\n\nDispatch (mirrors mpfr/src/sub1sp.c L1474-L1491):\n  prec < 64       -> mpfr_sub1sp1\n  prec == 64      -> mpfr_sub1sp1n\n  64 < prec < 128 -> mpfr_sub1sp2\n  prec == 128     -> mpfr_sub1sp2n\n  128 < prec < 192-> mpfr_sub1sp3\n  prec >= 192     -> mpfr_sub (general case via composition)\n\nPreconditions (mirrors C MPFR_ASSERTDs at L1465-L1467 + the upstream same-sign contract from mpfr_sub):\n  - b.prec == c.prec == prec\n  - b.kind == c.kind == 'normal'\n  - b.sign == c.sign  (mixed signs route through mpfr_add1sp instead)\n\nThe general-case delegation to mpfr_sub is safe because mpfr_sub composes via mpfr_add(a, -b, prec, rnd) (see src/ops/sub.ts L40-L60) rather than recursing into sub1sp -- no circular dependency. The C body's ~500 LOC of limb-walking for prec >= 192 is performance-oriented; the TS BigInt-based composition produces the same correctly-rounded output.",
+  "divergence_from_c": "1. Return shape: C mutates `a` and returns int ternary; TS returns Result.\n2. Same-sign precondition explicit (MPFRError EDOMAIN) where C relies on upstream caller (mpfr_sub) establishing it implicitly.\n3. General case (prec >= 192): C walks limbs directly; TS delegates to mpfr_sub for native BigInt arithmetic. Identical correctly-rounded output by construction (mpfr_sub itself is verified for arbitrary-precision subtraction). Performance may differ at high precision; this is a Phase-Optimize concern, not a correctness concern.\n4. MPFR_LOG_FUNC and MPFR_TMP_MARK/FREE bookkeeping are absent in TS (no global allocator marker).",
+  "refs": [
+    "mpfr/src/sub1sp.c L1437-L1492 -- C dispatcher body.",
+    "mpfr/src/sub1sp.c L1494-end -- general case (delegated to mpfr_sub in TS).",
+    "src/ops/sub1sp{1,1n,2,2n,3}.ts -- already-shipped fast paths.",
+    "src/ops/sub.ts -- general-case fallback; composition rationale at L40-L60.",
+    "src/core.ts -- locked MPFR, Result, RoundingMode, MPFRError.",
+    "mpfr/tests/tsub1sp.c -- mined test cases.",
+    "docs/adr/0002-approximation-helper-grading.md -- delegation rationale for the general case (prec >= 192 doesn't need limb-walking when BigInt natively handles arbitrary precision).",
+    "CLAUDE.md Hallucination callouts -- ternary direction, same-sign vs mixed-sign dispatch."
+  ]
+}

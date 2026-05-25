@@ -1,0 +1,14 @@
+{
+  "function": "mpfr_addrsh",
+  "class": "parked",
+  "signature": {"params": ["ap", "bp", "cp", "n", "d", "sb"], "returns": "{ result: readonly bigint[], limb: bigint, sb: bigint }"},
+  "c_signature": "static mp_limb_t mpfr_addrsh (mp_limb_t *ap, mp_limb_t *bp, mp_limb_t *cp, mp_size_t n, mp_size_t d, mp_limb_t *sb)",
+  "prec_unit": "n/a",
+  "doc": "PARKED. Static helper inside mpfr/src/add1sp.c (L783-) for mpfr_add1sp's same-exp-with-shift fast path. Computes ap = bp + (cp >> d) with carry-out and sticky-bit feedback. ADR 0002 criterion (i): no public-API caller in the TS port -- the only C caller is mpfr_add1sp (add1sp.c L1010), which is not yet selected for porting (state.db has no row for mpfr_add1sp; rank 42 in callgraph). Standalone porting would be dead code in src/internal/.\n\nNote: the sibling parent mpfr_sub1sp (rank 15) IS in pending and being ported this session, but it's the SUBTRACTION dispatcher; addrsh is on the ADDITION path. The natural unblock condition is that mpfr_add1sp is selected for porting in a future session, at which point addrsh is inlined into its body (substrate-style mirror) rather than ported standalone.",
+  "divergence_from_c": "PARKED -- not ported. See ADR 0002.",
+  "refs": [
+    "mpfr/src/add1sp.c L783-L? -- C reference body.",
+    "mpfr/src/add1sp.c L1010 -- the sole C call site inside mpfr_add1sp.",
+    "docs/adr/0002-approximation-helper-grading.md -- parking criteria (i)."
+  ]
+}
