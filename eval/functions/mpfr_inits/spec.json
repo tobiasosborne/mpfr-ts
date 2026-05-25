@@ -1,0 +1,21 @@
+{
+  "function": "mpfr_inits",
+  "class": "misc",
+  "signature": {
+    "params": ["n"],
+    "returns": "bigint"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_inits (mpfr/src/inits.c L37-L60). C signature is varargs: mpfr_inits(x, y, z, ..., (mpfr_ptr)0) -- iterate, initialize each via mpfr_init (at __gmpfr_default_fp_bit_precision = 53 bits), terminate on the NULL sentinel. C mutates in place and returns void.\n\nThe TS surface is necessarily different: varargs over mpfr_ptr handles don't survive the immutable surface, and C's mutate-handles-in-place contract is C-idiomatic. The TS port takes a count n: bigint and returns n: bigint (the count of values that would have been initialised, as a success marker -- same pattern as the void-returning family with boolean success markers, but bigint to allow length verification).\n\nA simpler return shape than an array-of-MPFR was chosen because (a) the wire codec doesn't natively encode top-level arrays of MPFR values, (b) each initialised element is the identical posZero(53n) so per-element verification adds no information beyond count-equality, and (c) the C void-return precludes any return-value-side observability anyway. Library users who actually want n default-prec values write `Array.from({length: Number(n)}, () => mpfr_init())` -- the one-line composition; this port records the count-passthrough fidelity.\n\nClass 'misc' (1000ms). Tag minimums per Rule 7: happy 20, edge 30, adv 12, fuzz 50, mined 5 (or fewer from mpfr/tests/tinits.c).",
+  "c_signature": "void mpfr_inits(mpfr_ptr x, ... /* mpfr_ptr 0 sentinel */)",
+  "prec_unit": "bits",
+  "divergence_from_c": "Four divergences:\n\n  1. Parameter shape: C varargs of mpfr_ptr handles terminated by NULL -> TS bigint count n.\n\n  2. Return type: C void -> TS bigint (count-passthrough success marker; mirrors mpfr_free_pool's boolean-true success marker).\n\n  3. Default precision: like the underlying mpfr_init, the implicit precision is 53n (the canonical IEEE binary64 mantissa width), not the C __gmpfr_default_fp_bit_precision global. Documented in src/ops/init.ts.\n\n  4. Allocation semantics: C allocates limb storage and leaves mantissa uninitialised; TS allocates JS bigints implicitly via posZero(53n). The user-visible difference is zero -- the count-passthrough is a vacuous reflection.",
+  "refs": [
+    "mpfr/src/inits.c L37-L60 -- the C reference body.",
+    "src/ops/init.ts -- delegate (default-prec init); composing init() in a loop is the user-side analogue.",
+    "src/ops/init2.ts -- explicit-prec init; posZero(prec) divergence documented there.",
+    "mpfr/tests/tinits.c -- mined-tests source (a, b, c three-element init pattern).",
+    "src/core.ts -- locked schema (MPFR shape).",
+    "eval/functions/mpfr_free_pool/spec.json -- precedent: void-returning op encoded as success-marker scalar.",
+    "CLAUDE.md Rule 4 -- worker isolation forces a value-returning factory, not handle mutation."
+  ]
+}

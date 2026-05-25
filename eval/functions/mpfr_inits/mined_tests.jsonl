@@ -1,0 +1,5 @@
+{"tag":"mined","inputs":{"n":"3"},"note":"tinits.c L31 -- mpfr_inits(a, b, c, NULL) -- 3 default-prec inits"}
+{"tag":"mined","inputs":{"n":"3"},"note":"tinits.c L33 -- repeat of n=3 after clears"}
+{"tag":"mined","inputs":{"n":"0"},"note":"degenerate; mpfr_inits(NULL) immediately returns"}
+{"tag":"mined","inputs":{"n":"1"},"note":"smallest non-empty case"}
+{"tag":"mined","inputs":{"n":"2"},"note":"intermediate"}

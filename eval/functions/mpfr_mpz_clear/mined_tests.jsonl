@@ -1,0 +1,1 @@
+{"tag":"mined","inputs":{"z":"0"},"note":"No mined tests; mpfr_mpz_clear is an internal helper not exercised in mpfr/tests/. The pool/clear path is exercised indirectly by every public op that uses mpz_t scratch. Single happy case suffices."}

@@ -1,0 +1,22 @@
+{
+  "function": "mpfr_modf",
+  "class": "arithmetic",
+  "signature": {
+    "params": ["x", "iprec", "fprec", "rnd"],
+    "returns": "{ iop: Result, fop: Result }"
+  },
+  "c_signature": "int mpfr_modf (mpfr_ptr iop, mpfr_ptr fop, mpfr_srcptr op, mpfr_rnd_t rnd_mode)",
+  "prec_unit": "bits",
+  "doc": "Pure-TS port of MPFR's mpfr_modf (mpfr/src/modf.c L24-L98). Splits an MPFR value op into its integer and fractional parts: iop = trunc(op), fop = frac(op) = op - trunc(op). The sign of op propagates to both parts (so modf(-2.7) -> iop=-2, fop=-0.7, not iop=-2 + fop=+0.3).\n\nC packs the two ternary values into one int via INEX(inexi, inexf). The TS port returns them separately as a {iop: Result, fop: Result} pair.\n\nAlgorithm:\n  1. If op is NaN -> both iop and fop are NaN; ternary 0 for both (matches NaN special).\n  2. If op is +/-Inf -> iop is +/-Inf (same sign), fop is +/-0 (same sign); ternary 0 for both.\n  3. If op is +/-0 -> iop is +/-0, fop is +/-0 (same sign); ternary 0 for both.\n  4. If |op| < 1 (exp <= 0): iop = +/-0 (same sign as op); fop = round(op, fprec, rnd); composite ternary INEX(0, inexf).\n  5. If op has no fractional part (exp >= op.prec): iop = round(op, iprec, rnd); fop = +/-0 (same sign); composite ternary INEX(inexi, 0).\n  6. Otherwise: iop = mpfr_rint_trunc(op, iprec, rnd); fop = mpfr_frac(op, fprec, rnd); composite ternary INEX(inexi, inexf).\n\nDelegates to already-shipped mpfr_set, mpfr_rint_trunc (status=done), and mpfr_frac (status=done). Class 'arithmetic' (200ms) for the bounded delegation chain.\n\nTag minimums per Rule 7: happy 20, edge 30, adv 12, fuzz 50, mined 5 (mpfr/tests/tmodf.c).",
+  "divergence_from_c": "Three divergences:\n\n  1. Output shape: C packs two ternary signs into a single int via INEX(inexi, inexf); TS returns a pair object {iop: Result, fop: Result} so each Result carries its own ternary. The wire format unpacks INEX back to (inexi, inexf) on the C side via INEXPOS inverse.\n\n  2. Precision: C uses MPFR_PREC(iop) and MPFR_PREC(fop) from the mutated handles; TS takes iprec and fprec as separate explicit parameters (so callers can target different precs for the two parts). The C-side iop and fop can also be aliased to op (in which case in-place mutation), an option the immutable TS surface has no analog for; we don't support iop===op aliasing because in TS the operation is purely functional.\n\n  3. Return-value-only: C mutates both iop and fop in place + returns the packed int; TS returns {iop, fop} value object only. No mutation.",
+  "refs": [
+    "mpfr/src/modf.c L24-L98 -- C reference body.",
+    "mpfr/src/mpfr-impl.h L1200-L1201 -- INEX(y,z) macro: INEXPOS(y) | (INEXPOS(z) << 2). INEXPOS encodes (sign==0 ? 0 : sign>0 ? 1 : 2). The driver inverts this to recover separate inexi/inexf.",
+    "src/ops/rint_trunc.ts -- delegate for the integer-part round-trunc step.",
+    "src/ops/frac.ts -- delegate for the fractional-part frac+round step.",
+    "src/ops/set.ts -- delegate for the |op|<1 and exp>=prec short-circuit branches (just copy at target prec).",
+    "src/core.ts -- locked schema (Result, MPFR, RoundingMode).",
+    "mpfr/tests/tmodf.c -- mined-tests source.",
+    "CLAUDE.md 'Hallucination-risk callouts' -- signed zero is observable in both iop and fop; ternary direction matters."
+  ]
+}

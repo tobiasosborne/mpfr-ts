@@ -1,0 +1,1 @@
+{"tag":"mined","inputs":{},"note":"No mined tests; mpfr_get_version is not exercised in mpfr/tests/ -- it is a static build-info accessor. Single happy case suffices."}

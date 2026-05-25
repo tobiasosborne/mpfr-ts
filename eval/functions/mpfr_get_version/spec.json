@@ -1,0 +1,16 @@
+{
+  "function": "mpfr_get_version",
+  "class": "misc",
+  "signature": {"params": [], "returns": "string"},
+  "doc": "Pure-TS port of MPFR's mpfr_get_version (mpfr/src/version.c L24-L28). Returns the upstream MPFR version string as a const char *. The TS port returns the same string verbatim.\n\nThis is a build-info accessor; no algorithm, no rounding, no precision. Tag minimums per Rule 7 inapplicable; single happy case (no-arg accessor pattern, same as mpfr_buildopt_*_p / mpfr_get_cputime).\n\nThe version string mirrors the upstream value at the cloned MPFR_VERSION (see mpfr/VERSION). Worklog 019 landed the string-output codec path that this function uses on the wire.",
+  "c_signature": "const char * mpfr_get_version(void)",
+  "prec_unit": "n/a",
+  "divergence_from_c": "Two divergences:\n\n  1. Return type: C `const char *` -> TS `string`. The TS surface uses native JS strings for static text returns (no need to expose a c-string wrapper).\n\n  2. Storage: C returns a pointer into static read-only data; TS returns a fresh JS string literal each call. Indistinguishable to the caller -- the string is identity-stable across calls.\n\nVersion-string source-of-truth: the golden_driver links the SYSTEM libmpfr.so (Ubuntu libmpfr-dev currently 4.2.1) NOT the cloned mpfr/ source (4.3.0-dev). When upgrading the system libmpfr-dev OR the cloned mpfr/, the TS port string literal must be re-aligned to match the system .so. Calibration will catch any drift.",
+  "refs": [
+    "mpfr/src/version.c L24-L28 -- the C reference body.",
+    "mpfr/src/mpfr.h MPFR_VERSION_STRING -- the build-time constant.",
+    "eval/harness/value_codec.ts -- string scalar passthrough (worklog 019).",
+    "eval/golden_master/common.h jl_output_scalar_str -- JSON-escape emitter (worklog 019).",
+    "eval/functions/mpfr_buildopt_tune_case/spec.json -- precedent for string-scalar accessor."
+  ]
+}

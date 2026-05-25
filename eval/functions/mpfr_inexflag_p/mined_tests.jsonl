@@ -1,0 +1,5 @@
+{"tag":"mined","inputs":{"mask":"0"},"note":"texceptions.c L353/L383 -- !mpfr_inexflag_p() after clear"}
+{"tag":"mined","inputs":{"mask":"8"},"note":"texceptions.c L189/L338/L368 -- mpfr_inexflag_p() after rounded op"}
+{"tag":"mined","inputs":{"mask":"2"},"note":"texceptions.c OVERFLOW-only mask -- predicate false"}
+{"tag":"mined","inputs":{"mask":"1"},"note":"texceptions.c UNDERFLOW-only mask -- predicate false"}
+{"tag":"mined","inputs":{"mask":"63"},"note":"texceptions.c FLAGS_ALL set -- predicate true"}

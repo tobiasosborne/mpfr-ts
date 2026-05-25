@@ -1,0 +1,5 @@
+{"tag":"mined","inputs":{"x":{"kind":"nan","sign":1,"prec":"0","exp":"0","mant":"0"},"iprec":"123","fprec":"123","rnd":"RNDN"},"note":"tmodf.c check_nans L74-L78 -- NaN input"}
+{"tag":"mined","inputs":{"x":{"kind":"inf","sign":1,"prec":"123","exp":"0","mant":"0"},"iprec":"123","fprec":"123","rnd":"RNDN"},"note":"tmodf.c check_nans L80-L86 -- +Inf -> iop=+Inf, fop=+0"}
+{"tag":"mined","inputs":{"x":{"kind":"inf","sign":-1,"prec":"123","exp":"0","mant":"0"},"iprec":"123","fprec":"123","rnd":"RNDN"},"note":"tmodf.c check_nans L88-L92 -- -Inf -> iop=-Inf, fop=-0"}
+{"tag":"mined","inputs":{"x":"2.5","iprec":"24","fprec":"24","rnd":"RNDN"},"note":"tmodf.c check L24-L63 -- 2.5 splits to (2, 0.5)"}
+{"tag":"mined","inputs":{"x":"-2.5","iprec":"24","fprec":"24","rnd":"RNDN"},"note":"tmodf.c negative variant -- (-2, -0.5)"}

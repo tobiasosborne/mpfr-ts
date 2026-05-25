@@ -1,0 +1,22 @@
+{
+  "function": "mpfr_set_sj_2exp",
+  "class": "misc",
+  "signature": {
+    "params": ["j", "e", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "c_signature": "int mpfr_set_sj_2exp (mpfr_ptr x, intmax_t j, intmax_t e, mpfr_rnd_t rnd)",
+  "prec_unit": "bits",
+  "doc": "Pure-TS port of MPFR's mpfr_set_sj_2exp: set the result to j * 2^e, correctly rounded to prec bits per rnd, where j is a signed C intmax_t (int64 on the platforms we care about). The C body (mpfr/src/set_sj.c L34-L45) is a one-line dispatch: for j >= 0 delegate to mpfr_set_uj_2exp; for j < 0 negate j (still as uintmax_t to handle INT64_MIN safely) and invert the rounding mode, then flip the sign of the result and negate the ternary.\n\nThe TS port takes j: bigint (per ADR 0003 mpz-as-bigint convention, here constrained to the signed int64 domain [-2^63, 2^63-1]). It mirrors C: if j >= 0n delegate to mpfr_set_uj_2exp(j, e, prec, rnd); if j < 0n delegate to mpfr_set_uj_2exp(-j, e, prec, INVERT_RND(rnd)) then flip the sign of the resulting MPFR value and negate the ternary.\n\nTag minimums per Rule 7: happy 20, edge 30, adversarial 12, fuzz 50, mined 5. Class 'misc' (1000ms budget) -- same as set_uj_2exp.",
+  "divergence_from_c": "Three divergences:\n\n  1. j parameter: C intmax_t (int64) -> TS bigint, constrained to [-(2^63), 2^63 - 1]. The TS port throws MPFRError('EDOMAIN') if j is outside int64 range. Same approach as set_uj_2exp clamping j to uint64.\n\n  2. Return: C mutates rop in place + returns int ternary; TS returns {value, ternary} Result.\n\n  3. emax/emin: C clamps the result against the active __gmpfr_emax / __gmpfr_emin. TS has no exponent range surface (per src/core.ts schema); we emit the value at its mathematical exponent. The golden_driver keeps e within [-1000, 1000] so the divergence is invisible.\n\nNote: for j = INT64_MIN (-2^63), the C body's `- (uintmax_t) j` produces 2^63 (well-defined unsigned arithmetic). The TS port computes -j as a bigint (yielding +2^63n which fits as a positive bigint in [0n, UINT64_MAX]) before delegating to mpfr_set_uj_2exp.",
+  "refs": [
+    "mpfr/src/set_sj.c L27-L45 -- the C reference body.",
+    "mpfr/src/mpfr-impl.h L1249-L1250 -- MPFR_INVERT_RND macro (RNDU <-> RNDD; others unchanged).",
+    "src/ops/set_uj_2exp.ts -- the underlying delegate; this port wraps it with sign-flip + rnd-invert.",
+    "eval/functions/mpfr_set_uj_2exp/golden_driver.c -- structural template; this driver mirrors the same xorshift PRNG seeding pattern and tag distribution.",
+    "src/core.ts -- locked schema (Result, RoundingMode, MPFR).",
+    "docs/adr/0003-mpz-api.md -- bigint-as-int analogue (this port leans on the same primitive type).",
+    "mpfr/tests/tset_sj.c -- mined-tests source.",
+    "CLAUDE.md 'Hallucination-risk callouts' -- ternary is sign of (rounded - exact), not 0/1; rounding-mode count is FIVE."
+  ]
+}

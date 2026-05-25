@@ -1,0 +1,5 @@
+{"tag":"mined","inputs":{"j":"0","e":"0","prec":"53","rnd":"RNDN"},"note":"tset_sj.c check_set_sj j=0 zero short-circuit"}
+{"tag":"mined","inputs":{"j":"1","e":"0","prec":"53","rnd":"RNDN"},"note":"tset_sj.c check_set_sj j=1 minimal positive"}
+{"tag":"mined","inputs":{"j":"-1","e":"0","prec":"53","rnd":"RNDN"},"note":"tset_sj.c check_set_sj j=-1 minimal negative"}
+{"tag":"mined","inputs":{"j":"-9223372036854775808","e":"0","prec":"64","rnd":"RNDN"},"note":"tset_sj.c INT64_MIN edge -- the C `-(uintmax_t)j` overflow case"}
+{"tag":"mined","inputs":{"j":"9223372036854775807","e":"0","prec":"64","rnd":"RNDN"},"note":"tset_sj.c INT64_MAX edge"}

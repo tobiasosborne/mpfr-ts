@@ -1,0 +1,20 @@
+{
+  "function": "mpfr_inits2",
+  "class": "misc",
+  "signature": {
+    "params": ["prec", "n"],
+    "returns": "bigint"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_inits2 (mpfr/src/inits2.c L40-L64). C signature is varargs with leading prec: mpfr_inits2(prec, x, y, z, ..., (mpfr_ptr)0) -- iterate, initialize each via mpfr_init2 at the supplied prec, terminate on the NULL sentinel. C mutates in place and returns void.\n\nSister of mpfr_inits with an explicit prec. Same TS surface decision: takes (prec: bigint, n: bigint) and returns n: bigint (count-passthrough success marker). The prec is validated against PREC_MIN / PREC_MAX (same bounds as mpfr_init2).\n\nClass 'misc' (1000ms). Tag minimums per Rule 7: happy 20, edge 30, adv 12, fuzz 50, mined 5 (or fewer from mpfr/tests/tinits.c).",
+  "c_signature": "void mpfr_inits2(mpfr_prec_t p, mpfr_ptr x, ... /* mpfr_ptr 0 sentinel */)",
+  "prec_unit": "bits",
+  "divergence_from_c": "Five divergences:\n\n  1. Parameter shape: C (prec, varargs of mpfr_ptr terminated by NULL) -> TS (prec: bigint, n: bigint count).\n\n  2. Return type: C void -> TS bigint (count-passthrough success marker; mirrors mpfr_inits and mpfr_free_pool patterns).\n\n  3. Allocation semantics: C allocates limb storage and leaves mantissa uninitialised; TS allocates JS bigints implicitly. User-side composition `Array.from({length: Number(n)}, () => mpfr_init2(prec))` covers this if the caller needs actual values.\n\n  4. Precision validation: TS throws MPFRError('EPREC') for prec out of [PREC_MIN, PREC_MAX]; C returns void and (in debug builds) ASSERTs.\n\n  5. Count validation: TS rejects n < 0; C has no analog (its varargs walk terminates on the NULL sentinel regardless).",
+  "refs": [
+    "mpfr/src/inits2.c L40-L64 -- the C reference body.",
+    "src/ops/init2.ts -- the underlying single-handle init2 (explicit prec); composing init2(prec) in a loop is the user-side analogue.",
+    "eval/functions/mpfr_inits/spec.json -- sister (default-prec variant).",
+    "mpfr/tests/tinits.c L33 -- mined-tests source (mpfr_inits2(200, a, b, c, NULL) pattern).",
+    "src/core.ts -- locked schema (PREC_MIN, PREC_MAX, MPFR shape).",
+    "eval/functions/mpfr_free_pool/spec.json -- precedent: void-returning op encoded as success-marker scalar."
+  ]
+}

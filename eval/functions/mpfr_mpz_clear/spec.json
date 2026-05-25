@@ -1,0 +1,16 @@
+{
+  "function": "mpfr_mpz_clear",
+  "class": "misc",
+  "signature": {"params": ["z"], "returns": "boolean"},
+  "doc": "Pure-TS port of MPFR's mpfr_mpz_clear (mpfr/src/pool.c L83-L101). In C, the function either pushes the mpz_t back onto the static mpz_tab pool (if pool has space and z fits) or calls the real mpz_clear. The pool exists in C to amortize mpz_init/mpz_clear churn.\n\nThe TS port is a no-op returning `true` as a success marker (codec convention for void-returning ops, per worklog 020 / HANDOFF gotcha #9). Per ADR 0003, bigint values are JS-runtime managed -- there is no explicit clear, no pool, no allocator. The 'mpz_t' analogue is a native bigint that the JS GC handles automatically.\n\nThis is the inverse of the (also-vacuous) mpz_init/mpz_init2/mpz_set_ui_2exp helpers that would be no-ops in TS. The C call signature takes the to-be-cleared mpz_t by pointer; the TS port takes a bigint parameter (the value formerly tracked) and ignores it -- the bigint itself goes out of scope naturally.\n\nTag minimums per Rule 7 inapplicable; single happy case (no-arg accessor pattern, same as mpfr_free_pool).",
+  "c_signature": "void mpfr_mpz_clear(mpz_ptr z)",
+  "prec_unit": "n/a",
+  "divergence_from_c": "Four divergences:\n\n  1. Return: C void -> TS boolean (success marker, mirrors mpfr_free_pool pattern from worklog 020).\n\n  2. Effect: C either pushes onto pool or calls mpz_clear (freeing the limb storage); TS does nothing. The runtime GC reclaims the bigint when it goes out of scope.\n\n  3. Parameter: C mpz_ptr z -> TS z: bigint. The bigint is the same MPFR-side value; TS doesn't observe or mutate it.\n\n  4. Idempotence: C calling mpz_clear twice is undefined behaviour; TS calling mpfr_mpz_clear twice is always a no-op return true.\n\nThe golden_driver emits true unconditionally to match the TS contract; the actual mpfr_mpz_clear is called on a real mpz_t but the wire form ignores side effects.",
+  "refs": [
+    "mpfr/src/pool.c L83-L101 -- the C reference body.",
+    "mpfr/src/pool.c L37-L80 -- the mpfr_mpz_init/_init2 primitives that this function is the inverse of.",
+    "eval/functions/mpfr_free_pool/spec.json -- precedent (vacuous pool teardown).",
+    "docs/adr/0003-mpz-api.md -- bigint-as-mpz_t; no pool, no explicit clear.",
+    "HANDOFF.md gotcha #9 (worklog 020) -- boolean success marker for void-returning ops."
+  ]
+}

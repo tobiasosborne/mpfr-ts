@@ -1,0 +1,5 @@
+{"tag":"mined","inputs":{"prec":"200","n":"3"},"note":"tinits.c L33 -- mpfr_inits2(200, a, b, c, NULL) pattern"}
+{"tag":"mined","inputs":{"prec":"200","n":"3"},"note":"tinits.c repeat (after clears)"}
+{"tag":"mined","inputs":{"prec":"53","n":"0"},"note":"degenerate sentinel-only"}
+{"tag":"mined","inputs":{"prec":"53","n":"1"},"note":"smallest non-empty"}
+{"tag":"mined","inputs":{"prec":"1","n":"2"},"note":"min-prec, small n"}
