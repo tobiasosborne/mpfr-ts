@@ -1,0 +1,16 @@
+{
+  "function": "mpn_zero",
+  "class": "substrate",
+  "signature": {
+    "params": ["n"],
+    "returns": "{ result: readonly bigint[] }"
+  },
+  "doc": "Pure-TS port of GMP mpn_zero: produce an n-limb all-zeros array. Substrate-class -- operates on raw bigint arrays, not src/core.ts MPFR values; runner sets requireCoreImport=false for substrate. In C, mpn_zero zeros the n limbs of rp in place; in the immutable TS substrate we return a fresh n-element array of 0n.",
+  "c_signature": "void mpn_zero(mp_limb_t *rp, mp_size_t n)",
+  "limb_width_bits": 64,
+  "limb_order": "little-endian",
+  "refs": [
+    "GMP manual §8.3 (Low-level Functions): zero-fill an n-limb array.",
+    "mpfr/src/mpfr-mini-gmp.c L199, L206, L237, L239, L265, L269 -- mpn_zero call sites inside mpn_divrem_1 / mpn_tdiv_qr."
+  ]
+}

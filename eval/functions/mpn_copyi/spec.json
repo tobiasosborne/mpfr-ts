@@ -1,0 +1,16 @@
+{
+  "function": "mpn_copyi",
+  "class": "substrate",
+  "signature": {
+    "params": ["s", "n"],
+    "returns": "{ result: readonly bigint[] }"
+  },
+  "doc": "Pure-TS port of GMP mpn_copyi: copy n limbs from s in increasing-address order. Substrate-class -- operates on raw bigint arrays, not src/core.ts MPFR values; runner sets requireCoreImport=false for substrate. In C, mpn_copyi and mpn_copyd differ only when src and dst overlap; in the immutable TS substrate both return a fresh array and are functionally equivalent. Kept as separate exports so the GMP I/O contract matches name-for-name with C callers in the call graph.",
+  "c_signature": "void mpn_copyi(mp_limb_t *rp, const mp_limb_t *sp, mp_size_t n)",
+  "limb_width_bits": 64,
+  "limb_order": "little-endian",
+  "refs": [
+    "GMP manual §8.3 (Low-level Functions): increasing-address copy.",
+    "mpfr/src/mpfr-mini-gmp.c L198, L204, L234, L263 -- mpn_copyi call sites inside mpn_divrem_1 / mpn_tdiv_qr."
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "function": "mpn_copyd",
+  "class": "substrate",
+  "signature": {
+    "params": ["s", "n"],
+    "returns": "{ result: readonly bigint[] }"
+  },
+  "doc": "Pure-TS port of GMP mpn_copyd: copy n limbs from s in decreasing-address order. Substrate-class -- operates on raw bigint arrays, not src/core.ts MPFR values; runner sets requireCoreImport=false for substrate. In C, mpn_copyd matters when src and dst overlap with dst > src (high addresses first prevents overwriting un-read limbs); in the immutable TS substrate the iteration direction is irrelevant because every return is a fresh array. Kept as a separate export so the GMP I/O contract matches name-for-name with C callers (e.g. mpfr_frac uses mpn_copyd specifically).",
+  "c_signature": "void mpn_copyd(mp_limb_t *rp, const mp_limb_t *sp, mp_size_t n)",
+  "limb_width_bits": 64,
+  "limb_order": "little-endian",
+  "refs": [
+    "GMP manual §8.3 (Low-level Functions): decreasing-address copy.",
+    "mpfr/src/frac.c L110 -- canonical caller: `mpn_copyd (tp + t0, up, un + 1);` (the fractional-part extraction's limb shuffle).",
+    "mpfr/src/sub1sp.c -- mpn_copyd in significand realignment."
+  ]
+}
