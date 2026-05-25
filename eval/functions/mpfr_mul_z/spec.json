@@ -1,0 +1,24 @@
+{
+  "function": "mpfr_mul_z",
+  "class": "misc",
+  "signature": {
+    "params": ["x", "z", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "c_signature": "int mpfr_mul_z (mpfr_ptr y, mpfr_srcptr x, mpz_srcptr z, mpfr_rnd_t r)",
+  "prec_unit": "bits",
+  "doc": "Pure-TS port of MPFR's mpfr_mul_z: compute x * z (where z is an arbitrary-precision integer) at the requested target precision, correctly rounded per rnd. Returns {value, ternary} per src/core.ts.\n\nStructurally identical to mpfr_add_z and mpfr_sub_z: lift z to a lossless intermediate MPFR via mpfr_set_z at prec = max(bitLength(|z|), 1n), then delegate to mpfr_mul. The lossless intermediate prevents double-rounding (ADR 0003 invariant 3). NaN/Inf/zero propagation comes from mpfr_mul naturally; the +/-Inf * 0 NaN case and the +/-0 * z=0 sign convention follow mpfr_mul's rules.",
+  "divergence_from_c": "C takes z as mpz_srcptr; TS takes a JS bigint (per ADR 0003). C has a mpz_fits_slong_p fast path (gmp_op.c L90-L91) that delegates to mpfr_mul_si; the TS port does not currently take this fast path -- consistent with mpfr_add_z / mpfr_sub_z. Otherwise identical algorithm: build a lossless intermediate via mpfr_set_z, delegate to mpfr_mul.",
+  "refs": [
+    "mpfr/src/gmp_op.c L87-L94 -- C reference (mpfr_mul_z body).",
+    "mpfr/src/gmp_op.c L25-L49 -- init_set_z helper that the TS port mirrors via mpfr_set_z.",
+    "src/ops/set_z.ts -- canonical bigint-to-MPFR coercion per ADR 0003 invariant 3.",
+    "src/ops/mul.ts -- the underlying mpfr*mpfr mul.",
+    "eval/functions/mpfr_add_z/spec.json -- sibling spec; same delegation pattern.",
+    "docs/adr/0003-mpz-api.md -- the API decision.",
+    "src/core.ts -- locked MPFR/RoundingMode/Result types.",
+    "mpfr/tests/tgmpop.c L211-L218 -- mined-tests source (check_for_zero for mul_z).",
+    "mpfr/tests/tgmpop.c L1099-L1108 -- mined-tests source (reduced_expo_range mul_z: 17 * 3 = 51).",
+    "CLAUDE.md 'Hallucination-risk callouts' -- ternary direction; signed zero observable (mul_z(+/-0, z=0) sign follows mpfr_mul)."
+  ]
+}

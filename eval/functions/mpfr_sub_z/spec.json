@@ -1,0 +1,24 @@
+{
+  "function": "mpfr_sub_z",
+  "class": "misc",
+  "signature": {
+    "params": ["x", "z", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "c_signature": "int mpfr_sub_z (mpfr_ptr y, mpfr_srcptr x, mpz_srcptr z, mpfr_rnd_t r)",
+  "prec_unit": "bits",
+  "doc": "Pure-TS port of MPFR's mpfr_sub_z: compute x - z (where z is an arbitrary-precision integer) at the requested target precision, correctly rounded per rnd. Returns {value, ternary} per src/core.ts.\n\nStructurally identical to mpfr_add_z (this file's sibling): lift z to a lossless intermediate MPFR via mpfr_set_z at prec = max(bitLength(|z|), 1n), then delegate to mpfr_sub. The lossless intermediate prevents double-rounding (ADR 0003 invariant 3). NaN/Inf/zero propagation comes from mpfr_sub naturally; the signed-zero rule for x=+/-0, z=0 follows mpfr_sub's convention (the +/-0 difference depends on rounding mode and signs).",
+  "divergence_from_c": "C takes z as mpz_srcptr; TS takes a JS bigint (per ADR 0003). C has a mpz_fits_slong_p fast path (gmp_op.c L117-L118) that delegates to mpfr_sub_si; the TS port does not currently take this fast path -- consistent with mpfr_add_z. Otherwise identical algorithm: build a lossless intermediate via mpfr_set_z, delegate to mpfr_sub.",
+  "refs": [
+    "mpfr/src/gmp_op.c L114-L121 -- C reference (mpfr_sub_z body).",
+    "mpfr/src/gmp_op.c L25-L49 -- init_set_z helper that the TS port mirrors via mpfr_set_z.",
+    "src/ops/set_z.ts -- canonical bigint-to-MPFR coercion per ADR 0003 invariant 3.",
+    "src/ops/sub.ts -- the underlying mpfr-mpfr sub.",
+    "eval/functions/mpfr_add_z/spec.json -- sibling spec; same delegation pattern.",
+    "docs/adr/0003-mpz-api.md -- the API decision.",
+    "src/core.ts -- locked MPFR/RoundingMode/Result types.",
+    "mpfr/tests/tgmpop.c L203-L210 -- mined-tests source (check_for_zero for sub_z).",
+    "mpfr/tests/tgmpop.c L1128-L1135 -- mined-tests source (reduced_expo_range sub_z).",
+    "CLAUDE.md 'Hallucination-risk callouts' -- ternary direction; signed zero observable."
+  ]
+}

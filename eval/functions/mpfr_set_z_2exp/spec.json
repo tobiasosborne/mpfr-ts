@@ -1,14 +1,23 @@
 {
   "function": "mpfr_set_z_2exp",
-  "class": "blocked",
-  "signature": {"params": ["z", "e", "prec", "rnd"], "returns": "Result"},
+  "class": "misc",
+  "signature": {
+    "params": ["z", "e", "prec", "rnd"],
+    "returns": "Result"
+  },
   "c_signature": "int mpfr_set_z_2exp (mpfr_ptr f, mpz_srcptr z, mpfr_exp_t e, mpfr_rnd_t rnd_mode)",
   "prec_unit": "bits",
-  "doc": "BLOCKED -- needs mpz/bigint integration ADR (bd mpfr-ts-3a9). Sets f = z * 2^e, correctly rounded. The C signature takes mpz_srcptr; the natural TS surface is mpfr_set_z_2exp(z: bigint, e: bigint, prec: bigint, rnd: RoundingMode): Result. But the upstream API decision (do we expose _z variants at all, or does the user compose via mpfr_set_from_bigint + mpfr_mul_2si?) needs to land first. Same blocker family as mpfr_add_z. See bd mpfr-ts-3a9 for the full discussion. Unblock condition: ADR on mpz/bigint surface design.",
-  "divergence_from_c": "BLOCKED on mpz API ADR.",
+  "doc": "Pure-TS port of MPFR's mpfr_set_z_2exp: set the result to z * 2^e, correctly rounded to prec bits per rnd. Returns {value, ternary} per src/core.ts. This is the load-bearing implementation that mpfr_set_z itself delegates to with e=0 (mpfr/src/set_z.c L24-L29); the algorithm is described in mpfr/src/set_z_2exp.c L27-L198. Class is 'misc' (1000ms budget) because the body is O(bitLength(|z|)) for the bit-length scan and roundMantissa shift -- for very large z (thousands of bits) plus a non-zero shift this exceeds the 'arithmetic' 200ms cap.\n\nAlgorithm: identical to mpfr_set_z, except the value of (z, e) is sign * absZ * 2^e (rather than sign * absZ * 2^0). Concretely: bitLength(|z|) gives srcPrec; the value's MPFR-convention exponent is srcPrec + e (the schema's value formula sign * mant * 2^(exp - prec) gives exp = srcPrec + e for mant = absZ at prec srcPrec). The rest of the routine is the same lossless-pad-vs-roundMantissa fork as set_z. Sign is forced positive on z=0 per the C reference (mpfr/src/set_z_2exp.c L39-L41); e is ignored when z=0. Per ADR 0003, z is accepted as native TS bigint; e is bigint to match the schema's bigint exponent convention.",
+  "divergence_from_c": "C takes z as mpz_srcptr and e as mpfr_exp_t (signed int); TS takes z as bigint (per ADR 0003) and e as bigint (per the locked schema's exp type). C mutates rop in place and returns the ternary as int; TS takes prec positionally and returns {value, ternary} per src/core.ts. C clamps against the active emax/emin and may return +/-Inf (overflow) or +/-0 (underflow); the TS schema has no exponent range surface and emits the value at its mathematical exponent. The golden driver stays within the default MPFR range so this divergence is invisible to grading. C handles MPFR_EMAX_MAX-driven early-overflow detection (set_z_2exp.c L52-L55); TS does not perform this check.",
   "refs": [
-    "mpfr/src/set_z_2exp.c -- C reference body (198 LOC).",
-    "src/core.ts -- bigint is the natural TS analog of mpz_t.",
-    "bd mpfr-ts-3a9 -- the API-decision tracker."
+    "mpfr/src/set_z_2exp.c L27-L198 -- load-bearing C reference. Lines L39-L41 are the z=0 short-circuit (sign forced positive); L65 is count_leading_zeros on the top limb; L79 is the uexp arithmetic; L93-L185 is the lossless-pad-vs-round fork.",
+    "mpfr/src/set_z.c L24-L29 -- mpfr_set_z is the e=0 specialisation of this function; the shipped src/ops/set_z.ts is the structural template for the port.",
+    "src/ops/set_z.ts -- precedent: same algorithm shape, e implicitly 0. The new port is essentially set_z with e folded into srcExp.",
+    "src/internal/mpfr/round_raw.ts -- shared substrate primitive for the lossy roundMantissa path.",
+    "src/core.ts -- locked MPFR/RoundingMode/Result types; posZero / PREC_MIN / PREC_MAX. Note the schema's value formula sign * mant * 2^(exp - prec) -- exp is in MPFR convention, so srcExp = srcPrec + e for an mpz-and-e input.",
+    "docs/adr/0003-mpz-api.md -- the API decision that unblocked this function. Codifies bigint-as-mpz-analogue, e: bigint, mpfr_set_z as canonical coercion.",
+    "eval/functions/mpfr_set_z/golden_driver.c -- precedent driver; the new driver follows the same xorshift PRNG seed pattern, same tag distribution shape, with the addition of the e parameter.",
+    "mpfr/tests/tset_z_2exp.c -- mined-tests source.",
+    "CLAUDE.md 'Hallucination-risk callouts' -- signed zero forced positive on z=0; ternary direction is sign of (rounded - exact); rounding-mode count is FIVE."
   ]
 }

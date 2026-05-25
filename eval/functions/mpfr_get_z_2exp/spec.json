@@ -1,14 +1,22 @@
 {
   "function": "mpfr_get_z_2exp",
-  "class": "blocked",
-  "signature": {"params": ["f"], "returns": "{ z: bigint, e: bigint }"},
+  "class": "misc",
+  "signature": {
+    "params": ["x"],
+    "returns": "{ z: bigint, exp: bigint }"
+  },
   "c_signature": "mpfr_exp_t mpfr_get_z_2exp (mpz_ptr z, mpfr_srcptr f)",
   "prec_unit": "bits",
-  "doc": "BLOCKED -- needs mpz/bigint integration ADR (bd mpfr-ts-3a9). Returns f as z * 2^e via the mpz output and exp return value. C mutates an out-param mpz; natural TS is to return { z: bigint, e: bigint } as a value tuple. Same blocker family as mpfr_set_z_2exp and mpfr_add_z. Unblock condition: ADR on mpz/bigint surface design.\n\nNote: per [[mpfr-storage-traps]] in agent memory, `mpfr_get_z_2exp` is already understood to be de-padding (NaN drops prec on the TS side; exp_ts = exp_2 + prec). When the ADR lands and this port ships, those traps will inform the implementation.",
-  "divergence_from_c": "BLOCKED on mpz API ADR.",
+  "doc": "Pure-TS port of MPFR's mpfr_get_z_2exp: extract a finite non-zero MPFR value x as a pair {z, exp} such that x = z * 2^exp, where z is a bigint and exp is the unbiased exponent of the value's mantissa relative to the integer interpretation. Returns the pair as a value tuple per ADR 0003 -- no out-parameter mutation.\n\nWith the schema's MSB-aligned mantissa, this port is a near-one-liner. The schema's value formula (src/core.ts L51-L62) is value = sign * mant * 2^(exp - prec), and the C function's contract is value = z * 2^exp_c. So:\n\n  - z   = (x.sign === -1 ? -x.mant : x.mant)   -- signed mantissa as bigint\n  - exp = x.exp - x.prec                       -- shift exponent by -prec\n\nNo bit-shift adjustment is needed (the C version does an mpn_rshift to strip GMP-NUMB_BITS limb padding; our schema has no such padding because mant is MSB-aligned to exactly prec bits). This mirrors precisely the inverse operation the golden-master's jl_kv_mpfr helper performs when serialising an MPFR (eval/golden_master/common.h L440-L447).\n\nClass is 'misc' (1000ms budget) because for a very large input (e.g. prec in the thousands) the magnitude of x.mant itself can be thousands of bits; the bigint copy + negation is O(prec).",
+  "divergence_from_c": "C mutates an out-parameter mpz_t z and returns the exponent as the function result. TS returns a frozen plain object {z, exp} as a value tuple (per ADR 0003 -- no out-parameter mutation in the idiomatic surface). C returns __gmpfr_emin (with the erange flag set) on NaN/Inf inputs and 0 on +/-0; the TS port throws MPFRError('EPREC') on NaN/Inf (the locked schema has no flag surface, same divergence as mpfr_get_z) and returns {z: 0n, exp: 0n} on +/-0 (sign collapses on the integer side since bigint has no -0n). C's MPFR_LARGE_EXP code path (get_z_2exp.c L81-L92) handles the case where x.exp - x.prec would overflow mpfr_exp_t; the TS port has no such concern because bigint is unbounded.",
   "refs": [
-    "mpfr/src/get_z_2exp.c -- C reference body.",
-    "src/core.ts -- bigint is the natural TS analog of mpz_t.",
-    "bd mpfr-ts-3a9 -- the API-decision tracker."
+    "mpfr/src/get_z_2exp.c L50-L95 -- C reference. Lines L56-L62 are the singular short-circuit (NaN/Inf/zero), L73-L77 are the mpn_rshift that the TS schema makes unnecessary, L94 is the exponent return.",
+    "eval/golden_master/common.h L410-L460 -- the jl_kv_mpfr helper that performs the inverse op (serialising an MPFR to wire) uses precisely the same exp_ts = exp_2 + prec relationship. The TS port is the cleanest inverse.",
+    "src/ops/get_z.ts -- precedent for the get-family op pattern (throw on NaN/Inf, return 0 on +/-0, normal path).",
+    "src/core.ts -- locked MPFR schema. The value formula sign * mant * 2^(exp - prec) is what makes this port a near-one-liner.",
+    "docs/adr/0003-mpz-api.md -- the API decision that unblocked this function. Codifies bigint-out (z) and the pair-return shape.",
+    "~/.claude/projects/-home-tobiasosborne-Projects-mpfr-ts/memory/mpfr_storage_traps.md -- 'mpfr_get_z_2exp already de-pads; exp_ts = exp_2 + prec; NaN drops prec on the TS side' -- the load-bearing storage trap this port leans on.",
+    "mpfr/tests/tget_z.c L268-L294 -- mined-tests source (the special() function covers NaN/Inf/zero inputs).",
+    "CLAUDE.md 'Hallucination-risk callouts' -- NaN != NaN (we throw rather than return a flagged 0); signed zero observable."
   ]
 }

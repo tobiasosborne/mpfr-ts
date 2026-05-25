@@ -1,14 +1,22 @@
 {
   "function": "mpfr_add_z",
-  "class": "blocked",
-  "signature": {"params": ["x", "z", "prec", "rnd"], "returns": "Result"},
+  "class": "misc",
+  "signature": {
+    "params": ["x", "z", "prec", "rnd"],
+    "returns": "Result"
+  },
   "c_signature": "int mpfr_add_z (mpfr_ptr y, mpfr_srcptr x, mpz_srcptr z, mpfr_rnd_t r)",
   "prec_unit": "bits",
-  "doc": "BLOCKED -- needs mpz/bigint integration ADR. C signature takes mpz_srcptr (GMP multi-precision integer). Natural TS surface is `mpfr_add_z(x: MPFR, z: bigint, prec: bigint, rnd: RoundingMode): Result`, but we need a project-wide decision on:\n\n  1. Whether the public TS API exposes `_z` variants at all, or whether users compose `mpfr_set_from_bigint(z) -> mpfr_add(x, ..., prec, rnd)` instead.\n  2. If yes to _z variants: the bigint-to-mantissa coercion strategy (how do we represent the integer 2^64 + 1 inside the MPFR mantissa model?).\n\nUntil that ADR lands, the port is blocked. The C source is straightforward (delegates to mpfr_add after converting z to a temporary mpfr) but the API decision is upstream.",
-  "divergence_from_c": "BLOCKED on mpz API ADR.",
+  "doc": "Pure-TS port of MPFR's mpfr_add_z: compute x + z (where z is an arbitrary-precision integer) at the requested target precision, correctly rounded per rnd. Returns {value, ternary} per src/core.ts. Per ADR 0003, z is a TS bigint; per the same ADR, the port delegates to mpfr_set_z + mpfr_add (no inline reimplementation of the add algorithm).\n\nAlgorithm: mirror mpfr/src/gmp_op.c L106-L112's foo() pattern.\n  1. If z === 0n: trivially equal to mpfr_set(x, prec, rnd) -- the result is x rounded to prec at rnd. (The TS port composes by calling mpfr_set_z(0n, ...) then mpfr_add; the underlying mpfr_add correctly handles x + 0.)\n  2. Otherwise: compute the bitLength of |z|, call mpfr_set_z(z, max(bitLength(z), 1n), 'RNDN') to lift z into a lossless temporary MPFR (the precision choice guarantees ternary=0 on this conversion, matching the C source's init_set_z helper), then call mpfr_add(x, t, prec, rnd) and return its Result directly.\n\nThe lossless intermediate is critical: if mpfr_set_z used a lower precision and lost bits, mpfr_add would compute a rounded-then-rounded result, double-counting the rounding error. ADR 0003 invariant 3 makes this contract explicit. Class is 'misc' (1000ms budget) because for a very large z (thousands of bits) the intermediate MPFR's precision is correspondingly large; mpfr_add at that prec is O(prec) bigint arithmetic.",
+  "divergence_from_c": "C takes z as mpz_srcptr; TS takes a JS bigint (per ADR 0003). C mutates y and returns the ternary as int; TS takes prec positionally and returns {value, ternary}. C has a mpz_fits_slong_p fast path (gmp_op.c L107-L108) that delegates to mpfr_add_si when z fits in signed long; the TS port does not currently take this fast path -- bigint arithmetic in V8/Bun is fast enough that the overhead of the dispatch isn't worth the complexity. (A later perf-driven port may add the fast path; tracked by the perf-grade re-attempt phase.) Otherwise the algorithm is identical: build a lossless intermediate via mpfr_set_z, delegate to mpfr_add. NaN/Inf/zero propagation comes from mpfr_add naturally.",
   "refs": [
-    "mpfr/src/gmp_op.c -- C reference body.",
-    "src/core.ts -- bigint is the natural TS analog of mpz_t.",
-    "src/ops/add.ts -- the underlying mpfr+mpfr add the _z variant would compose with."
+    "mpfr/src/gmp_op.c L87-L130 -- C reference. Lines L25-L49 (init_set_z helper), L51-L68 (foo helper), L106-L112 (mpfr_add_z body itself).",
+    "src/ops/set_z.ts -- the canonical bigint-to-MPFR coercion per ADR 0003 invariant 3. Called with prec = max(bitLength(z), 1n) for losslessness.",
+    "src/ops/add.ts -- the underlying mpfr+mpfr add. Handles NaN/Inf/zero propagation, the +/-0 sign convention, rounding.",
+    "docs/adr/0003-mpz-api.md -- the API decision. Codifies bigint-as-mpz-analogue, mpfr_set_z as canonical coercion, no inline rewrite.",
+    "src/core.ts -- locked MPFR/RoundingMode/Result types.",
+    "mpfr/tests/tgmpop.c L195-L201 -- mined-tests source (check_for_zero with x={+/-0}, z=0).",
+    "mpfr/tests/tgmpop.c L1119-L1126 -- mined-tests source (reduced_expo_range with x=17, z=3 -> 20).",
+    "CLAUDE.md 'Hallucination-risk callouts' -- signed zero on +/-0+/-0 follows the add convention; ternary direction = sign of (rounded - exact)."
   ]
 }
