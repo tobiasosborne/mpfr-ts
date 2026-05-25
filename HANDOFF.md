@@ -74,29 +74,64 @@ bd ready                                              # 16 issues (unchanged)
 
 ## Next-session priority sequence
 
-### Priority 1 (recommended): Pick up the rank-15 cluster
+### Priority 1 (START HERE): Harvest the rank-15 cluster
 
 The substrate batch was specifically to unblock these — pick them up
-to harvest the leverage:
+to harvest the leverage. **Don't blindly run `ralph.py --next`** —
+the picker surfaces in topo-rank order, which would put
+`mpfr_sub1sp` (1993 LOC of C, the largest in the cluster) first.
+Instead use the ramp below: small functions first to validate the
+dispatch flow, then larger ones.
 
-| Rank | Function | What it does |
-|---:|---|---|
-| 15 | `mpfr_sub1sp` | same-prec subtraction wrapper |
-| 16 | `mpfr_set_z_2exp` | set MPFR from bigint × 2^exp |
-| 26 | `mpfr_rint` | round-to-int dispatcher |
-| 36 | `mpfr_addrsh` | add-right-shift internal helper |
-| 84 | `mpfr_nexttozero` | next FP value toward zero |
-| 85 | `mpfr_nexttoinf` | next FP value toward infinity |
+| Order | Function | Rank | C LOC | Ramp tier | Notes |
+|---:|---|---:|---:|---|---|
+| 1 | `mpfr_nexttozero` | 84 | 172 | warmup | small misc; next FP value toward 0 |
+| 2 | `mpfr_nexttoinf` | 85 | 172 | warmup | small misc; symmetric to 1; share next.c |
+| 3 | `mpfr_rint` | 26 | 476 | medium | full rint dispatcher; `mpfr_rint_trunc` already shipped as a sibling so the pattern is established |
+| 4 | `mpfr_addrsh` | 36 | 1095 | large | add-right-shift internal helper; inside add1sp.c |
+| 5 | `mpfr_sub1sp` | 15 | 1993 | large | same-prec subtraction wrapper; biggest port in this batch — save for last |
 
-These are all rank-15-to-85 — earliest in topo order, highest value.
-Expect 5-8 ports per batch. If API dispatch is working, ~$3-5 in
-subagent costs.
+**Triage call**: `mpfr_set_z_2exp` (rank 16) takes `mpz_srcptr` and
+should be **blocked** on the same mpz API decision as
+`mpfr_add_z` (bd `mpfr-ts-3a9`). First step of next session:
+file/route this as blocked, do NOT port. Take 30 seconds to write its
+spec.json with a "BLOCKED: mpz API decision, see mpfr-ts-3a9" doc
+field, mark status='blocked' in state.db, move on.
 
-`mpfr_sub1sp` is large (full subtraction-same-precision algorithm,
-~300 LOC of MPFR source); `mpfr_addrsh` and `mpfr_rint` are
-medium-sized; `mpfr_nexttozero`/`nexttoinf` are small.
+#### First 30 minutes (concrete recipe)
 
-**Deliverable**: 5-8 ports + worklog 015 + HANDOFF refresh.
+```bash
+# 1. Confirm state
+sqlite3 eval/state.db "SELECT status, COUNT(*) FROM functions GROUP BY status"
+# Expected: blocked|14 done|134 pending|2
+
+# 2. Block mpfr_set_z_2exp before the picker offers it
+sqlite3 eval/state.db "UPDATE functions SET status='blocked' WHERE name='mpfr_set_z_2exp'"
+# Then write eval/functions/mpfr_set_z_2exp/spec.json with the BLOCKED rationale.
+
+# 3. Start the warmup pair (mpfr_nexttozero + mpfr_nexttoinf)
+#    Both live in mpfr/src/next.c and share the algorithm — one
+#    subagent dispatch can do both in a single pass (model: how
+#    the buildopt + get_em* batch worked in worklog 013).
+#    Per-fn flow: spec.json + golden_driver.c + port.ts + grade
+#    + mutate + state.db update + per-fn commit. Push at end of
+#    batch.
+
+# 4. Once warmup ships, move to mpfr_rint (medium).
+#    Read src/ops/rint_trunc.ts (just shipped worklog 012) for the
+#    structural template — the full mpfr_rint dispatcher is the
+#    parent that rint_trunc/rint_ceil/rint_floor/rint_round all
+#    delegate to.
+
+# 5. Then addrsh + sub1sp. These are large; if API is healthy,
+#    dispatch each as its own subagent. If API is overloaded (4
+#    consecutive 529s this session), inline is the documented
+#    fallback (see worklog 014 §"Process").
+```
+
+**Deliverable**: 4-5 ports shipped (excluding the set_z_2exp block) +
+worklog 015 + HANDOFF refresh. Estimated cost: $5-15 in subagent
+dispatches if API is healthy; ~equivalent orchestrator time if inline.
 
 ### Priority 2: `mpn_divrem_1` (rank 76, substrate)
 
