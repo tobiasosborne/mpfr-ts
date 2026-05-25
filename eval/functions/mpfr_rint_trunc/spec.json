@@ -1,0 +1,22 @@
+{
+  "function": "mpfr_rint_trunc",
+  "class": "misc",
+  "signature": {
+    "params": ["u", "prec", "rnd"],
+    "returns": "Result"
+  },
+  "c_signature": "int mpfr_rint_trunc (mpfr_ptr r, mpfr_srcptr u, mpfr_rnd_t rnd_mode)",
+  "prec_unit": "bits",
+  "doc": "Round u toward zero to a nearby integer, then round that integer to prec bits in mode rnd. The C body (mpfr/src/rint.c L405-L424) is a pure delegation:\n\n  - If u is singular (NaN/Inf/Zero) or already an integer: return mpfr_set(r, u, rnd) directly.\n  - Otherwise: compute tmp = trunc(u) at prec(u) (exact, since trunc only zeros bits below the binary point at u's own precision), then return mpfr_set(r, tmp, rnd) (which rounds tmp to r's precision if needed).\n\nThe two-step shape (trunc-then-round) distinguishes mpfr_rint_trunc from mpfr_trunc: the former applies a final correctly-rounded set to the requested output precision, so when prec < bit-width-of-trunc(u), the returned value may differ from trunc(u) by one ulp depending on rnd. mpfr_trunc, by contrast, replaces r's value with floor-toward-zero at r's own prec and only ever rounds toward zero.\n\nTernary semantics: ternary = sign(rounded - exact_trunc_u). For singular / integer u: inherited from mpfr_set (typically 0). For the general case: ternary comes from the final mpfr_set(r, tmp, rnd) step, NOT from the trunc step (which is exact at u.prec).",
+  "divergence_from_c": "1. Return shape: C mutates r and returns int ternary; TS returns Result {value, ternary} per src/core.ts.\n2. Global flag side effects (saved_flags = __gmpfr_flags; mpfr_trunc may mutate inexact flag; restore at exit) are omitted; the returned value is still correctly rounded. The TS surface uses src/internal/mpfr/flags.ts for explicit flag reads in predicate ports — flag mutation by intermediate ops is invisible to the caller.\n3. The intermediate tmp variable (mpfr_t with prec=PREC(u)) is internal scratch in C; the TS port reuses the immutable result of mpfr_trunc(u, u.prec) directly without an explicit allocation step.\n4. C's mpfr_clear(tmp) is a no-op in TS (the immutable value is GC'd).\n\nADR 0001 application (curator overrides):\n  - signature.params: gen_spec emitted [u, prec, rnd]; curator-aligned with the rest of the misc-class ports. No change.\n  - signature.returns: gen_spec emitted 'Result'; correct.\n  - class: gen_spec inferred 'misc' from rint.c basename; matches the budget tier.\n  - prec_unit: 'bits'.",
+  "refs": [
+    "mpfr/src/rint.c L405-L424 -- C reference body.",
+    "src/core.ts -- locked MPFR shape, Result, RoundingMode, MPFRError.",
+    "src/ops/trunc.ts -- delegate (exact at u.prec).",
+    "src/ops/set.ts -- delegate (does the final rounding to prec).",
+    "src/ops/integer_p.ts -- the integer-fast-path predicate.",
+    "mpfr/tests/trint.c -- mined test cases (mpfr_rint_trunc-specific assertions).",
+    "docs/adr/0001-spec-merge-policy.md -- per-field precedence applied above.",
+    "CLAUDE.md hallucination callouts -- NaN!=NaN; signed zero; ternary sign convention."
+  ]
+}
