@@ -1538,3 +1538,206 @@ def test_prep_prompt_scaffold_refs_list_nonempty() -> None:
     assert "exceptions.c" in parsed["refs"][0]
 
 
+# ---------------------------------------------------------------------------
+# Phase 5: --grade model/effort/usd_est parameterization
+# ---------------------------------------------------------------------------
+#
+# The legacy --grade INSERT hardcoded model='sonnet', effort='L3', usd_est=0.0.
+# Phase 5 (DeepSeek-V4-Flash integration) needs to record the actual model
+# and cost on a per-run basis so dashboards can distinguish Flash from sonnet
+# spending. The integration map confirmed no SELECT call sites consume these
+# columns yet, so parameterizing is safe.
+#
+# Backward compat is the discriminating constraint: every existing --grade
+# call MUST keep producing the 'sonnet' / 'L3' / 0.0 row exactly as before.
+# Hence the default values on the new kwargs / CLI flags.
+# ---------------------------------------------------------------------------
+
+
+def _setup_grade_env_single_fn(
+    tmp_path: Path,
+    fresh_db: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    fn: str,
+    *,
+    grade_writer=_write_passing_grade,
+) -> list[_RecordedCall]:
+    """Shared scaffold: seed pending fn, write port.ts + fake golden, stub bun."""
+    _seed_pending_function(fresh_db, fn)
+    port = tmp_path / f"eval_{fn}" / "port.ts"
+    port.parent.mkdir(parents=True)
+    port.write_text("export const x = 1;")
+    monkeypatch.setattr(ralph, "TMP_ROOT", tmp_path)
+    (tmp_path / f"golden_{fn}.jsonl").write_text("{}")
+    monkeypatch.setattr(
+        ralph,
+        "resolve_golden_path",
+        lambda fn_, root: tmp_path / f"golden_{fn_}.jsonl",
+    )
+    calls: list[_RecordedCall] = []
+    monkeypatch.setattr(
+        subprocess,
+        "run",
+        _make_grade_subprocess_stub(record=calls, grade_writer=grade_writer),
+    )
+    return calls
+
+
+def test_grade_default_model_effort_usd_backward_compat(
+    tmp_path: Path, fresh_db: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Default --grade (no new flags) keeps writing 'sonnet'/'L3'/0.0 — no regression."""
+    _setup_grade_env_single_fn(tmp_path, fresh_db, monkeypatch, "mpfr_compat")
+    rc = ralph.run_grade(
+        ["mpfr_compat"], db_path=fresh_db, repo_root=REPO_ROOT
+    )
+    assert rc == 0
+    with sqlite3.connect(fresh_db) as conn:
+        model, effort, usd = conn.execute(
+            "SELECT model, effort, usd_est FROM runs WHERE fn_name='mpfr_compat'"
+        ).fetchone()
+    assert model == "sonnet"
+    assert effort == "L3"
+    assert usd == 0.0
+
+
+def test_grade_with_custom_model_writes_model_column(
+    tmp_path: Path, fresh_db: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Passing model='deepseek-v4-flash' writes it into runs.model."""
+    _setup_grade_env_single_fn(tmp_path, fresh_db, monkeypatch, "mpfr_ds")
+    rc = ralph.run_grade(
+        ["mpfr_ds"],
+        db_path=fresh_db,
+        repo_root=REPO_ROOT,
+        model="deepseek-v4-flash",
+    )
+    assert rc == 0
+    with sqlite3.connect(fresh_db) as conn:
+        model, effort, usd = conn.execute(
+            "SELECT model, effort, usd_est FROM runs WHERE fn_name='mpfr_ds'"
+        ).fetchone()
+    assert model == "deepseek-v4-flash"
+    # effort and usd_est still default.
+    assert effort == "L3"
+    assert usd == 0.0
+
+
+def test_grade_with_custom_usd_est_writes_usd_column(
+    tmp_path: Path, fresh_db: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Passing usd_est=0.0050 writes it into runs.usd_est."""
+    _setup_grade_env_single_fn(tmp_path, fresh_db, monkeypatch, "mpfr_cost")
+    rc = ralph.run_grade(
+        ["mpfr_cost"],
+        db_path=fresh_db,
+        repo_root=REPO_ROOT,
+        usd_est=0.0050,
+    )
+    assert rc == 0
+    with sqlite3.connect(fresh_db) as conn:
+        model, effort, usd = conn.execute(
+            "SELECT model, effort, usd_est FROM runs WHERE fn_name='mpfr_cost'"
+        ).fetchone()
+    assert model == "sonnet"
+    assert effort == "L3"
+    assert abs(usd - 0.0050) < 1e-9
+
+
+def test_grade_with_custom_effort_writes_effort_column(
+    tmp_path: Path, fresh_db: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Passing effort='L2' writes it into runs.effort."""
+    _setup_grade_env_single_fn(tmp_path, fresh_db, monkeypatch, "mpfr_eff")
+    rc = ralph.run_grade(
+        ["mpfr_eff"],
+        db_path=fresh_db,
+        repo_root=REPO_ROOT,
+        effort="L2",
+    )
+    assert rc == 0
+    with sqlite3.connect(fresh_db) as conn:
+        model, effort, usd = conn.execute(
+            "SELECT model, effort, usd_est FROM runs WHERE fn_name='mpfr_eff'"
+        ).fetchone()
+    assert model == "sonnet"
+    assert effort == "L2"
+    assert usd == 0.0
+
+
+def test_grade_all_three_flags_together(
+    tmp_path: Path, fresh_db: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Passing model, effort, usd_est all at once writes all three correctly."""
+    _setup_grade_env_single_fn(tmp_path, fresh_db, monkeypatch, "mpfr_all")
+    rc = ralph.run_grade(
+        ["mpfr_all"],
+        db_path=fresh_db,
+        repo_root=REPO_ROOT,
+        model="deepseek-anthropic/deepseek-v4-flash",
+        effort="L3",
+        usd_est=0.0123,
+    )
+    assert rc == 0
+    with sqlite3.connect(fresh_db) as conn:
+        model, effort, usd = conn.execute(
+            "SELECT model, effort, usd_est FROM runs WHERE fn_name='mpfr_all'"
+        ).fetchone()
+    assert model == "deepseek-anthropic/deepseek-v4-flash"
+    assert effort == "L3"
+    assert abs(usd - 0.0123) < 1e-9
+
+
+def test_grade_cli_flags_propagate_to_runs_row(
+    tmp_path: Path, fresh_db: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The argparser exposes --model, --effort, --usd-est; main() threads them to run_grade."""
+    _setup_grade_env_single_fn(tmp_path, fresh_db, monkeypatch, "mpfr_cli")
+    # Route ralph.main()'s db_path lookup at our fresh_db.
+    monkeypatch.setattr(ralph, "_repo_root", lambda: fresh_db.parent.parent)
+    # _repo_root() is used as: db_path = root / "eval" / "state.db"
+    # Re-route by patching at the call site: build a fake repo layout.
+    fake_root = tmp_path / "fake_repo"
+    (fake_root / "eval").mkdir(parents=True, exist_ok=True)
+    # Symlink fresh_db into the expected slot.
+    target = fake_root / "eval" / "state.db"
+    target.symlink_to(fresh_db)
+    monkeypatch.setattr(ralph, "_repo_root", lambda: fake_root)
+
+    rc = ralph.main([
+        "--grade", "mpfr_cli",
+        "--model", "deepseek-v4-flash",
+        "--effort", "L3",
+        "--usd-est", "0.0042",
+    ])
+    assert rc == 0
+    with sqlite3.connect(fresh_db) as conn:
+        model, effort, usd = conn.execute(
+            "SELECT model, effort, usd_est FROM runs WHERE fn_name='mpfr_cli'"
+        ).fetchone()
+    assert model == "deepseek-v4-flash"
+    assert effort == "L3"
+    assert abs(usd - 0.0042) < 1e-9
+
+
+def test_grade_cli_no_flags_keeps_legacy_defaults(
+    tmp_path: Path, fresh_db: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """CLI --grade without --model/--effort/--usd-est writes the legacy sonnet/L3/0.0 row."""
+    _setup_grade_env_single_fn(tmp_path, fresh_db, monkeypatch, "mpfr_legacy")
+    fake_root = tmp_path / "fake_repo"
+    (fake_root / "eval").mkdir(parents=True, exist_ok=True)
+    target = fake_root / "eval" / "state.db"
+    target.symlink_to(fresh_db)
+    monkeypatch.setattr(ralph, "_repo_root", lambda: fake_root)
+
+    rc = ralph.main(["--grade", "mpfr_legacy"])
+    assert rc == 0
+    with sqlite3.connect(fresh_db) as conn:
+        model, effort, usd = conn.execute(
+            "SELECT model, effort, usd_est FROM runs WHERE fn_name='mpfr_legacy'"
+        ).fetchone()
+    assert model == "sonnet"
+    assert effort == "L3"
+    assert usd == 0.0
+

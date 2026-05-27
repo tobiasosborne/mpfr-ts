@@ -469,11 +469,21 @@ def _grade_one(
     *,
     db_path: Path,
     repo_root: Path,
+    model: str = "sonnet",
+    effort: str = "L3",
+    usd_est: float = 0.0,
 ) -> tuple[bool, str | None, dict[str, float | int | str | None]]:
     """Grade a single function.
 
     Returns ``(passed, first_error, summary)``. ``summary`` carries
     composite, n_pass/n_cases, wall_ms for the stdout one-liner.
+
+    ``model`` / ``effort`` / ``usd_est`` are written into the ``runs`` row.
+    Defaults preserve the legacy sonnet/L3/0.0 behaviour for callers that
+    don't care (e.g. existing --grade invocations). Phase 5 (DeepSeek-V4-Flash)
+    threads real values through here so dashboards can distinguish Flash from
+    sonnet spending. The columns are write-only as of Phase 5: no SELECT
+    consumer in the harness depends on a particular schema for these values.
     """
 
     port_path = resolve_port_path(fn, repo_root)
@@ -581,10 +591,12 @@ def _grade_one(
             "INSERT INTO runs (run_id, fn_name, model, effort, seed, started_at, ended_at, "
             "composite_correctness, perf_grade, n_cases, n_pass, n_throw, n_timegate, n_infloop, "
             "first_error, raw_path, port_path, grade_path, usd_est) "
-            "VALUES (?, ?, 'sonnet', 'L3', 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, 0.0)",
+            "VALUES (?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?)",
             (
                 run_id,
                 fn,
+                model,
+                effort,
                 started,
                 ended,
                 composite,
@@ -597,6 +609,7 @@ def _grade_one(
                 first_error,
                 str(port_path),
                 str(grade_path),
+                usd_est,
             ),
         )
         if passed:
@@ -625,10 +638,55 @@ def _grade_one(
     return passed, first_error, summary
 
 
+def _maybe_load_cost_json(
+    fn: str, model: str, usd_est_explicit: bool
+) -> float | None:
+    """Convenience: pull ``usd_est`` from ``/tmp/eval_<fn>/cost.json`` when
+    grading a DeepSeek port and the caller didn't pass --usd-est explicitly.
+
+    Returns the loaded value, or None if no auto-load applies (caller should
+    fall back to whatever default they had). Silently returns None on any
+    IO/JSON error -- this is a convenience, not a contract.
+    """
+    if usd_est_explicit:
+        return None
+    if not model.startswith("deepseek"):
+        return None
+    cost_path = TMP_ROOT / f"eval_{fn}" / "cost.json"
+    if not cost_path.exists():
+        return None
+    try:
+        payload = json.loads(cost_path.read_text(encoding="utf-8"))
+        val = payload.get("usd_est")
+        if isinstance(val, (int, float)):
+            return float(val)
+    except (OSError, ValueError):
+        pass
+    return None
+
+
 def run_grade(
-    fns: list[str], *, db_path: Path, repo_root: Path
+    fns: list[str],
+    *,
+    db_path: Path,
+    repo_root: Path,
+    model: str = "sonnet",
+    effort: str = "L3",
+    usd_est: float = 0.0,
+    usd_est_explicit: bool = True,
 ) -> int:
-    """Grade each function in ``fns``. Exit 0 iff all pass."""
+    """Grade each function in ``fns``. Exit 0 iff all pass.
+
+    ``model`` / ``effort`` / ``usd_est`` are forwarded into the ``runs`` row
+    for every function. Defaults preserve the legacy sonnet/L3/0.0 behaviour;
+    Phase 5 callers pass the real values for DeepSeek-V4-Flash runs.
+
+    ``usd_est_explicit`` is a hint from the CLI layer: when False AND
+    ``model`` starts with ``deepseek``, ``run_grade`` will try to load the
+    per-fn cost from ``/tmp/eval_<fn>/cost.json`` (written by
+    ``run_deepseek_port.py``). Defaults to True so direct Python callers
+    don't trigger the auto-load surprise.
+    """
 
     if not fns:
         print("error: --grade requires at least one function name", file=sys.stderr)
@@ -637,8 +695,17 @@ def run_grade(
     all_passed = True
     failures: list[tuple[str, str]] = []
     for fn in fns:
+        fn_usd_est = usd_est
+        auto_loaded = _maybe_load_cost_json(fn, model, usd_est_explicit)
+        if auto_loaded is not None:
+            fn_usd_est = auto_loaded
         passed, first_error, summary = _grade_one(
-            fn, db_path=db_path, repo_root=repo_root
+            fn,
+            db_path=db_path,
+            repo_root=repo_root,
+            model=model,
+            effort=effort,
+            usd_est=fn_usd_est,
         )
         status_word = "done" if passed else "FAILED"
         line = (
@@ -963,6 +1030,34 @@ def _build_parser() -> argparse.ArgumentParser:
         metavar="FN",
         help="Spot-grade each /tmp/eval_<FN>/port.ts.",
     )
+    # Phase 5: model/effort/usd_est parameterization for --grade. Defaults
+    # preserve the legacy sonnet/L3/0.0 runs row exactly. --usd-est defaults
+    # to None (sentinel) rather than 0.0 so we can distinguish "caller passed
+    # 0.0 explicitly" from "caller omitted the flag" -- the latter triggers
+    # cost.json auto-load for deepseek models.
+    parser.add_argument(
+        "--model",
+        type=str,
+        default="sonnet",
+        help="Model name to record in runs.model (default: 'sonnet'). "
+             "Only consumed in --grade mode.",
+    )
+    parser.add_argument(
+        "--effort",
+        type=str,
+        default="L3",
+        help="Effort tier to record in runs.effort (default: 'L3'). "
+             "Only consumed in --grade mode.",
+    )
+    parser.add_argument(
+        "--usd-est",
+        type=float,
+        default=None,
+        help="USD cost estimate to record in runs.usd_est (default: 0.0). "
+             "If omitted AND --model starts with 'deepseek', ralph tries to "
+             "auto-load from /tmp/eval_<fn>/cost.json. Only consumed in "
+             "--grade mode.",
+    )
     parser.add_argument(
         "--commit-batch",
         metavar="MSG",
@@ -1052,7 +1147,20 @@ def main(argv: list[str] | None = None) -> int:
             repo_root=root,
         )
     if args.grade:
-        return run_grade(args.grade, db_path=db_path, repo_root=root)
+        # --usd-est defaults to None as a sentinel for "caller didn't pass it";
+        # collapse to 0.0 for the actual write while remembering the absence
+        # so cost.json auto-load can fire for deepseek models.
+        usd_est_explicit = args.usd_est is not None
+        usd_est_value = args.usd_est if usd_est_explicit else 0.0
+        return run_grade(
+            args.grade,
+            db_path=db_path,
+            repo_root=root,
+            model=args.model,
+            effort=args.effort,
+            usd_est=usd_est_value,
+            usd_est_explicit=usd_est_explicit,
+        )
     if args.commit_batch:
         return run_commit_batch(args.commit_batch, repo_root=root)
     if args.ship:
