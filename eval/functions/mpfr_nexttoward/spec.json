@@ -1,0 +1,22 @@
+{
+  "function": "mpfr_nexttoward",
+  "class": "misc",
+  "signature": {
+    "params": ["x", "y"],
+    "returns": "MPFR"
+  },
+  "c_signature": "void mpfr_nexttoward (mpfr_ptr x, mpfr_srcptr y)",
+  "prec_unit": "bits",
+  "doc": "Pure-TS port of MPFR's mpfr_nexttoward (mpfr/src/next.c L148-L172). Step x one ULP toward y at x's own precision; this is IEEE 754-1985 nextafter restricted to MPFR's precision lattice (NOT IEEE 754-2008 nextUp/nextDown, which is what nextabove/nextbelow implement).\n\nDispatch (mpfr/src/next.c L148-L172):\n  - x is NaN -> sets MPFR_FLAGS_NAN; x stays NaN. (TS: returns NAN_VALUE.)\n  - y is NaN -> sets x to NaN, sets MPFR_FLAGS_NAN. (TS: returns NAN_VALUE.)\n  - cmp(x, y) == 0 (x equals y, ignoring sign) -> return x unchanged. This is the load-bearing IEEE 1985 vs IEEE 2008 distinction: for x = y (including +/-0 same magnitude different sign), mpfr_nexttoward returns x AS-IS, including +0/-0 distinction. Per the C source comment at L31-L33: 'For mpfr_nexttoward where x and y are zeros of different signs, the behavior is the same as the nextafter function from IEEE 754-1985 (x is returned), but differs from the ISO C99 nextafter and nexttoward functions (where y is returned)'.\n  - cmp(x, y) < 0 -> mpfr_nextabove(x).\n  - cmp(x, y) > 0 -> mpfr_nextbelow(x).\n\nThe TS port returns a bare MPFR (no Result wrapper) since nexttoward is exact at the precision-defined lattice -- no rounding occurs.\n\nNote on mpfr_cmp dispatch under TS: src/ops/cmp.ts throws on NaN inputs (idiomatic TS surface). The TS port must therefore inspect x.kind === 'nan' and y.kind === 'nan' BEFORE invoking cmp, to avoid the throw -- the C cmp returns 0 on NaN inputs (with erange flag set), but we don't surface erange, so the dispatch must be done manually.\n\nClass 'misc' (1000ms budget). Tag minimums per Rule 7: happy 22, edge 34, adversarial 12, fuzz 55, mined 6.",
+  "divergence_from_c": "Three divergences:\n\n  1. Return shape: C mutates x in place + returns void; TS returns a fresh MPFR. The y parameter is read-only on both sides.\n\n  2. NaN handling: C sets the global __gmpfr_flags |= MPFR_FLAGS_NAN. TS has no global flag register; returns NAN_VALUE. Functional output (NaN in, NaN out) is identical.\n\n  3. NaN dispatch: TS port must inspect kind === 'nan' BEFORE calling cmp (which throws on NaN per the idiomatic surface). C cmp returns 0 on NaN with erange flag; we don't surface erange.\n\nNote: there are TWO observable subtleties in the C source the TS port must preserve:\n\n  (a) The first NaN check (L153-L157) is for x; the second (L158-L163) is for y. Both lead to x becoming NaN and the flag being set. The two paths are functionally equivalent in the immutable TS surface -- both return NAN_VALUE -- and the C dispatch order is a defensive double-check (the L158 condition `MPFR_IS_NAN(x) || MPFR_IS_NAN(y)` includes x, even though L153-L156 already returned -- the second check is dead code triggered by y only).\n\n  (b) The cmp == 0 case returns x unchanged (NOT y). For x = +0, y = -0 this means the TS port returns x's +0 (not y's -0). This is the IEEE 754-1985 nextafter behaviour, not IEEE 754-2008.",
+  "refs": [
+    "mpfr/src/next.c L148-L172 -- C reference body.",
+    "mpfr/src/next.c L23-L41 -- the comment that explains the IEEE 754-1985 vs IEEE 754-2008 distinction.",
+    "src/ops/nextabove.ts -- delegate for cmp(x, y) < 0 case.",
+    "src/ops/nextbelow.ts -- delegate for cmp(x, y) > 0 case.",
+    "src/ops/cmp.ts -- ordering primitive (throws on NaN, so dispatch must guard).",
+    "src/core.ts -- locked schema, NAN_VALUE constant.",
+    "mpfr/tests/tnext.c -- mined-tests source (mpfr_nexttoward at L48-L51 and L130).",
+    "CLAUDE.md 'Hallucination-risk callouts' -- NaN propagation, signed zero observable."
+  ]
+}

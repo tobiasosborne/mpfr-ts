@@ -71,6 +71,10 @@ SAFE_UNICODE_NORMALIZATION = {
     " ": " ",     # NO-BREAK SPACE
     "§": "S",     # SECTION SIGN
     "·": ".",     # MIDDLE DOT
+    "→": "->",    # RIGHTWARDS ARROW
+    "←": "<-",    # LEFTWARDS ARROW
+    "⇒": "=>",    # RIGHTWARDS DOUBLE ARROW
+    "⇐": "<=",    # LEFTWARDS DOUBLE ARROW
 }
 
 

@@ -1,0 +1,19 @@
+{
+  "function": "mpfr_mpz_set_uj",
+  "class": "misc",
+  "signature": {
+    "params": ["n"],
+    "returns": "bigint"
+  },
+  "c_signature": "static void mpfr_mpz_set_uj (mpz_t z, uintmax_t n)",
+  "prec_unit": "n/a",
+  "doc": "Pure-TS port of MPFR's static helper mpfr_mpz_set_uj (mpfr/src/pow_uj.c L40-L57). In C, this sets an mpz_t z to the uintmax_t value n, handling the case where uintmax_t exceeds unsigned long by decomposing n into (high << ULONG_BITS) | low and reassembling via mpz_set_ui + mpz_mul_2exp + mpz_add_ui.\n\nUnder ADR 0003 (bigint-as-mpz_t), this entire two-limb-style decomposition is unnecessary: TS bigint is arbitrary-precision natively, and the operation reduces to the identity n -> n (for the uint64 domain that uintmax_t inhabits on platforms we care about). The TS port validates the uint64 domain and returns n unchanged.\n\nC function is declared static -- it has no public symbol. The only C caller is mpfr_pow_uj (in the same compilation unit), which composes it with pow_ui.c via #include preprocessor inclusion. The TS surface preserves the helper because (a) the orchestrator's callgraph picks it up via the standalone-wire-form-with-delegate pattern (decision_delegation_pattern.md), (b) the underlying primitive -- 'lift a uintmax_t to an mpz_t' -- is well-defined and reusable, and (c) future mpfr_pow_uj port can call it directly to mirror the C structure verbatim.\n\nTag minimums per Rule 7: happy 20, edge 30, adversarial 12, fuzz 50, mined 5.",
+  "divergence_from_c": "Three divergences:\n\n  1. Return: C void (mutates z) -> TS returns bigint (the assigned value).\n\n  2. Parameter shape: C (mpz_t z, uintmax_t n) -> TS (n: bigint). The output z is gone -- replaced by the return value -- and n is now a bigint constrained to the uint64 domain.\n\n  3. Decomposition: C has to manually split n into high/low halves via mpz_set_ui + mpz_mul_2exp + mpz_add_ui because mpz_set_ui only takes unsigned long. TS bigint has no such limitation: the value flows through unchanged.\n\nNo invariants beyond 'returns n unchanged when 0n <= n <= UINT64_MAX'. Throws MPFRError('EDOMAIN') on negative n or n > UINT64_MAX.",
+  "refs": [
+    "mpfr/src/pow_uj.c L40-L57 -- the static C helper body.",
+    "mpfr/src/set_uj.c -- the broader uintmax_t-to-mpfr family (related but distinct path).",
+    "docs/adr/0003-mpz-api.md -- bigint-as-mpz_t.",
+    "memory/decision_delegation_pattern.md -- standalone-wire-form-with-delegate pattern for static helpers.",
+    "src/ops/set_uj_2exp.ts -- reference for uintmax_t domain validation (UINT64_MAX constant)."
+  ]
+}

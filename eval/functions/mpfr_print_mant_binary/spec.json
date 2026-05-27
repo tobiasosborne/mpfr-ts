@@ -1,0 +1,19 @@
+{
+  "function": "mpfr_print_mant_binary",
+  "class": "misc",
+  "signature": {
+    "params": ["str", "x"],
+    "returns": "string"
+  },
+  "c_signature": "void mpfr_print_mant_binary (const char *str, const mp_limb_t *p, mpfr_prec_t r)",
+  "prec_unit": "bits",
+  "doc": "Pure-TS port of MPFR's mpfr_print_mant_binary (mpfr/src/print_raw.c L26-L47). Debug-only function that prints the internal binary representation of a significand to stdout in the form '<prefix> <limbk-1-bits>.<limbk-2-bits>...<limb0-bits>\\n', with a '[' inserted at position r (the significant-bit count) and a matching ']' before the trailing newline.\n\nThe TS surface returns the string instead of printing -- a natural lift of a C void+side-effects function into a pure function. The wire codec accepts string scalars via the path established in worklog 019 (mpfr-ts-2ls fix) for mpfr_fdump.\n\nInputs differ from the C body: instead of (str, mp_limb_t* p, mpfr_prec_t r), the TS port takes (str: string, x: MPFR) -- the limb pointer + bit count is replaced by an MPFR value whose mant/prec fields encode the same information. This matches the idiomatic schema (callers don't construct raw limb arrays).\n\nFormat (mirroring print_raw.c L33-L46):\n  - n = ceil(r / 64) -- number of 64-bit limbs (this is GMP_NUMB_BITS-bit limbs in C).\n  - Output starts with `str + ' '` (prefix + space).\n  - Walk limbs from index n-1 down to 0; for each limb, print all 64 bits MSB-first, inserting '[' after position r.\n  - Each limb is terminated by '.'.\n  - If count >= r after the last limb, append ']'.\n  - Trailing newline.\n\nTag minimums per Rule 7: happy 20, edge 30, adversarial 12, fuzz 50, mined 5 (or fewer from mpfr/tests/ -- print_mant_binary has no isolated test).",
+  "divergence_from_c": "Five divergences:\n\n  1. Return: C void (printf to stdout) -> TS returns the formatted string. Pure function; caller can choose to console.log or capture.\n\n  2. Input shape: C (str, p, r) where p is a raw mp_limb_t* and r is the precision bit count -> TS (str, x: MPFR) where x's mant and prec carry the same information. The MPFR shape requires reconstructing the C limb layout from x.mant: split x.mant into 64-bit chunks where limb[0] is least-significant, and pad with zeros at the LSB of limb[0] so the total bit-width is ceil(r/64) * 64.\n\n  3. Limb padding: the C side has the limb storage padded out to ceil(r/64)*64 bits with the low bits of limb[0] being zeros (the trailing 'k*GMP_NUMB_BITS - r' bits per src/core.ts). The TS side reproduces this by left-shifting x.mant by (n*64 - r) where n = ceil(r/64) when computing the concatenated bit string.\n\n  4. Edge case: when r is a multiple of 64, no padding needed; the ']' immediately follows the final '.'.\n\n  5. Singular x: C operates on raw limbs (no singular checks). TS port throws MPFRError('EDOMAIN') when x.kind !== 'normal' -- the function's contract is 'print mantissa' and singular values have no mantissa. The golden_driver excludes singular cases by construction.",
+  "refs": [
+    "mpfr/src/print_raw.c L26-L47 -- the C reference body.",
+    "mpfr/src/mpfr-impl.h MPFR_PREC2LIMBS macro -- limb count formula.",
+    "eval/functions/mpfr_fdump/spec.json -- precedent for string-output ports (post-mpfr-ts-2ls).",
+    "src/core.ts -- MPFR shape (mant is MSB-aligned to prec bits per the docstring).",
+    "docs/adr/0004-binary-io-api.md -- though this is text I/O, the no-FILE-in-src principle applies (pure function over inputs)."
+  ]
+}

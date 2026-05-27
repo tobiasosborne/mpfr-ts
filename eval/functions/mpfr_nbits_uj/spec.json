@@ -1,0 +1,18 @@
+{
+  "function": "mpfr_nbits_uj",
+  "class": "misc",
+  "signature": {
+    "params": ["n"],
+    "returns": "number"
+  },
+  "c_signature": "int mpfr_nbits_uj (uintmax_t n)",
+  "prec_unit": "n/a",
+  "doc": "Pure-TS port of MPFR's mpfr_nbits_uj (mpfr/src/nbits_ulong.c L89-L136). Computes the number of significant bits of n, i.e. floor(log2(n)) + 1, equivalently the 1-indexed position of the highest set bit. The C body returns nbits(uintmax_t) - count_leading_zeros(n); on LP64 the platform uintmax_t is 64 bits so the result lies in [1, 64].\n\nThe TS port mirrors the C #else branch of nbits_ulong (the divide-and-conquer bit-search) since BigInt has no native CLZ in TypeScript; the algorithm is identical to the existing src/ops/nbits_ulong.ts but with the uintmax_t domain bound (2^64 - 1) instead of unsigned long (same on LP64). Comparisons against power-of-two BigInt constants are O(1) in V8 / JSC.\n\nThis is the uintmax_t (intmax-aware) sister of mpfr_nbits_ulong; both functions exist in C because uintmax_t may be wider than unsigned long on some platforms (LLP64 Windows: unsigned long = 32 bits, uintmax_t = 64 bits). On the platforms we care about (LP64 Linux), both are 64 bits and the implementations are byte-identical.\n\nTag minimums per Rule 7: happy 20, edge 30, adversarial 12, fuzz 50, mined 5.",
+  "divergence_from_c": "Three divergences:\n\n  1. Input type: C takes uintmax_t (uint64 on LP64); TS takes bigint constrained to [1n, 2^64 - 1n]. A JS number input throws MPFRError('EPREC') -- caller must BigInt(n) at the call site.\n\n  2. n = 0: C asserts (MPFR_ASSERTD(n > 0)); TS throws MPFRError('EDOMAIN'). The C assert is a debug-only crash; we don't model that as a process crash since a thrown exception is recoverable for the worker pool.\n\n  3. n >= 2^64: outside C platform domain on LP64; TS rejects with MPFRError('EPREC') rather than silently truncate. (Future: if 128-bit uintmax_t platform is ever a target, this should go through an ADR.)\n\nThe wire codec emits n as a u64 decimal string, decoded to bigint; output is a bare JS number in [1, 64].",
+  "refs": [
+    "mpfr/src/nbits_ulong.c L89-L136 -- the C reference body.",
+    "src/ops/nbits_ulong.ts -- the unsigned long sister (same algorithm, byte-identical on LP64).",
+    "eval/functions/mpfr_nbits_ulong/spec.json -- structural template.",
+    "src/core.ts -- locked schema (MPFRError class)."
+  ]
+}

@@ -1,0 +1,5 @@
+{"source":"mpfr/tests/tset_sj.c L150","note":"set_sj(x, 1742, RNDN) should produce exactly 1742 at prec 53","j":"1742","prec":"53","rnd":"RNDN"}
+{"source":"mpfr/tests/tset_sj.c L144","note":"set_sj(x, -INTMAX_MAX, RNDN) -- exact at prec >= 63","j":"-9223372036854775807","prec":"64","rnd":"RNDN"}
+{"source":"mpfr/tests/tset_sj.c (extrapolated)","note":"j=0 is the sign-forced-positive case","j":"0","prec":"53","rnd":"RNDN"}
+{"source":"mpfr/tests/tset_sj.c (boundary)","note":"INT64_MIN exercises the -(uintmax_t)j overflow trick","j":"-9223372036854775808","prec":"64","rnd":"RNDN"}
+{"source":"mpfr/tests/tset_sj.c (boundary)","note":"INT64_MAX exact at prec >= 63","j":"9223372036854775807","prec":"64","rnd":"RNDN"}

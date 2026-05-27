@@ -1,0 +1,6 @@
+{"source":"mpfr/tests/tnext.c L48-L49","note":"NaN(x) -> NaN, regardless of y"}
+{"source":"mpfr/tests/tnext.c L50-L52","note":"y NaN -> x becomes NaN"}
+{"source":"mpfr/tests/tnext.c L53-L56","note":"x == y == 1 -> x unchanged"}
+{"source":"mpfr/tests/tnext.c L130","note":"nexttoward(y, x) inverse-stepping in the generic loop"}
+{"source":"mpfr/tests/tnext.c (extrapolated)","note":"signed-zero IEEE 1985 vs C99 distinction: nexttoward(+0, -0) returns +0, NOT -0"}
+{"source":"mpfr/tests/tnext.c (extrapolated)","note":"x finite, y NaN -> x becomes NaN; flag set as side effect (not surfaced in TS)"}
