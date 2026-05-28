@@ -1,0 +1,21 @@
+{
+  "function": "mpfr_set_emin",
+  "class": "misc",
+  "signature": {
+    "params": ["exp"],
+    "returns": "object"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_set_emin (mpfr/src/exceptions.c L38-L50), the mirror of mpfr_set_emax. The C function `int mpfr_set_emin(mpfr_exp_t exp)` sets the global minimum exponent: if `exp` is in [MPFR_EMIN_MIN, MPFR_EMIN_MAX] it stores it into __gmpfr_emin and returns 0; otherwise it leaves emin unchanged and returns 1.\n\nOn the build host (mpfr_exp_t == 64-bit long) the bounds are MPFR_EMIN_MIN = -(2^62 - 1) = -4611686018427387903 and MPFR_EMIN_MAX = 2^62 - 1 = 4611686018427387903 (mpfr/src/mpfr-impl.h L1037,L1048-L1049). Note the emin and emax bounds are numerically identical on this platform.\n\nWire form (immutable-API lift): the port takes the candidate `exp: bigint` and returns an object `{ret: number, emin: bigint}` where `ret` is the 0/1 return code and `emin` is the resulting global emin (== exp on accept, == the unchanged prior emin -- here the MPFR default -(2^30-1) = -1073741823 -- on reject). The golden's per-case SAVE/RESTORE pins the prior emin to the library default, so the rejected-case output is deterministic.\n\nClass 'misc' (1000ms per-case budget). Tag minimums per Rule 7 satisfied: happy 20, edge 30, adversarial 12, fuzz 50, mined 5 (117 lines).",
+  "c_signature": "int mpfr_set_emin(mpfr_exp_t exp)",
+  "prec_unit": "n/a",
+  "divergence_from_c": "Three divergences (mirror of mpfr_set_emax):\n\n  1. Statefulness: C mutates the thread-global __gmpfr_emin and returns only the int status. The immutable-API mandate forbids hidden global state in the public surface, so the port returns BOTH the status and the resulting emin in one object {ret, emin}. The golden makes this observable by saving the prior emin, calling set, reading get_emin(), then restoring.\n\n  2. Prior-emin baseline: on a rejected exp the C leaves emin unchanged. The golden runs each case from the MPFR default emin (run starts pristine; every case restores), so rejected cases deterministically report emin = -1073741823 (= -(2^30 - 1), MPFR_EMIN_DEFAULT). The reject branch is fully determined by exp against the fixed bounds, so no separate prior input is threaded.\n\n  3. Types: C `exp` is mpfr_exp_t (signed long); the port takes `bigint` (exp can reach ~2^62). `ret` is a JS number (0|1); `emin` is a bigint.",
+  "refs": [
+    "mpfr/src/exceptions.c L38-L50 -- mpfr_set_emin C body (bounds check + store + return 0/1).",
+    "mpfr/src/exceptions.c L28-L62 -- mpfr_get_emin / get_emin_min / get_emin_max companions.",
+    "mpfr/src/mpfr-impl.h L1037 -- MPFR_EXP_INVALID = MPFR_EXP_MAX/2 + 1.",
+    "mpfr/src/mpfr-impl.h L1048-L1049 -- MPFR_EMIN_MIN = 1-MPFR_EXP_INVALID, MPFR_EMIN_MAX = MPFR_EXP_INVALID-1.",
+    "/usr/include/mpfr.h L216-L217 -- MPFR_EMIN_DEFAULT = -(2^30 - 1) (the prior-emin baseline).",
+    "/usr/include/mpfr.h L1117-L1118 -- public MPFR_EMIN_MIN/MAX macros wrap mpfr_get_emin_min/max.",
+    "mpfr/tests/texceptions.c -- emin/emax set-and-restore boundary-probing test pattern (mined)."
+  ]
+}

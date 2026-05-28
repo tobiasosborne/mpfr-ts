@@ -1,0 +1,21 @@
+{
+  "function": "mpfr_set_emax",
+  "class": "misc",
+  "signature": {
+    "params": ["exp"],
+    "returns": "object"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_set_emax (mpfr/src/exceptions.c L74-L86). The C function `int mpfr_set_emax(mpfr_exp_t exp)` sets the global maximum exponent: if `exp` is in [MPFR_EMAX_MIN, MPFR_EMAX_MAX] it stores it into __gmpfr_emax and returns 0; otherwise it leaves emax unchanged and returns 1.\n\nOn the build host (mpfr_exp_t == 64-bit long) the bounds are MPFR_EMAX_MIN = -(2^62 - 1) = -4611686018427387903 and MPFR_EMAX_MAX = 2^62 - 1 = 4611686018427387903 (mpfr/src/mpfr-impl.h L1037,L1050-L1051).\n\nWire form (immutable-API lift): the C global is exposed explicitly in the OUTPUT rather than mutated. The port takes the candidate `exp: bigint` and returns an object `{ret: number, emax: bigint}` where `ret` is the 0/1 return code and `emax` is the resulting global emax (== exp on accept, == the unchanged prior emax -- here the MPFR default 2^30-1 = 1073741823 -- on reject). The golden's per-case SAVE/RESTORE pins the prior emax to the library default, so the rejected-case output is deterministic.\n\nClass 'misc' (1000ms per-case budget). Tag minimums per Rule 7 satisfied: happy 20, edge 30, adversarial 12, fuzz 50, mined 5 (117 lines).",
+  "c_signature": "int mpfr_set_emax(mpfr_exp_t exp)",
+  "prec_unit": "n/a",
+  "divergence_from_c": "Three divergences:\n\n  1. Statefulness: C mutates the thread-global __gmpfr_emax and returns only the int status; the resulting emax must be read separately via mpfr_get_emax(). The immutable-API mandate (decision_api_shape memory) forbids hidden global state in the public surface, so the port returns BOTH the status and the resulting emax in one object {ret, emax}. The golden driver makes this observable by saving the prior emax, calling set, reading get_emax(), then restoring -- and the wire records the {ret, emax} pair.\n\n  2. Prior-emax baseline: on a rejected exp the C function leaves emax unchanged, so the result depends on whatever emax was live. The golden runs each case from the MPFR default emax (the run starts pristine and every case restores), so rejected cases deterministically report emax = 1073741823 (= 2^30 - 1, MPFR_EMAX_DEFAULT). The port therefore models the reject branch as 'return the prior/default emax', and the runner feeds no separate prior input (unlike set_default_rounding_mode) because the accept/reject result is fully determined by exp against the fixed bounds.\n\n  3. Types: C `exp` is mpfr_exp_t (signed long); the port takes `bigint` (decoded from the decimal-string wire) since exp can reach ~2^62, beyond JS Number safety. `ret` is a JS number (0|1); `emax` is a bigint.",
+  "refs": [
+    "mpfr/src/exceptions.c L74-L86 -- mpfr_set_emax C body (bounds check + store + return 0/1).",
+    "mpfr/src/exceptions.c L66-L97 -- mpfr_get_emax / get_emax_min / get_emax_max companions.",
+    "mpfr/src/mpfr-impl.h L1037 -- MPFR_EXP_INVALID = MPFR_EXP_MAX/2 + 1.",
+    "mpfr/src/mpfr-impl.h L1050-L1051 -- MPFR_EMAX_MIN = 1-MPFR_EXP_INVALID, MPFR_EMAX_MAX = MPFR_EXP_INVALID-1.",
+    "/usr/include/mpfr.h L216-L217 -- MPFR_EMAX_DEFAULT = 2^30 - 1 (the prior-emax baseline).",
+    "/usr/include/mpfr.h L1119-L1120 -- public MPFR_EMAX_MIN/MAX macros wrap mpfr_get_emax_min/max.",
+    "mpfr/tests/texceptions.c -- emin/emax set-and-restore boundary-probing test pattern (mined)."
+  ]
+}

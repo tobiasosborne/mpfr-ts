@@ -1,0 +1,19 @@
+{
+  "function": "mpfr_total_order_p",
+  "class": "misc",
+  "signature": {
+    "params": ["x", "y"],
+    "returns": "boolean"
+  },
+  "c_signature": "int mpfr_total_order_p (mpfr_srcptr x, mpfr_srcptr y)",
+  "doc": "Pure-TS port of MPFR's mpfr_total_order_p: the IEEE 754-2008 Section 5.10 totalOrder predicate. Returns true iff x <= y under the *total* ordering -NaN < -Inf < negatives < -0 < +0 < positives < +Inf < +NaN. Unlike mpfr_cmp / mpfr_lessequal_p this DOES order signed zeros (-0 < +0) and DOES order NaN (NaN sits at the extremes by sign, and is reflexive: to(NaN,NaN)=true). The port mirrors mpfr/src/total_order.c L26-L42: a sign-difference fast path (which is what orders signed zero), then NaN handling for each operand, then a delegate to mpfr_lessequal_p for the finite/inf tail. Class 'misc' (1000ms budget); predicate output is a bare JSON boolean via jl_output_scalar_bool.",
+  "divergence_from_c": "Two divergences:\n\n  1. C returns int (0/1); TS returns boolean. The predicate does NOT throw on NaN -- totalOrder is total, so every (x,y) pair has a defined true/false answer (in particular to(NaN,NaN)=true, unlike the unordered-NaN convention of the other comparison predicates).\n\n  2. NaN sign is NOT representable. The locked TS schema (src/core.ts) folds every NaN to NAN_VALUE with sign=1 (a +NaN); a -NaN cannot be constructed on the TS side. The C branches that depend on a negative NaN sign -- the `MPFR_IS_NEG(x)` disjunct at total_order.c L32, and the sign-difference branch (L28) when one operand is -NaN -- are therefore DEAD in the TS port. To keep the C reference output consistent with what the TS port computes on the schema-folded inputs, this golden emits ONLY +NaN inputs (libmpfr's mpfr_set_nan produces a positive-sign NaN, verified signbit=0). A -NaN golden case would be an unfixable divergence (C answer computed on -NaN, TS port sees +NaN) and is deliberately excluded. Signed ZEROS, by contrast, ARE representable and fully exercised (-0 vs +0 IS ordered).",
+  "refs": [
+    "mpfr/src/total_order.c L26-L42 -- the C reference (sign-diff fast path, NaN-by-sign handling, mpfr_lessequal_p delegate). 'follows IEEE 754-2008, Section 5.10'.",
+    "mpfr/src/comparisons.c -- mpfr_lessequal_p, the L40 delegate.",
+    "src/ops/lessequal_p.ts -- the production delegate used by the reference port.",
+    "src/internal/mpfr/cmp_raw.ts -- compareMPFR; note it does NOT order signed zero (returns 0 for +0 vs -0), so signed-zero ordering MUST come from the sign-difference branch ahead of the delegate.",
+    "src/core.ts -- locked schema; NAN_VALUE forces NaN sign=1 (drives divergence #2).",
+    "CLAUDE.md 'Hallucination-risk callouts' -- Signed zero is real (and IS ordered by totalOrder); NaN != NaN (but totalOrder is reflexive on NaN)."
+  ]
+}

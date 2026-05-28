@@ -1,0 +1,31 @@
+{
+  "function": "mpfr_round_raw_generic",
+  "class": "substrate",
+  "signature": {
+    "params": [
+      "xp",
+      "xprec",
+      "neg",
+      "yprec",
+      "rnd"
+    ],
+    "returns": "{ yp: readonly bigint[], carry: bigint, inexp: number }"
+  },
+  "c_signature": "int mpfr_round_raw (mp_limb_t *yp, const mp_limb_t *xp, mpfr_prec_t xprec, int neg, mpfr_prec_t yprec, mpfr_rnd_t rnd_mode, int *inexp)",
+  "limb_width_bits": 64,
+  "limb_order": "little-endian",
+  "prec_unit": "bits",
+  "doc": "Pure-TS port of MPFR's mpfr_round_raw -- THE core mpn-level rounding primitive. mpfr_round_raw is the flag=0, use_inexp=1 instantiation of the macro-generated mpfr_round_raw_generic (mpfr/src/round_raw_generic.c L60-L273; instantiated in mpfr/src/round_prec.c L25-L28). SUBSTRATE class: operates on raw GMP limb arrays (little-endian; xp[0] is the least-significant 2^64 word), NOT src/core.ts MPFR values, so the runner's requireCoreImport AST gate is exempt (eval/harness/runner.ts L1188). The production port lands in src/internal/mpfr/, not src/ops/.\n\nContract (round_raw_generic.c L32-L54): given an MSB-aligned source mantissa xp of xprec bits, with value sign neg (0 => positive, 1 => negative), round it to yprec bits in mode rnd, writing the result limbs into yp (ceil(yprec/64) limbs). Returns the carry (0 or 1): carry==1 means the rounding overflowed the top -- the true result is a power of two, and the yp limbs hold the wrapped low bits (all zero after the masked add). The caller bumps the exponent by 1 on carry. Also writes the inexact flag into *inexp:\n  -  0  : result is exact (xp had no significant bits below yprec).\n  - +1  : rounded up (rounded > exact) for a positive value (neg=0).\n  - -1  : rounded down (rounded < exact) for neg=0; signs flip for neg=1.\n  - +-2 : MPFR_EVEN_INEX -- the rounding was an exact halfway tie resolved by ties-to-even (RNDN only). The sign indicates the direction (sign of rounded - exact): +2 rounded up to even, -2 rounded down to even.\n\nKey sub-cases of the C body:\n  - xprec <= yprec (round_raw_generic.c L108-L123): NO rounding needed; copy xp into the top of yp, zero-pad the low limbs, inexp=0, carry=0.\n  - RNDN/RNDNA (L143-L202): inspect the rounding bit (bit GMP_NUMB_BITS-1-rw of the boundary limb); if 0 -> behave like RNDZ; if 1 -> scan sticky bits, then either even-rounding (L156-L184, sets +-MPFR_EVEN_INEX) or add-one-ulp.\n  - RNDZ / like-RNDZ (L204-L220): truncate; sticky-bit scan sets inexp to 0 or +-1.\n  - RNDA / away (L221-L255): add-one-ulp unless all dropped bits are zero.\n  - RNDF (L88-L95): treated as RNDZ (faster), inexp forced to 0.\n\nThe low rw bits of yp[0] are masked off via himask after every write (yp[0] &= himask), so the output is MSB-aligned to yprec bits with the sub-yprec bits zeroed.\n\nNote: the existing src/internal/mpfr/round_raw.ts (roundMantissa) is the SINGLE-BIGINT reframing of this same logic, NOT the limb-array form. A faithful port for this golden must speak the limb-array I/O contract (xp/yp as bigint[] little-endian), matching the C signature byte-for-byte at the I/O boundary, OR adapt the single-bigint engine across a limb<->bigint bridge.",
+  "divergence_from_c": "1. Return shape: C writes yp in place, returns carry as int, and writes *inexp through a pointer. The TS port returns a struct { yp: readonly bigint[], carry: bigint, inexp: number } -- yp is a freshly-allocated array (no aliasing with xp), carry is a bigint (0n/1n) since the wire scalar codec decodes a decimal string to bigint, and inexp is a JS number (small int in {-2,-1,0,1,2}).\n2. The C in-place / aliasing semantics (yp may overlap xp via mpn_copyd) are irrelevant to the immutable TS surface: the port returns a fresh yp.\n3. RNDF is accepted and mapped to RNDZ internally (round_raw_generic.c L88-L95) with inexp forced to 0; the golden does NOT exercise RNDF because the public RoundingMode union in src/core.ts is the five RNDN/RNDZ/RNDU/RNDD/RNDA (no RNDF). The substrate port MAY accept a RNDF string if it chooses, but the golden only covers the five.\n4. xprec, yprec are passed as bigint (decoded from decimal-string wire); neg as a JS number 0/1 (decoded from a small JSON int via jl_kv_int); rnd as the RoundingMode string.\n5. Precondition (round_raw_generic.c L32-L37): xp must be non-zero and MSB-aligned (top limb's MSB set). The golden only emits MSB-aligned xp; the port may assume the precondition (it is a substrate hot path).",
+  "refs": [
+    "mpfr/src/round_raw_generic.c L60-L273 -- the macro body; this golden instantiates flag=0, use_inexp=1.",
+    "mpfr/src/round_prec.c L25-L28 -- '#define mpfr_round_raw_generic mpfr_round_raw / #define flag 0 / #define use_inexp 1 / #include round_raw_generic.c' -- the exact instantiation.",
+    "mpfr/src/mpfr-impl.h L2500-L2501 -- __MPFR_DECLSPEC int mpfr_round_raw(mp_limb_t*, const mp_limb_t*, mpfr_prec_t, int, mpfr_prec_t, mpfr_rnd_t, int*) declaration.",
+    "mpfr/src/mpfr-impl.h L1190 -- #define MPFR_EVEN_INEX 2 (the +-2 even-rounding marker).",
+    "src/internal/mpfr/round_raw.ts -- the single-bigint roundMantissa reframing of the same logic (NOT the limb form; reference for the rounding decision table).",
+    "GMP manual section 8.3 -- little-endian limb order: limbs[0] is least-significant.",
+    "eval/functions/mpn_lshift/golden_driver.c -- the limb-array wire pattern (jl_kv_limbs / decimal-string-per-limb).",
+    "eval/functions/mpfr_round_p/golden_driver.c -- sibling substrate driver: extern-decl of a __MPFR_DECLSPEC symbol against the public header.",
+    "CLAUDE.md 'Hallucination-risk callouts' -- little-endian limbs; ternary/inexact is sign of (rounded - exact); umul_ppmm output-args convention (not used here)."
+  ]
+}

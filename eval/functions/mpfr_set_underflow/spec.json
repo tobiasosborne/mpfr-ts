@@ -1,0 +1,20 @@
+{
+  "function": "mpfr_set_underflow",
+  "class": "misc",
+  "signature": {
+    "params": ["mask"],
+    "returns": "bigint"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_set_underflow (mpfr/src/exceptions.c L200-L206). One-line C body: `__gmpfr_flags |= MPFR_FLAGS_UNDERFLOW` -- set the UNDERFLOW bit (bit 1) in the global flag register. This is the OR-set mirror of the clear_* family's `&= ALL ^ BIT`. C returns void.\n\nThe TS port follows the same immutable-API contract used by the rest of the flag family (see mpfr_clear_divby0, mpfr_divby0_p): it takes a `mask: bigint` describing the pre-set flag state, applies the set-UNDERFLOW operation, and returns the new flag state as a `bigint`. This makes the port pure/stateless on its surface (the wire form encodes the global flag state explicitly), while still exercising the SAME `flags |= BIT` arithmetic the C performs.\n\nThe in-library wiring (when ported into src/) routes through setFlags(MPFR_FLAGS_UNDERFLOW) from src/internal/mpfr/flags.ts. The reference port reads that delegate; the production src/ops/set_underflow.ts will too.\n\nClass 'misc' (1000ms per-case budget). Tag minimums per Rule 7 apply -- the input domain (mask in [0, 63]) is small but enumerable. happy/edge/adversarial/fuzz coverage is built on the same six-flag truth-table the mpfr_clear_divby0 golden uses, so the same coverage shape applies.",
+  "c_signature": "void mpfr_set_underflow(void)",
+  "prec_unit": "n/a",
+  "divergence_from_c": "Three divergences:\n\n  1. Return type: C returns void (mutates global state); TS returns `bigint` -- the new flag state after the set operation. The immutable-API mandate (decision_api_shape memory) forbids global mutable state in the public surface.\n\n  2. Parameter list: C takes no parameters (operates on the global __gmpfr_flags register); TS takes `mask: bigint` -- the desired pre-set flag state. Matches the convention used by mpfr_clear_divby0 and the rest of the flag family.\n\n  3. Mechanism: The port must either (a) use src/internal/mpfr/flags.ts directly (setFlags(MPFR_FLAGS_UNDERFLOW)) or (b) compute the result inline as `(mask | MPFR_FLAGS_UNDERFLOW) & MPFR_FLAGS_ALL` = `(mask | 1n) & 63n`. Both are equivalent. Option (a) ties the port into the shared substrate; option (b) is self-contained. The reference port uses option (a) for consistency with the rest of the flag family.",
+  "refs": [
+    "mpfr/src/exceptions.c L200-L206 -- the C reference body (`__gmpfr_flags |= MPFR_FLAGS_UNDERFLOW`).",
+    "mpfr/src/exceptions.c L37-L40 -- __gmpfr_flags declaration.",
+    "/usr/include/mpfr.h L77-L88 -- MPFR_FLAGS_* bit constants (UNDERFLOW=1, ALL=63).",
+    "src/internal/mpfr/flags.ts -- the TS flag register module (already shipped); setFlags(MPFR_FLAGS_UNDERFLOW) is the canonical set path.",
+    "src/ops/clear_divby0.ts -- sister clear op family using the same mask-based wire form.",
+    "mpfr/tests/texceptions.c L327-L351 -- mined source pattern (clear, set_X, verify)."
+  ]
+}

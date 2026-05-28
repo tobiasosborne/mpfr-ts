@@ -1,0 +1,19 @@
+{
+  "function": "mpfr_set_prec_raw",
+  "class": "misc",
+  "signature": {
+    "params": ["x", "prec"],
+    "returns": "bigint"
+  },
+  "c_signature": "void mpfr_set_prec_raw (mpfr_ptr x, mpfr_prec_t p)",
+  "prec_unit": "bits",
+  "doc": "Pure-TS port of MPFR's internal mpfr_set_prec_raw: reset x's precision field to p WITHOUT reallocating the mantissa limb buffer and WITHOUT preserving the value. The entire C body (mpfr/src/set_prc_raw.c L25-L30) is three lines: two MPFR_ASSERTN preconditions (p is a valid precision; p fits the EXISTING allocation, i.e. p <= alloc_size_in_limbs * GMP_NUMB_BITS) followed by the single store MPFR_PREC(x) = p. No limb data is touched: the numeric value of x after the call is INDETERMINATE (the old limbs are now reinterpreted under the new precision). The ONLY well-defined post-condition is MPFR_PREC(x) == p (confirmed empirically: after set_prec_raw(x, p), mpfr_get_prec(x) returns exactly p).\n\nBecause the value is not preserved, the golden asserts ONLY the resulting precision -- NOT any mantissa/exponent content. The wire output is therefore the resulting precision as a bare scalar (decimal-string -> bigint on the TS side), which is the single observable C guarantees. The input MPFR x is present in the wire so the port mirrors the C contract (x is the object whose prec is reset) but its value is irrelevant to the output -- mirroring C, which ignores x's value entirely.\n\nClass 'misc' (1000ms budget). Tag minimums per Rule 7: happy 20, edge 30, adversarial 12, fuzz 50, mined 5.",
+  "divergence_from_c": "Three divergences:\n\n  1. Return shape. C returns void and mutates x->_mpfr_prec in place. The immutable TS lift cannot mutate; and returning a full MPFR is meaningless because the value is not preserved (the mantissa would be re-interpreted under the new prec into an arbitrary bit pattern that need not satisfy the MSB-normalisation invariant validate() enforces). The TS port therefore returns the single well-defined observable: the resulting precision p, as a bigint. The output wire is a bare scalar.\n\n  2. The alloc-fit precondition (p <= alloc_size * GMP_NUMB_BITS) is a C-level invariant about the physical limb buffer of x. The immutable TS surface has no separate 'allocation' concept distinct from prec, so this precondition is not surfaceable and is documented-but-not-enforced. The golden driver chooses p only within the limb-rounded allocation bound ceil(orig_prec/64)*64 of the constructed x, so every emitted case is one the C assertion accepts.\n\n  3. Validity precondition (MPFR_PREC_COND p). The TS port enforces PREC_MIN <= p <= PREC_MAX and throws MPFRError('EPREC') otherwise, in the spirit of the C MPFR_ASSERTN(MPFR_PREC_COND(p)) -- but MPFR's assertion aborts the process whereas the TS port throws a recoverable error. The golden emits only valid p, so this path is not graded (it is a fail-fast guard per CLAUDE.md Rule 1).",
+  "refs": [
+    "mpfr/src/set_prc_raw.c L25-L30 -- the entire C reference (two MPFR_ASSERTN + MPFR_PREC(x)=p).",
+    "mpfr/src/mpfr-impl.h L975 -- #define MPFR_PREC(x) ((x)->_mpfr_prec); L1344 MPFR_GET_ALLOC_SIZE.",
+    "mpfr/src/mpfr.h L483 -- public declaration of mpfr_set_prec_raw (it IS exported in libmpfr; nm -D confirms symbol T mpfr_set_prec_raw).",
+    "src/core.ts -- locked schema; PREC_MIN/PREC_MAX bounds and the MPFR value type carried in the input wire.",
+    "CLAUDE.md 'Hallucination-risk callouts' -- mpfr_set_prec vs mpfr_set_prec_raw: prec is in BITS; set_prec_raw does NOT reallocate, set_prec does. Here we faithfully model the no-realloc, value-not-preserved variant."
+  ]
+}

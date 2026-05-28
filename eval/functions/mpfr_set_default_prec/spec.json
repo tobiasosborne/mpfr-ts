@@ -1,0 +1,20 @@
+{
+  "function": "mpfr_set_default_prec",
+  "class": "misc",
+  "signature": {
+    "params": ["prec"],
+    "returns": "bigint"
+  },
+  "doc": "Pure-TS port of MPFR's mpfr_set_default_prec (mpfr/src/set_dfl_prec.c L28-L33). The C function `void mpfr_set_default_prec(mpfr_prec_t prec)` asserts MPFR_PREC_COND(prec) -- i.e. prec in [MPFR_PREC_MIN, MPFR_PREC_MAX] -- then stores prec into the thread-global __gmpfr_default_fp_bit_precision. There is NO recoverable error path: an out-of-range prec triggers MPFR_ASSERTN, which abort()s the process.\n\nMPFR_PREC_MIN = 1; MPFR_PREC_MAX on this host = 2^63 - 257. prec is in BITS (not decimal digits).\n\nWire form (immutable-API lift): the port takes `prec: bigint` and returns the RESULTING default precision as a `bigint` (== prec for every valid call, since the function stores prec verbatim and mpfr_get_default_prec() reads it back). The global is not mutated on the public surface; the result IS the new default. The golden saves/restores the default prec around every case.\n\nPrecision cap: the golden only emits precs in [1, 2^31 - 257] (== src/core.ts PREC_MAX), a strict subset of the C MPFR_PREC_MAX and every value is accepted by C. This lets the idiomatic port reuse the locked src/core.ts precision bounds. The out-of-range C abort() is lifted in the TS surface to a thrown MPFRError('EPREC', ...) for prec < 1 or prec > PREC_MAX -- that error path is recorded by the runner as n_throw and is not part of these value-correctness goldens.\n\nClass 'misc' (1000ms per-case budget). Tag minimums per Rule 7 satisfied: happy 20, edge 30, adversarial 12, fuzz 50, mined 5 (117 lines).",
+  "c_signature": "void mpfr_set_default_prec(mpfr_prec_t prec)",
+  "prec_unit": "bits",
+  "divergence_from_c": "Three divergences:\n\n  1. Return value: C returns void (mutates the global); the port returns `bigint` -- the resulting default precision. For every (in-range) case this equals the input prec, but the port returns it explicitly so the surface is pure (no observable global mutation). The golden encodes this by reading mpfr_get_default_prec() after the set.\n\n  2. Error path: C abort()s on prec out of [1, MPFR_PREC_MAX] via MPFR_ASSERTN (no recoverable signal). The idiomatic TS port instead throws MPFRError('EPREC', ...) (consistent with core.ts assertPrec) -- a recoverable, testable error. The golden CANNOT exercise the abort path (it would kill the driver process), so all golden cases are valid precs; the throw-on-bad-input contract is verified separately via the runner's n_throw bookkeeping, not via these value goldens.\n\n  3. Precision bound: the golden caps inputs at 2^31 - 257 (src/core.ts PREC_MAX), which is below the C MPFR_PREC_MAX (2^63 - 257) but is itself a valid C precision. This keeps the port aligned with the locked TS precision ceiling without the golden ever feeding a prec the TS surface would reject. `prec` is bits, decoded from the decimal-string wire as bigint.",
+  "refs": [
+    "mpfr/src/set_dfl_prec.c L28-L33 -- mpfr_set_default_prec C body (assert + store).",
+    "mpfr/src/set_dfl_prec.c L35-L40 -- mpfr_get_default_prec companion (reads the global).",
+    "mpfr/src/mpfr-impl.h L959 -- MPFR_PREC_COND(p) := p >= MPFR_PREC_MIN && p <= MPFR_PREC_MAX.",
+    "/usr/include/mpfr.h L177-L178 -- MPFR_PREC_MIN = 1, MPFR_PREC_MAX formula.",
+    "src/core.ts L216-L236 -- PREC_MIN (1n) and PREC_MAX (2^31 - 257) in the TS surface; the golden cap matches PREC_MAX.",
+    "src/core.ts L445-L455 -- assertPrec: the EPREC throw the port mirrors for the lifted abort() path."
+  ]
+}
